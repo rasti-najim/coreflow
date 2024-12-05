@@ -32,6 +32,22 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you upload them."
+        }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Apple-LiGothic-Medium.ttf",
+            "./assets/fonts/Margin-DEMO.otf",
+            "./assets/fonts/KeeponTruckin.ttf"
+          ]
+        }
       ]
     ],
     "experiments": {

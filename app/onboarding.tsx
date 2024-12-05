@@ -3,10 +3,16 @@ import { PilatesExperience } from "@/components/pilates-experience";
 import { SelectGoals } from "@/components/select-goals";
 import { SelectRoutine, SelectDuration } from "@/components/select-routine";
 import { GoalsDetails } from "@/components/goals-details";
+import { CreateAccount } from "@/components/create-account";
 import { useState, useMemo } from "react";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { PaywallScreen } from "@/components/paywall";
+import { Tracking } from "@/components/tracking";
+import {
+  StartingJourney,
+  StartingJourneyPhoto,
+} from "@/components/starting-journey";
 
 interface OnboardingData {
   pilatesLevel: string | null;
@@ -15,6 +21,12 @@ interface OnboardingData {
   duration: string | null;
   goalDetails: string[];
   hasPurchased?: boolean;
+  hasAccount?: boolean;
+  phoneNumber?: string;
+  email?: string;
+  tracking: "pictures" | "mood" | "neither" | null;
+  mood?: string;
+  photo?: string;
 }
 
 export default function Onboarding() {
@@ -25,10 +37,16 @@ export default function Onboarding() {
     routine: null,
     duration: null,
     goalDetails: [],
+    hasAccount: false,
+    phoneNumber: "",
+    email: "",
+    tracking: null,
+    mood: "",
+    photo: "",
   });
   const router = useRouter();
 
-  const totalSteps = useMemo(() => 6, []); // Fixed number of steps for now
+  const totalSteps = useMemo(() => 9, []); // Increased by 1 for account creation
 
   const handleNext = async () => {
     if (step < totalSteps - 1) {
@@ -37,9 +55,9 @@ export default function Onboarding() {
     } else {
       // Handle completion of onboarding
       console.log("Completed onboarding:", onboardingData);
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // Navigate to next screen
-      //   router.push("/home"); // Update this to your desired route
+      router.push("/(app)");
     }
   };
 
@@ -66,6 +84,16 @@ export default function Onboarding() {
         return false;
       case 5:
         return !onboardingData.hasPurchased;
+      case 6:
+        // return !onboardingData.hasAccount;
+        return false;
+      case 7:
+        return !onboardingData.tracking;
+      case 8:
+        if (onboardingData.tracking === "neither") return false;
+        if (onboardingData.tracking === "pictures")
+          return !onboardingData.photo;
+        return !onboardingData.mood;
       default:
         return false;
     }
@@ -127,6 +155,36 @@ export default function Onboarding() {
         );
       case 4:
         return <GoalsDetails selectedGoals={onboardingData.goals} />;
+      case 6:
+        return (
+          <CreateAccount onGoogleSignIn={() => {}} onPhoneSignIn={() => {}} />
+        );
+      case 7:
+        return (
+          <Tracking
+            selectedTracking={onboardingData.tracking}
+            onSelectTracking={(tracking) =>
+              setOnboardingData((prev) => ({ ...prev, tracking: tracking }))
+            }
+          />
+        );
+      case 8:
+        if (onboardingData.tracking === "pictures") {
+          return (
+            <StartingJourneyPhoto
+              onPhotoSelect={(photo) =>
+                setOnboardingData((prev) => ({ ...prev, photo: photo }))
+              }
+            />
+          );
+        }
+        return (
+          <StartingJourney
+            onMoodChange={(mood) =>
+              setOnboardingData((prev) => ({ ...prev, mood: mood }))
+            }
+          />
+        );
       default:
         return null;
     }

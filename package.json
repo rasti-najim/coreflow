@@ -40,7 +40,9 @@
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.2",
     "expo-image": "~2.0.2",
-    "expo-linear-gradient": "~14.0.1"
+    "expo-linear-gradient": "~14.0.1",
+    "expo-image-picker": "~16.0.3",
+    "lottie-react-native": "7.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
