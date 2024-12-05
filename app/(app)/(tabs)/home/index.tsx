@@ -20,7 +20,13 @@ export default function Page() {
 
   return (
     <View style={[styles.container, { paddingTop: safeArea.top }]}>
-      <Text style={styles.logo}>coreflow</Text>
+      <View style={styles.header}>
+        <Text style={styles.logo}>coreflow</Text>
+        <TouchableOpacity style={styles.addButton}>
+          <Text style={styles.addButtonText}>+</Text>
+          <Text style={styles.addButtonText}>Add Progress</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Today's Workout */}
       <View style={styles.todayContainer}>
@@ -94,12 +100,32 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFE9D5",
     paddingHorizontal: 32,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 40,
+    marginTop: 40,
+  },
   logo: {
     fontSize: 32,
     fontWeight: "bold",
     color: "#4A2318",
-    marginTop: 40,
-    marginBottom: 40,
+  },
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    // paddingTop: 8,
+    backgroundColor: "#4A2318",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+    marginTop: 8,
+  },
+  addButtonText: {
+    fontWeight: "bold",
+    color: "#FFE9D5",
   },
   todayContainer: {
     marginBottom: 40,
