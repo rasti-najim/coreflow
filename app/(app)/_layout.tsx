@@ -5,9 +5,9 @@ import { useAuth } from "@/components/auth-context";
 export default function AppLayout() {
   const { session } = useAuth();
 
-  if (!session) {
-    return <Redirect href="/welcome" />;
-  }
+  // if (!session) {
+  //   return <Redirect href="/welcome" />;
+  // }
 
   return <Slot />;
 }
