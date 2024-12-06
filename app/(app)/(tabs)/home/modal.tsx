@@ -18,7 +18,7 @@ export default function Modal() {
       setExercises(data || []);
 
       const { data: animations, error: animationsError } =
-        await supabase.storage.from("exercise_animations").list("warmups");
+        await supabase.storage.from("exercise_animations").list("warmups/");
       console.log("animations", animations);
     };
     fetchExercises();
