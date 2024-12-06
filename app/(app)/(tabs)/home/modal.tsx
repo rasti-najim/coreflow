@@ -14,7 +14,7 @@ export default function Modal() {
   useEffect(() => {
     const fetchExercises = async () => {
       const { data, error } = await supabase.from("exercises").select("*");
-      console.log("data", data);
+      console.log(data);
 
       if (data && data.length > 0) {
         // Get the public URL for the animation file
