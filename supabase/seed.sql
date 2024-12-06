@@ -154,7 +154,7 @@ INSERT INTO exercises (name, description, focus, skill_level, is_two_sided, lott
      'exercise_animations/warmups/LegSlides.json');
 
 -- Cooldown Exercises
-INSERT INTO exercises (name, description, skill_level, is_two_sided, lottie_file_url) VALUES
+INSERT INTO exercises (name, description, focus, skill_level, is_two_sided, lottie_file_url) VALUES
     ('Child''s Pose',
      'Start on all fours, then gently sit back onto your heels, reaching your arms forward and lowering your forehead to the mat. Inhale deeply, feeling your ribs expand. Exhale to soften your hips and stretch through your spine. Let your body relax as you breathe.',
      ARRAY['Breathing'],
@@ -219,7 +219,7 @@ INSERT INTO exercises (name, description, skill_level, is_two_sided, lottie_file
      'exercise_animations/cooldowns/BreatheAndRelax.json');
 
 -- Target Exercises
-INSERT INTO exercises (name, description, skill_level, is_two_sided, lottie_file_url) VALUES
+INSERT INTO exercises (name, description, focus, skill_level, is_two_sided, lottie_file_url) VALUES
     ('Pilates Ab Curl',
      'Lie on your back, knees bent, feet grounded, hands supporting your head with elbows wide. Inhale deeply, and as you exhale, draw your belly in and curl your head, neck, and shoulders off the mat. Pause at the top, then slowly lower down with control. Feel your core do the work!',
      ARRAY['Core'],
