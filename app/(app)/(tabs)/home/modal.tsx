@@ -10,11 +10,16 @@ export default function Modal() {
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
   const [exercises, setExercises] = useState<any[]>([]);
+  const [type, setType] = useState<"Warmup" | "Cooldown" | "Target">("Warmup");
 
   useEffect(() => {
     const fetchExercises = async () => {
       const { data, error } = await supabase.from("exercises").select("*");
-      console.log("data", data);
+
+      if (error) {
+        console.error("Error fetching exercises:", error);
+        return;
+      }
 
       if (data && data.length > 0) {
         // Get the public URL for the animation file
@@ -22,15 +27,25 @@ export default function Modal() {
           .from("exercise_animations")
           .getPublicUrl(data[0].lottie_file_url);
 
-        console.log("publicURL", publicURL);
+        // Extract exercise type from URL
+        const url = publicURL.publicUrl;
+        let exerciseType: "Warmup" | "Cooldown" | "Target" = "Warmup";
+        if (url.includes("/warmups/")) {
+          exerciseType = "Warmup";
+        } else if (url.includes("/cooldowns/")) {
+          exerciseType = "Cooldown";
+        } else if (url.includes("/targets/")) {
+          exerciseType = "Target";
+        }
 
-        // Update the exercise data with the full URL
+        // Update the exercise data with the full URL and set the type
         const exerciseWithURL = {
           ...data[0],
           lottie_file_url: publicURL.publicUrl,
         };
 
         setExercises([exerciseWithURL]);
+        setType(exerciseType);
       }
     };
     fetchExercises();
@@ -53,20 +68,13 @@ export default function Modal() {
   }
 
   return (
-    <View style={[styles.container]}>
-      <View style={[styles.header, { paddingTop: safeArea.top }]}>
-        <TouchableOpacity
-          style={styles.dismissButton}
-          onPress={() => router.back()}
-        >
-          <FontAwesome name="times" size={24} color="#4A2318" />
-        </TouchableOpacity>
-      </View>
+    <View style={[styles.container, { paddingTop: safeArea.top }]}>
       <ExerciseLayout
         title={exercises[0].name}
         description={exercises[0].description}
         duration={20}
         animationSource={exercises[0].lottie_file_url}
+        type={type}
       />
     </View>
   );

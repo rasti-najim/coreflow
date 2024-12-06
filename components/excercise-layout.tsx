@@ -3,10 +3,12 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import LottieView from "lottie-react-native";
 import * as Haptics from "expo-haptics";
 import { useFonts } from "expo-font";
+import { FontAwesome } from "@expo/vector-icons";
 
 interface ExerciseLayoutProps {
   title: string;
   description: string;
+  type: "Warmup" | "Cooldown" | "Target";
   animationSource: string;
   duration: number; // in seconds
   onComplete?: () => void;
@@ -15,6 +17,7 @@ interface ExerciseLayoutProps {
 export const ExerciseLayout = ({
   title,
   description,
+  type,
   animationSource,
   duration,
   onComplete,
@@ -60,34 +63,21 @@ export const ExerciseLayout = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title}>
+        {type}: {title}
+      </Text>
       <Text style={styles.description}>{description}</Text>
 
-      <View style={styles.animationContainer}>
-        <LottieView
-          ref={animation}
-          // source={animationSource}
-          source={require("../assets/excercise.json")}
-          autoPlay={isActive}
-          loop={isActive}
-          style={styles.animation}
-        />
-      </View>
+      <LottieView
+        ref={animation}
+        source={{ uri: animationSource }}
+        autoPlay={true}
+        loop={true}
+        style={styles.animation}
+      />
 
       <View style={styles.timerContainer}>
-        <View style={styles.outerCircle}>
-          {/* <View style={styles.timerTrack} /> */}
-          <View
-            style={[
-              styles.progressTrack,
-              { transform: [{ rotate: `${(timeLeft / duration) * 360}deg` }] },
-            ]}
-          />
-          <View style={styles.innerCircle}>
-            <Text style={styles.timerText}>{timeLeft}</Text>
-            <Text style={styles.secondsText}>sec</Text>
-          </View>
-        </View>
+        <Text style={styles.timerText}>{timeLeft} sec</Text>
       </View>
 
       {!isActive ? (
@@ -95,13 +85,22 @@ export const ExerciseLayout = ({
           <Text style={styles.beginButtonText}>begin</Text>
         </TouchableOpacity>
       ) : (
-        <TouchableOpacity
-          style={[styles.beginButton, styles.stopButton]}
-          onPress={handleStop}
-        >
+        <TouchableOpacity style={styles.beginButton} onPress={handleStop}>
           <Text style={styles.beginButtonText}>stop</Text>
         </TouchableOpacity>
       )}
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.quitButton}>
+          <Text style={styles.quitButtonText}>quit</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.differentExerciseButton}>
+          <Text style={styles.differentExerciseButtonText}>
+            different exercise
+          </Text>
+          <FontAwesome name="refresh" size={16} color="#4A2318" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -110,102 +109,83 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFE9D5",
-    // marginTop: 40,
     alignItems: "center",
-    paddingHorizontal: 16,
-    // justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingTop: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#4A2318",
-    marginBottom: 16,
+    marginBottom: 8,
+    alignSelf: "flex-start",
   },
   description: {
     fontSize: 18,
-    // fontWeight: "600",
     color: "#4A2318",
-    textAlign: "center",
-    marginBottom: 40,
+    marginBottom: 32,
+    alignSelf: "flex-start",
     lineHeight: 24,
   },
-  animationContainer: {
-    // width: "100%",
-    // height: 200,
-    marginBottom: 40,
-  },
   animation: {
-    width: 200,
-    height: 200,
+    width: "100%",
+    height: 300,
+    // marginBottom: 32,
   },
   timerContainer: {
     alignItems: "center",
-    marginBottom: 40,
-  },
-  outerCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: "#4A2318",
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  timerTrack: {
-    position: "absolute",
-    width: "50%",
-    height: "50%",
-    borderRadius: 80,
-    borderWidth: 10,
-    borderColor: "#FFE9D5",
-  },
-  progressTrack: {
-    position: "absolute",
-    width: "140%",
-    height: "140%",
-    borderRadius: 112,
-    borderWidth: 20,
-    borderColor: "#FFE9D5",
-    opacity: 0.2,
-    borderLeftColor: "transparent",
-    borderBottomColor: "transparent",
-    borderRightColor: "transparent",
-    transform: [{ scale: 0.8 }],
-  },
-  innerCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "#4A2318",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 8,
-    borderColor: "#FFE9D5",
-    opacity: 0.9,
+    marginBottom: 32,
   },
   timerText: {
     fontSize: 48,
     fontFamily: "KeeponTruckin",
-    fontWeight: "bold",
-    color: "#FFE9D5",
-  },
-  secondsText: {
-    fontSize: 16,
-    color: "#FFE9D5",
-    marginTop: -5,
+    color: "#4A2318",
+    textAlign: "center",
   },
   beginButton: {
+    backgroundColor: "#4A2318",
     paddingVertical: 12,
     paddingHorizontal: 32,
-    backgroundColor: "#4A2318",
-    borderRadius: 10,
+    borderRadius: 8,
+    marginBottom: 16,
   },
   beginButtonText: {
-    fontSize: 18,
-    fontWeight: "bold",
     color: "#FFE9D5",
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
   },
-  stopButton: {
-    backgroundColor: "#FF4A4A",
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  quitButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#4A2318",
+  },
+  quitButtonText: {
+    fontSize: 18,
+    color: "#FF0000",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  differentExerciseButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#4A2318",
+  },
+  differentExerciseButtonText: {
+    fontSize: 18,
+    color: "#4A2318",
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
