@@ -15,11 +15,23 @@ export default function Modal() {
     const fetchExercises = async () => {
       const { data, error } = await supabase.from("exercises").select("*");
       console.log(data);
-      setExercises(data || []);
 
-      const { data: animations, error: animationsError } =
-        await supabase.storage.from("exercise_animations").list("warmups/");
-      console.log("animations", animations);
+      if (data && data.length > 0) {
+        // Get the public URL for the animation file
+        const { data: publicURL } = supabase.storage
+          .from("exercise_animations")
+          .getPublicUrl(data[0].lottie_file_url);
+
+        console.log("publicURL", publicURL);
+
+        // Update the exercise data with the full URL
+        const exerciseWithURL = {
+          ...data[0],
+          lottie_file_url: publicURL.publicUrl,
+        };
+
+        setExercises([exerciseWithURL]);
+      }
     };
     fetchExercises();
   }, []);

@@ -112,6 +112,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFE9D5",
     // marginTop: 40,
     alignItems: "center",
+    paddingHorizontal: 16,
     // justifyContent: "center",
   },
   title: {
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 18,
-    fontWeight: "600",
+    // fontWeight: "600",
     color: "#4A2318",
     textAlign: "center",
     marginBottom: 40,
