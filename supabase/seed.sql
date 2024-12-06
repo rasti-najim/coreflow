@@ -3,6 +3,7 @@ TRUNCATE TABLE progress CASCADE;
 TRUNCATE TABLE user_goals CASCADE;
 TRUNCATE TABLE user_preferences CASCADE;
 TRUNCATE TABLE users CASCADE;
+TRUNCATE TABLE exercises CASCADE;
 
 -- Insert sample users
 INSERT INTO users (user_id, email, phone_number, experience_level) 
@@ -91,9 +92,6 @@ SELECT 'Preferences', COUNT(*) FROM user_preferences
 SELECT 'Goals', COUNT(*) FROM user_goals
     UNION ALL
 SELECT 'Progress', COUNT(*) FROM progress;
-
--- First, let's clear any existing data (optional)
--- TRUNCATE TABLE exercises;
 
 -- Warmup Exercises
 INSERT INTO exercises (name, description, focus, skill_level, is_two_sided, lottie_file_url) VALUES
@@ -596,3 +594,9 @@ INSERT INTO exercises (name, description, focus, skill_level, is_two_sided, lott
      'intermediate',
      true,
      'exercise_animations/targets/SingleLegFlutterKick.json');
+
+SELECT COUNT(*) as total_exercises,
+       COUNT(*) FILTER (WHERE lottie_file_url LIKE 'exercise_animations/warmups%') as warmup_count,
+       COUNT(*) FILTER (WHERE lottie_file_url LIKE 'exercise_animations/cooldowns%') as cooldown_count,
+       COUNT(*) FILTER (WHERE lottie_file_url LIKE 'exercise_animations/targets%') as target_count
+FROM exercises;
