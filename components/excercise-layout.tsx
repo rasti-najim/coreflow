@@ -4,6 +4,7 @@ import LottieView from "lottie-react-native";
 import * as Haptics from "expo-haptics";
 import { useFonts } from "expo-font";
 import { FontAwesome } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 interface ExerciseLayoutProps {
   title: string;
@@ -25,9 +26,18 @@ export const ExerciseLayout = ({
   const [timeLeft, setTimeLeft] = useState(duration);
   const [isActive, setIsActive] = useState(false);
   const animation = useRef<LottieView>(null);
+  const router = useRouter();
   const [fontsLoaded] = useFonts({
     KeeponTruckin: require("../assets/fonts/KeeponTruckin.ttf"),
   });
+
+  const onQuit = () => {
+    router.dismiss();
+  };
+
+  const onDifferentExercise = () => {
+    router.dismiss();
+  };
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -91,10 +101,13 @@ export const ExerciseLayout = ({
       )}
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.quitButton}>
+        <TouchableOpacity style={styles.quitButton} onPress={onQuit}>
           <Text style={styles.quitButtonText}>quit</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.differentExerciseButton}>
+        <TouchableOpacity
+          style={styles.differentExerciseButton}
+          onPress={onDifferentExercise}
+        >
           <Text style={styles.differentExerciseButtonText}>
             different exercise
           </Text>
@@ -144,8 +157,8 @@ const styles = StyleSheet.create({
   },
   beginButton: {
     backgroundColor: "#4A2318",
-    paddingVertical: 12,
-    paddingHorizontal: 32,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 8,
     marginBottom: 16,
   },
