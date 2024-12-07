@@ -1,9 +1,9 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome6 } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ExerciseLayout } from "@/components/excercise-layout";
-import { Link } from "expo-router";
+import { useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
 
 const WEEKLY_SCHEDULE = [
   { day: "Mon", workout: "Glutes", isHighlighted: true },
@@ -17,13 +17,19 @@ const WEEKLY_SCHEDULE = [
 
 export default function Page() {
   const safeArea = useSafeAreaInsets();
+  const router = useRouter();
+
+  const onBegin = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push("/home/modal");
+  };
 
   return (
     <View style={[styles.container, { paddingTop: safeArea.top }]}>
       <View style={styles.header}>
         <Text style={styles.logo}>coreflow</Text>
         <TouchableOpacity style={styles.addButton}>
-          <Text style={styles.addButtonText}>+</Text>
+          <FontAwesome6 name="plus" size={16} color="#FFE9D5" />
           <Text style={styles.addButtonText}>Add Progress</Text>
         </TouchableOpacity>
       </View>
@@ -33,11 +39,10 @@ export default function Page() {
         <Text style={styles.day}>Tuesday</Text>
         <View style={styles.workoutRow}>
           <Text style={styles.workout}>20m Intermediate Core</Text>
-          <Link href="/home/modal" asChild>
-            <TouchableOpacity style={styles.beginButton}>
-              <Text style={styles.beginButtonText}>begin</Text>
-            </TouchableOpacity>
-          </Link>
+
+          <TouchableOpacity style={styles.beginButton} onPress={onBegin}>
+            <Text style={styles.beginButtonText}>begin</Text>
+          </TouchableOpacity>
         </View>
       </View>
 

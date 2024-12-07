@@ -1,4 +1,4 @@
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, FontAwesome6 } from "@expo/vector-icons";
 import { Text, StyleSheet } from "react-native";
 import { Tabs } from "expo-router";
 // import { Tabs, TabList, TabTrigger, TabSlot } from "expo-router/ui";
@@ -34,16 +34,16 @@ export default function TabLayout() {
           title: "",
           tabBarIcon: ({ color }) => (
             // <FontAwesome name="plus" size={24} color={color} />
-            <FontAwesome name="home" size={24} color={color} />
+            <FontAwesome6 name="house" size={24} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="calendar"
+        name="timeline"
         options={{
           title: "",
           tabBarIcon: ({ color }) => (
-            <FontAwesome name="calendar" size={24} color={color} />
+            <FontAwesome6 name="calendar" size={24} color={color} />
           ),
         }}
       />
@@ -52,7 +52,7 @@ export default function TabLayout() {
         options={{
           title: "",
           tabBarIcon: ({ color }) => (
-            <FontAwesome name="cog" size={24} color={color} />
+            <FontAwesome6 name="gear" size={24} color={color} />
           ),
         }}
       />
