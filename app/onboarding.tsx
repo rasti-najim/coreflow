@@ -13,6 +13,8 @@ import {
   StartingJourney,
   StartingJourneyPhoto,
 } from "@/components/starting-journey";
+import supabase from "@/lib/supabase";
+import { VerifyOTP } from "@/components/verify-otp";
 
 interface OnboardingData {
   pilatesLevel: string | null;
@@ -27,6 +29,7 @@ interface OnboardingData {
   tracking: "pictures" | "mood" | "neither" | null;
   mood?: string;
   photo?: string;
+  otp?: string;
 }
 
 export default function Onboarding() {
@@ -43,13 +46,36 @@ export default function Onboarding() {
     tracking: null,
     mood: "",
     photo: "",
+    otp: "",
   });
   const router = useRouter();
 
   const totalSteps = useMemo(() => 9, []); // Increased by 1 for account creation
 
+  const handlePhoneSignIn = async (phoneNumber: string) => {
+    console.log("Phone sign in with", phoneNumber);
+    if (!phoneNumber) return;
+
+    // Update the onboarding data with the phone number
+    setOnboardingData((prev) => ({
+      ...prev,
+      phoneNumber: `+1${phoneNumber}`,
+    }));
+
+    try {
+      await supabase.auth.signInWithOtp({
+        phone: `+1${phoneNumber}`,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const handleNext = async () => {
     if (step < totalSteps - 1) {
+      if (step === 6) {
+        await handlePhoneSignIn(onboardingData.phoneNumber || "");
+      }
       setStep(step + 1);
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } else {
@@ -57,7 +83,7 @@ export default function Onboarding() {
       console.log("Completed onboarding:", onboardingData);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // Navigate to next screen
-      router.push("/(app)");
+      router.push("/(app)/(tabs)/home");
     }
   };
 
@@ -85,17 +111,35 @@ export default function Onboarding() {
       case 5:
         return !onboardingData.hasPurchased;
       case 6:
-        // return !onboardingData.hasAccount;
-        return false;
+        return !onboardingData.phoneNumber;
       case 7:
-        return !onboardingData.tracking;
+        return !onboardingData.otp || !onboardingData.hasAccount;
       case 8:
+        return !onboardingData.tracking;
+      case 9:
         if (onboardingData.tracking === "neither") return false;
         if (onboardingData.tracking === "pictures")
           return !onboardingData.photo;
         return !onboardingData.mood;
       default:
         return false;
+    }
+  };
+
+  const handleVerifyOTP = async (code: string) => {
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        phone: onboardingData.phoneNumber || "",
+        token: code,
+        type: "sms",
+      });
+
+      if (!error) {
+        setOnboardingData((prev) => ({ ...prev, hasAccount: true }));
+        handleNext();
+      }
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -157,9 +201,30 @@ export default function Onboarding() {
         return <GoalsDetails selectedGoals={onboardingData.goals} />;
       case 6:
         return (
-          <CreateAccount onGoogleSignIn={() => {}} onPhoneSignIn={() => {}} />
+          <CreateAccount
+            onGoogleSignIn={() => {
+              // Handle Google sign in and skip OTP
+              handleNext();
+            }}
+            phoneNumber={onboardingData.phoneNumber || ""}
+            onChangePhoneNumber={(phoneNumber) =>
+              setOnboardingData((prev) => ({ ...prev, phoneNumber }))
+            }
+          />
         );
       case 7:
+        return (
+          <VerifyOTP
+            phoneNumber={onboardingData.phoneNumber || ""}
+            code={onboardingData.otp || ""}
+            onChangeCode={(code) =>
+              setOnboardingData((prev) => ({ ...prev, otp: code }))
+            }
+            onVerify={handleVerifyOTP}
+            onResend={() => handlePhoneSignIn(onboardingData.phoneNumber || "")}
+          />
+        );
+      case 8:
         return (
           <Tracking
             selectedTracking={onboardingData.tracking}
@@ -168,7 +233,7 @@ export default function Onboarding() {
             }
           />
         );
-      case 8:
+      case 9:
         if (onboardingData.tracking === "pictures") {
           return (
             <StartingJourneyPhoto

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -13,21 +13,18 @@ import { AntDesign } from "@expo/vector-icons";
 
 interface CreateAccountProps {
   onGoogleSignIn: () => void;
-  onPhoneSignIn: () => void;
+  phoneNumber: string;
+  onChangePhoneNumber: (phoneNumber: string) => void;
 }
 
 export const CreateAccount = ({
   onGoogleSignIn,
-  onPhoneSignIn,
+  phoneNumber,
+  onChangePhoneNumber,
 }: CreateAccountProps) => {
   const handleGoogleSignIn = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onGoogleSignIn();
-  };
-
-  const handlePhoneSignIn = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPhoneSignIn();
   };
 
   return (
@@ -41,21 +38,24 @@ export const CreateAccount = ({
         >
           <View style={styles.googleButtonContent}>
             <AntDesign name="google" size={24} style={{ paddingRight: 4 }} />
-            {/* <View style={styles.googleIconContainer}>
-              <Text style={styles.googleIcon}>G</Text>
-            </View> */}
             <Text style={styles.googleButtonText}>Continue with Google</Text>
           </View>
         </TouchableOpacity>
 
         <Text style={styles.orText}>Or</Text>
 
-        <TextInput
-          style={styles.phoneInput}
-          placeholder="Continue with phone number"
-          placeholderTextColor="#666666"
-          keyboardType="phone-pad"
-        />
+        <View style={styles.phoneContainer}>
+          <TextInput
+            style={styles.phoneInput}
+            placeholder="Enter phone number"
+            placeholderTextColor="#666666"
+            keyboardType="phone-pad"
+            value={phoneNumber}
+            onChangeText={(text) => {
+              onChangePhoneNumber(text);
+            }}
+          />
+        </View>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -73,6 +73,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 40,
     color: "#000000",
+    fontFamily: "Margin-DEMO",
   },
   googleButton: {
     paddingVertical: 16,
@@ -86,44 +87,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  googleIconContainer: {
-    marginRight: 12,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#4285F4",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  googleIcon: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
   googleButtonText: {
     fontSize: 18,
     fontWeight: "500",
     color: "#000000",
-  },
-  phoneButton: {
-    alignItems: "center",
-  },
-  phoneButtonText: {
-    fontSize: 18,
-    color: "#666666",
-    textDecorationLine: "underline",
-  },
-  arrowContainer: {
-    position: "absolute",
-    bottom: 40,
-    right: 24,
   },
   orText: {
     fontSize: 18,
     fontWeight: "500",
     color: "#666666",
     textAlign: "center",
-    marginBottom: 12,
+    marginBottom: 24,
   },
   phoneInput: {
     paddingVertical: 16,
@@ -132,6 +106,8 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     borderBottomWidth: 1,
     borderBottomColor: "#4A2318",
-    marginBottom: 24,
+  },
+  phoneContainer: {
+    width: "100%",
   },
 });

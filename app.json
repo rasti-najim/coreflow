@@ -9,6 +9,16 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.241331490609-ru0e1cbhj9eb9g56i2if9009aa8uekff"
+            ]
+          }
+        ]
+      },
+      "bundleIdentifier": "com.coreflow.app",
       "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
@@ -52,7 +62,13 @@
           ]
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.241331490609-ru0e1cbhj9eb9g56i2if9009aa8uekff"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
