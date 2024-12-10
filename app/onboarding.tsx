@@ -50,7 +50,7 @@ export default function Onboarding() {
   });
   const router = useRouter();
 
-  const totalSteps = useMemo(() => 9, []); // Increased by 1 for account creation
+  const totalSteps = useMemo(() => 10, []); // Increased by 1 for account creation
 
   const handlePhoneSignIn = async (phoneNumber: string) => {
     console.log("Phone sign in with", phoneNumber);
@@ -71,19 +71,66 @@ export default function Onboarding() {
     }
   };
 
+  const saveOnboardingData = async (userId: string) => {
+    const { error: userError } = await supabase.from("users").insert({
+      id: userId,
+      phone_number: onboardingData.phoneNumber,
+      email: onboardingData.email,
+      experience_level: onboardingData.pilatesLevel,
+    });
+
+    if (userError) throw userError;
+
+    const { error: goalsError } = await supabase.from("user_goals").insert(
+      onboardingData.goals.map((goal) => ({
+        user_id: userId,
+        name: goal,
+      }))
+    );
+
+    if (goalsError) throw goalsError;
+
+    const { error: prefsError } = await supabase
+      .from("user_preferences")
+      .insert({
+        user_id: userId,
+        weekly_sessions: onboardingData.duration,
+        session_duration: onboardingData.routine,
+        tracking_method: onboardingData.tracking,
+      });
+
+    if (prefsError) throw prefsError;
+  };
+
   const handleNext = async () => {
     if (step < totalSteps - 1) {
       if (step === 6) {
         await handlePhoneSignIn(onboardingData.phoneNumber || "");
       }
+      if (step === 7) {
+        await handleVerifyOTP(onboardingData.otp || "");
+      }
       setStep(step + 1);
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } else {
-      // Handle completion of onboarding
-      console.log("Completed onboarding:", onboardingData);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Navigate to next screen
-      router.push("/(app)/(tabs)/home");
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError) throw userError;
+        if (!user) throw new Error("No user found");
+
+        await saveOnboardingData(user.id);
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success
+        );
+        router.push("/(app)/(tabs)/home");
+      } catch (error: any) {
+        console.error("Failed to save onboarding data:", error.message);
+        // Here you might want to show an error message to the user
+      }
     }
   };
 
@@ -113,7 +160,7 @@ export default function Onboarding() {
       case 6:
         return !onboardingData.phoneNumber;
       case 7:
-        return !onboardingData.otp || !onboardingData.hasAccount;
+        return !onboardingData.otp && !onboardingData.hasAccount;
       case 8:
         return !onboardingData.tracking;
       case 9:

@@ -12,6 +12,10 @@ import * as Haptics from "expo-haptics";
 import { AntDesign } from "@expo/vector-icons";
 import * as AppleAuthentication from "expo-apple-authentication";
 import supabase from "@/lib/supabase";
+// import {
+//   GoogleSignin,
+//   statusCodes,
+// } from "@react-native-google-signin/google-signin";
 interface CreateAccountProps {
   onGoogleSignIn: () => void;
   phoneNumber: string;
@@ -23,10 +27,44 @@ export const CreateAccount = ({
   phoneNumber,
   onChangePhoneNumber,
 }: CreateAccountProps) => {
-  const handleGoogleSignIn = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onGoogleSignIn();
-  };
+  // GoogleSignin.configure({
+  //   scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+  //   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+  // });
+
+  // const handleGoogleSignIn = async () => {
+  //   try {
+  //     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+  //     await GoogleSignin.hasPlayServices();
+  //     const userInfo = await GoogleSignin.signIn();
+  //     console.log(userInfo);
+
+  //     if (userInfo?.data?.idToken) {
+  //       const { data, error } = await supabase.auth.signInWithIdToken({
+  //         provider: "google",
+  //         token: userInfo.data.idToken,
+  //       });
+  //       console.log(error, data);
+
+  //       if (!error) {
+  //         // User is signed in.
+  //       }
+  //     } else {
+  //       throw new Error("no ID token present!");
+  //     }
+  //   } catch (error: any) {
+  //     if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+  //       // user cancelled the login flow
+  //     } else if (error.code === statusCodes.IN_PROGRESS) {
+  //       // operation (e.g. sign in) is in progress already
+  //     } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+  //       // play services not available or outdated
+  //     } else {
+  //       // some other error happened
+  //     }
+  //   }
+  // };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -35,7 +73,7 @@ export const CreateAccount = ({
 
         <TouchableOpacity
           style={styles.googleButton}
-          onPress={handleGoogleSignIn}
+          // onPress={handleGoogleSignIn}
         >
           <View style={styles.googleButtonContent}>
             <AntDesign name="google" size={24} style={{ paddingRight: 4 }} />

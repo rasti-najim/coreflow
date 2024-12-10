@@ -28,6 +28,14 @@ export const VerifyOTP = ({
     onVerify(code);
   };
 
+  const handleCodeChange = (text: string) => {
+    onChangeCode(text);
+    // If the code length is 6 (complete), automatically verify
+    if (text.length === 6) {
+      handleVerify();
+    }
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -96,7 +104,7 @@ export const VerifyOTP = ({
         placeholderTextColor="#666666"
         keyboardType="number-pad"
         value={code}
-        onChangeText={onChangeCode}
+        onChangeText={handleCodeChange}
         maxLength={6}
       />
 
