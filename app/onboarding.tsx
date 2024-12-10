@@ -17,7 +17,7 @@ import supabase from "@/lib/supabase";
 import { VerifyOTP } from "@/components/verify-otp";
 
 interface OnboardingData {
-  pilatesLevel: string | null;
+  pilatesLevel: "beginner" | "intermediate" | "advanced" | null;
   goals: string[];
   routine: string | null;
   duration: string | null;
@@ -72,6 +72,7 @@ export default function Onboarding() {
   };
 
   const saveOnboardingData = async (userId: string) => {
+    console.log("user id", userId);
     const { error: userError } = await supabase.from("users").insert({
       id: userId,
       phone_number: onboardingData.phoneNumber,
@@ -100,6 +101,8 @@ export default function Onboarding() {
       });
 
     if (prefsError) throw prefsError;
+
+    console.log("onboarding data saved", onboardingData);
   };
 
   const handleNext = async () => {
@@ -121,6 +124,8 @@ export default function Onboarding() {
 
         if (userError) throw userError;
         if (!user) throw new Error("No user found");
+
+        console.log("onboarding data", onboardingData);
 
         await saveOnboardingData(user.id);
         await Haptics.notificationAsync(
@@ -222,7 +227,10 @@ export default function Onboarding() {
           <PilatesExperience
             selectedLevel={onboardingData.pilatesLevel}
             onSelectLevel={(level) =>
-              setOnboardingData((prev) => ({ ...prev, pilatesLevel: level }))
+              setOnboardingData((prev) => ({
+                ...prev,
+                pilatesLevel: level as "beginner" | "intermediate" | "advanced",
+              }))
             }
           />
         );
