@@ -45,7 +45,7 @@ export const PilatesExperience = ({
             key={level}
             style={[
               styles.levelButton,
-              selectedLevel === level && styles.selectedLevel,
+              selectedLevel === level.toLowerCase() && styles.selectedLevel,
             ]}
             onPress={() =>
               handleSelectLevel(
@@ -56,7 +56,8 @@ export const PilatesExperience = ({
             <Text
               style={[
                 styles.levelText,
-                selectedLevel === level && styles.selectedLevelText,
+                selectedLevel === level.toLowerCase() &&
+                  styles.selectedLevelText,
               ]}
             >
               {level}
@@ -64,7 +65,8 @@ export const PilatesExperience = ({
             <Text
               style={[
                 styles.descriptionText,
-                selectedLevel === level && styles.selectedLevelText,
+                selectedLevel === level.toLowerCase() &&
+                  styles.selectedLevelText,
               ]}
             >
               {description}

@@ -76,7 +76,7 @@ export default function Onboarding() {
     const { error: userError } = await supabase.from("users").insert({
       id: userId,
       phone_number: onboardingData.phoneNumber,
-      email: onboardingData.email,
+      email: onboardingData.email ? onboardingData.email : null,
       experience_level: onboardingData.pilatesLevel,
     });
 
