@@ -125,7 +125,7 @@ export default function Onboarding() {
         if (userError) throw userError;
         if (!user) throw new Error("No user found");
 
-        console.log("onboarding data", onboardingData);
+        // console.log("onboarding data", onboardingData);
 
         await saveOnboardingData(user.id);
         await Haptics.notificationAsync(
