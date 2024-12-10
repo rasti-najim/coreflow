@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "usesAppleSignIn": true,
       "infoPlist": {
         "CFBundleURLTypes": [
           {
@@ -18,7 +19,7 @@
           }
         ]
       },
-      "bundleIdentifier": "com.coreflow.app",
+      "bundleIdentifier": "com.pilates-coreflow.app",
       "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
@@ -29,10 +30,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": [
-        "android.permission.RECORD_AUDIO",
-        "android.permission.RECORD_AUDIO"
-      ],
+      "permissions": ["android.permission.RECORD_AUDIO"],
       "package": "com.coreflow.app"
     },
     "web": {
@@ -41,6 +39,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "expo-apple-authentication",
       "expo-router",
       [
         "expo-splash-screen",
@@ -77,6 +76,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "a5d6e3ed-1ccf-4a77-be68-caacffe20c04"
+      }
     }
   }
 }

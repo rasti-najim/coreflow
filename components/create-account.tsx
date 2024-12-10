@@ -10,7 +10,8 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { AntDesign } from "@expo/vector-icons";
-
+import * as AppleAuthentication from "expo-apple-authentication";
+import supabase from "@/lib/supabase";
 interface CreateAccountProps {
   onGoogleSignIn: () => void;
   phoneNumber: string;
@@ -41,6 +42,47 @@ export const CreateAccount = ({
             <Text style={styles.googleButtonText}>Continue with Google</Text>
           </View>
         </TouchableOpacity>
+
+        <AppleAuthentication.AppleAuthenticationButton
+          buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+          buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+          cornerRadius={5}
+          style={styles.button}
+          onPress={async () => {
+            try {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              const credential = await AppleAuthentication.signInAsync({
+                requestedScopes: [
+                  AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                  AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                ],
+              });
+              console.log(credential);
+
+              if (credential.identityToken) {
+                const {
+                  error,
+                  data: { user },
+                } = await supabase.auth.signInWithIdToken({
+                  provider: "apple",
+                  token: credential.identityToken,
+                });
+                console.log(JSON.stringify({ error, user }, null, 2));
+                if (!error) {
+                  // User is signed in.
+                }
+              } else {
+                throw new Error("No identityToken.");
+              }
+            } catch (e: any) {
+              if (e.code === "ERR_REQUEST_CANCELED") {
+                // handle that the user canceled the sign-in flow
+              } else {
+                // handle other errors
+              }
+            }
+          }}
+        />
 
         <Text style={styles.orText}>Or</Text>
 
@@ -77,7 +119,7 @@ const styles = StyleSheet.create({
   },
   googleButton: {
     paddingVertical: 16,
-    borderRadius: 10,
+    borderRadius: 5,
     borderWidth: 1,
     borderColor: "#4A2318",
     marginBottom: 24,
@@ -109,5 +151,10 @@ const styles = StyleSheet.create({
   },
   phoneContainer: {
     width: "100%",
+  },
+  button: {
+    // width: 200,
+    height: 50,
+    marginBottom: 24,
   },
 });
