@@ -95,8 +95,8 @@ export default function Onboarding() {
       .from("user_preferences")
       .insert({
         user_id: userId,
-        weekly_sessions: onboardingData.duration,
-        session_duration: onboardingData.routine,
+        weekly_sessions: onboardingData.routine,
+        session_duration: onboardingData.duration,
         tracking_method: onboardingData.tracking,
       });
 
