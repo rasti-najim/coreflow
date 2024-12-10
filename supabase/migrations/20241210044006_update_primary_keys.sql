@@ -12,7 +12,7 @@ ALTER TABLE progress
 RENAME COLUMN progress_id TO id;
 
 ALTER TABLE exercises 
-RENAME COLUMN excercise_id TO id;
+RENAME COLUMN exercise_id TO id;
 
 -- Update foreign key constraints to ensure they still work
 ALTER TABLE user_preferences
