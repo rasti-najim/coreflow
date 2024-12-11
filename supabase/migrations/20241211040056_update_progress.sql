@@ -1,21 +1,38 @@
 -- Create new enum type for progress entry types
 CREATE TYPE entry_type_enum AS ENUM ('session', 'picture', 'mood');
 
--- Drop existing columns and add new ones
+-- Add new columns first (allowing nulls initially)
+ALTER TABLE progress
+    ADD COLUMN session_id UUID REFERENCES sessions(id),
+    ADD COLUMN entry_type entry_type_enum,
+    ADD COLUMN created_at TIMESTAMP WITH TIME ZONE;
+
+-- Update existing records
+UPDATE progress
+SET entry_type = CASE
+    WHEN picture_url IS NOT NULL THEN 'picture'::entry_type_enum
+    WHEN mood_description IS NOT NULL THEN 'mood'::entry_type_enum
+    ELSE 'session'::entry_type_enum
+END,
+created_at = recorded_at;
+
+-- Now make entry_type NOT NULL
+ALTER TABLE progress
+    ALTER COLUMN entry_type SET NOT NULL,
+    ALTER COLUMN created_at SET NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+-- Finally drop the old columns
 ALTER TABLE progress
     DROP COLUMN notes,
-    DROP COLUMN recorded_at,
-    ADD COLUMN session_id UUID REFERENCES sessions(id),
-    ADD COLUMN entry_type entry_type_enum NOT NULL,
-    ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+    DROP COLUMN recorded_at;
 
--- Update the existing constraint for tracking data
+-- Update the constraint for tracking data
 ALTER TABLE progress
     DROP CONSTRAINT valid_tracking_data,
     ADD CONSTRAINT valid_tracking_data CHECK (
-        (entry_type = 'mood' AND mood_description IS NOT NULL AND picture_url IS NULL) OR
-        (entry_type = 'picture' AND picture_url IS NOT NULL AND mood_description IS NULL) OR
-        (entry_type = 'session' AND mood_description IS NULL AND picture_url IS NULL)
+        (entry_type = 'mood' AND mood_description IS NOT NULL AND picture_url IS NULL AND session_id IS NULL) OR
+        (entry_type = 'picture' AND picture_url IS NOT NULL AND mood_description IS NULL AND session_id IS NULL) OR
+        (entry_type = 'session' AND mood_description IS NULL AND picture_url IS NULL AND session_id IS NOT NULL)
     );
 
 -- Create index for the new foreign key
