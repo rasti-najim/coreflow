@@ -42,15 +42,47 @@ export default function EditGoals() {
 
   const handleSave = async () => {
     try {
-      const { data, error } = await supabase
-        .from("user_goals")
-        .insert(selectedGoals.map((goal) => ({ name: goal })))
-        .eq("user_id", user.id);
-      if (error) {
-        console.error(error);
-      } else {
-        setInitialGoals(selectedGoals);
+      // Find goals to add (goals that are in selectedGoals but not in initialGoals)
+      const goalsToAdd = selectedGoals.filter(
+        (goal) => !initialGoals.includes(goal)
+      );
+
+      // Find goals to remove (goals that are in initialGoals but not in selectedGoals)
+      const goalsToRemove = initialGoals.filter(
+        (goal) => !selectedGoals.includes(goal)
+      );
+
+      // Insert new goals if any
+      if (goalsToAdd.length > 0) {
+        const { error: insertError } = await supabase.from("user_goals").insert(
+          goalsToAdd.map((goal) => ({
+            user_id: user.id,
+            name: goal,
+          }))
+        );
+
+        if (insertError) {
+          console.error("Error inserting goals:", insertError);
+          return;
+        }
       }
+
+      // Delete removed goals if any
+      if (goalsToRemove.length > 0) {
+        const { error: deleteError } = await supabase
+          .from("user_goals")
+          .delete()
+          .eq("user_id", user.id)
+          .in("name", goalsToRemove);
+
+        if (deleteError) {
+          console.error("Error deleting goals:", deleteError);
+          return;
+        }
+      }
+
+      // Update the initial state to match current selection
+      setInitialGoals(selectedGoals);
     } catch (error) {
       console.error(error);
     }
