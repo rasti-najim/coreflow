@@ -26,6 +26,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("session", session);
+      console.log("session.user", session?.user);
       setState((prev) => ({
         ...prev,
         session,
@@ -38,10 +40,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("session", session);
       setState((prev) => ({
         ...prev,
         session,
         user: session?.user ?? null,
+        loading: false,
       }));
     });
 
@@ -55,10 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
     });
-
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
   };
 
   const signUp = async (email: string, password: string) => {
@@ -66,17 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
     });
-
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
   };
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
   };
 
   const value = {

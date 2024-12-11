@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,10 +24,8 @@ const WEEKLY_SCHEDULE = [
 export default function Page() {
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
-  const [schedule, setSchedule] = React.useState<ScheduleDay[]>([]);
-  const [todayWorkout, setTodayWorkout] = React.useState<
-    ScheduleDay | undefined
-  >();
+  const [schedule, setSchedule] = useState<ScheduleDay[]>([]);
+  const [todayWorkout, setTodayWorkout] = useState<ScheduleDay | undefined>();
 
   useEffect(() => {
     const loadSchedule = async () => {

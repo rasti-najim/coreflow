@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { GoalSelector } from "@/components/goal-selector";
 import supabase from "@/lib/supabase";
+import { useAuth } from "@/components/auth-context";
+import { Redirect } from "expo-router";
 
 type Goal = {
   id: string;
@@ -27,6 +29,11 @@ export default function EditGoals() {
   const safeArea = useSafeAreaInsets();
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [initialGoals, setInitialGoals] = useState<string[]>([]);
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Redirect href="/welcome" />;
+  }
 
   const hasChanges = () => {
     if (selectedGoals.length !== initialGoals.length) return true;
@@ -35,12 +42,10 @@ export default function EditGoals() {
 
   const handleSave = async () => {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user || !user.user) return;
       const { data, error } = await supabase
         .from("user_goals")
         .insert({ name: selectedGoals })
-        .eq("user_id", user.user.id);
+        .eq("user_id", user.id);
       if (error) {
         console.error(error);
       } else {
@@ -53,12 +58,17 @@ export default function EditGoals() {
 
   useEffect(() => {
     const fetchGoals = async () => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user || !user.user) return;
       const { data: goals, error } = await supabase
         .from("user_goals")
         .select("*")
-        .eq("user_id", user.user.id);
+        .eq("user_id", user.id);
+      console.log("user", user.id);
+      console.log("goals", goals);
+
+      if (error) {
+        console.error(error);
+      }
+
       if (goals) {
         const goalNames = goals.map((goal) => goal.name);
         setSelectedGoals(goalNames);
