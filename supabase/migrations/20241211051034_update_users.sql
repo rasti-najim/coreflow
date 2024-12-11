@@ -1,4 +1,14 @@
--- First drop the existing primary key and auth_user_id column
+-- First drop the foreign key constraints that reference users
+ALTER TABLE user_preferences
+DROP CONSTRAINT user_preferences_user_id_fkey;
+
+ALTER TABLE user_goals
+DROP CONSTRAINT user_goals_user_id_fkey;
+
+ALTER TABLE progress
+DROP CONSTRAINT progress_user_id_fkey;
+
+-- Now we can drop the primary key and auth_user_id
 ALTER TABLE users
 DROP CONSTRAINT users_pkey,
 DROP COLUMN auth_user_id;
@@ -10,4 +20,23 @@ ADD CONSTRAINT users_pkey PRIMARY KEY (id),
 ADD CONSTRAINT users_id_fkey 
     FOREIGN KEY (id) 
     REFERENCES auth.users(id) 
+    ON DELETE CASCADE;
+
+-- Recreate the foreign key constraints to reference the new primary key
+ALTER TABLE user_preferences
+ADD CONSTRAINT user_preferences_user_id_fkey 
+    FOREIGN KEY (user_id) 
+    REFERENCES users(id) 
+    ON DELETE CASCADE;
+
+ALTER TABLE user_goals
+ADD CONSTRAINT user_goals_user_id_fkey 
+    FOREIGN KEY (user_id) 
+    REFERENCES users(id) 
+    ON DELETE CASCADE;
+
+ALTER TABLE progress
+ADD CONSTRAINT progress_user_id_fkey 
+    FOREIGN KEY (user_id) 
+    REFERENCES users(id) 
     ON DELETE CASCADE;
