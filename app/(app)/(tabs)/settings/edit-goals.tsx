@@ -1,8 +1,16 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SelectGoals } from "@/components/select-goals";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GoalSelector } from "@/components/goal-selector";
+import supabase from "@/lib/supabase";
+
+type Goal = {
+  id: string;
+  name: string;
+  user_id: string;
+  created_at: string;
+};
 
 const GOALS = [
   "reduce stress",
@@ -17,11 +25,64 @@ const GOALS = [
 
 export default function EditGoals() {
   const safeArea = useSafeAreaInsets();
-  const [selectedGoals, setSelectedGoals] = useState<string[]>(["muscle tone"]);
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [initialGoals, setInitialGoals] = useState<string[]>([]);
+
+  const hasChanges = () => {
+    if (selectedGoals.length !== initialGoals.length) return true;
+    return !selectedGoals.every((goal) => initialGoals.includes(goal));
+  };
+
+  const handleSave = async () => {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user || !user.user) return;
+      const { data, error } = await supabase
+        .from("user_goals")
+        .insert({ name: selectedGoals })
+        .eq("user_id", user.user.id);
+      if (error) {
+        console.error(error);
+      } else {
+        setInitialGoals(selectedGoals);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchGoals = async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user || !user.user) return;
+      const { data: goals, error } = await supabase
+        .from("user_goals")
+        .select("*")
+        .eq("user_id", user.user.id);
+      if (goals) {
+        const goalNames = goals.map((goal) => goal.name);
+        setSelectedGoals(goalNames);
+        setInitialGoals(goalNames);
+      }
+    };
+    fetchGoals();
+  }, []);
 
   return (
     <View style={[styles.container, { paddingTop: safeArea.top + 24 }]}>
-      <Text style={styles.title}>goals</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>goals</Text>
+        <TouchableOpacity
+          style={[
+            styles.saveButton,
+            !hasChanges() && styles.saveButtonDisabled,
+          ]}
+          onPress={handleSave}
+          disabled={!hasChanges()}
+        >
+          <Text style={styles.saveButtonText}>Save</Text>
+        </TouchableOpacity>
+      </View>
       <GoalSelector
         goals={GOALS}
         selectedGoals={selectedGoals}
@@ -41,7 +102,28 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: "bold",
     color: "#4A2318",
-    marginBottom: 48,
     fontFamily: "Margin-DEMO",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 48,
+  },
+  saveButton: {
+    backgroundColor: "#4A2318",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: "auto",
+  },
+  saveButtonDisabled: {
+    opacity: 0.5,
+  },
+  saveButtonText: {
+    color: "#FFE9D5",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
