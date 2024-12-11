@@ -16,10 +16,13 @@ SET entry_type = CASE
 END,
 created_at = recorded_at;
 
--- Now make entry_type NOT NULL
+-- Now make columns NOT NULL and set defaults separately
 ALTER TABLE progress
-    ALTER COLUMN entry_type SET NOT NULL,
-    ALTER COLUMN created_at SET NOT NULL DEFAULT CURRENT_TIMESTAMP;
+    ALTER COLUMN entry_type SET NOT NULL;
+
+ALTER TABLE progress
+    ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP,
+    ALTER COLUMN created_at SET NOT NULL;
 
 -- Finally drop the old columns
 ALTER TABLE progress
