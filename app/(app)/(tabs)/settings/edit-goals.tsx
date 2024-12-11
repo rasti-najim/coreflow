@@ -44,7 +44,7 @@ export default function EditGoals() {
     try {
       const { data, error } = await supabase
         .from("user_goals")
-        .insert({ name: selectedGoals })
+        .insert(selectedGoals.map((goal) => ({ name: goal })))
         .eq("user_id", user.id);
       if (error) {
         console.error(error);
