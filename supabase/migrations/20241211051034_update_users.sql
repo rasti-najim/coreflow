@@ -1,4 +1,7 @@
--- First drop the policies that reference auth_user_id
+-- First truncate all data since we're changing the primary key structure
+TRUNCATE TABLE users CASCADE;
+
+-- Drop the policies that reference auth_user_id
 DROP POLICY "Users can view own data" ON users;
 DROP POLICY "Users can view own preferences" ON user_preferences;
 DROP POLICY "Users can view own goals" ON user_goals;

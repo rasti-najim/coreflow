@@ -16,13 +16,10 @@ VALUES
   ('55555555-5555-5555-5555-555555555555', 'lisa@example.com', '+1234567894', 'intermediate');
 
 -- Insert user preferences
-INSERT INTO user_preferences (preference_id, user_id, weekly_sessions, session_duration, tracking_method)
+INSERT INTO user_preferences (id, user_id, weekly_sessions, session_duration, tracking_method)
 VALUES
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', '1-2', '5-10', 'mood'),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '22222222-2222-2222-2222-222222222222', '3', '30-45', 'pictures'),
-  ('cccccccc-cccc-cccc-cccc-cccccccccccc', '33333333-3333-3333-3333-333333333333', '5', '60-75', 'pictures'),
-  ('dddddddd-dddd-dddd-dddd-dddddddddddd', '44444444-4444-4444-4444-444444444444', '1-2', '10-20', 'neither'),
-  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '55555555-5555-5555-5555-555555555555', '3', '30-45', 'mood');
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '00000000-0000-0000-0000-000000000001', '1-2', '5-10', 'mood'),
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '00000000-0000-0000-0000-000000000002', '3', '30-45', 'pictures');
 
 -- Insert user goals
 INSERT INTO user_goals (goal_id, user_id, name)
