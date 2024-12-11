@@ -52,6 +52,9 @@ export default function EditGoals() {
         (goal) => !selectedGoals.includes(goal)
       );
 
+      console.log("goalsToAdd", goalsToAdd);
+      console.log("goalsToRemove", goalsToRemove);
+
       // Insert new goals if any
       if (goalsToAdd.length > 0) {
         const { error: insertError } = await supabase.from("user_goals").insert(
