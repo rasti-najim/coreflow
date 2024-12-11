@@ -1,4 +1,10 @@
--- First drop the foreign key constraints that reference users
+-- First drop the policies that reference auth_user_id
+DROP POLICY "Users can view own data" ON users;
+DROP POLICY "Users can view own preferences" ON user_preferences;
+DROP POLICY "Users can view own goals" ON user_goals;
+DROP POLICY "Users can view own progress" ON progress;
+
+-- Drop the foreign key constraints that reference users
 ALTER TABLE user_preferences
 DROP CONSTRAINT user_preferences_user_id_fkey;
 
@@ -40,3 +46,5 @@ ADD CONSTRAINT progress_user_id_fkey
     FOREIGN KEY (user_id) 
     REFERENCES users(id) 
     ON DELETE CASCADE;
+
+-- The new policies are already created in 20241210050929_create_users_policy.sql
