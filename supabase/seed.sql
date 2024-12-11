@@ -4,6 +4,7 @@ TRUNCATE TABLE user_goals CASCADE;
 TRUNCATE TABLE user_preferences CASCADE;
 TRUNCATE TABLE users CASCADE;
 TRUNCATE TABLE exercises CASCADE;
+TRUNCATE TABLE sessions CASCADE;
 
 -- Insert sample users
 INSERT INTO users (user_id, email, phone_number, experience_level) 
@@ -35,52 +36,52 @@ VALUES
   ('77777777-aaaa-7777-aaaa-777777777777', '55555555-5555-5555-5555-555555555555', 'Reduce back pain');
 
 -- Insert progress records
-INSERT INTO progress (progress_id, user_id, mood_description, picture_url, notes, recorded_at)
+INSERT INTO progress (id, user_id, entry_type, mood_description, picture_url, created_at)
 VALUES
   -- Mood tracking user (Sarah)
   ('11111111-bbbb-1111-bbbb-111111111111', 
    '11111111-1111-1111-1111-111111111111',
+   'mood',
    'Feeling energized after first session. Some muscle soreness but excited to continue.',
    NULL,
-   'Completed 10 minute session',
    CURRENT_TIMESTAMP - INTERVAL '7 days'),
    
   ('22222222-bbbb-2222-bbbb-222222222222',
    '11111111-1111-1111-1111-111111111111',
+   'mood',
    'More confident with the basic moves. Less soreness today.',
    NULL,
-   'Completed 15 minute session',
    CURRENT_TIMESTAMP - INTERVAL '3 days'),
 
   -- Picture tracking user (Mike)
   ('33333333-bbbb-3333-bbbb-333333333333',
    '22222222-2222-2222-2222-222222222222',
+   'picture',
    NULL,
    'progress_pics/mike_week1.jpg',
-   'Working on shoulder flexibility',
    CURRENT_TIMESTAMP - INTERVAL '14 days'),
 
   ('44444444-bbbb-4444-bbbb-444444444444',
    '22222222-2222-2222-2222-222222222222',
+   'picture',
    NULL,
    'progress_pics/mike_week2.jpg',
-   'Noticeable improvement in form',
    CURRENT_TIMESTAMP - INTERVAL '7 days'),
 
   -- Picture tracking user (Emma)
   ('55555555-bbbb-5555-bbbb-555555555555',
    '33333333-3333-3333-3333-333333333333',
+   'picture',
    NULL,
    'progress_pics/emma_week1.jpg',
-   'Advanced sequence practice',
    CURRENT_TIMESTAMP - INTERVAL '10 days'),
 
   -- Mood tracking user (Lisa)
   ('66666666-bbbb-6666-bbbb-666666666666',
    '55555555-5555-5555-5555-555555555555',
+   'mood',
    'Back pain has reduced significantly after three weeks of practice',
    NULL,
-   'Focused on spine alignment exercises',
    CURRENT_TIMESTAMP - INTERVAL '2 days');
 
 -- Verify the data
