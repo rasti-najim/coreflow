@@ -1,9 +1,15 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
+import {
+  generateWeeklySchedule,
+  getTodayWorkout,
+  ScheduleDay,
+} from "@/lib/create_schedule";
+import supabase from "@/lib/supabase";
 
 const WEEKLY_SCHEDULE = [
   { day: "Mon", workout: "Glutes", isHighlighted: true },
@@ -18,6 +24,30 @@ const WEEKLY_SCHEDULE = [
 export default function Page() {
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
+  const [schedule, setSchedule] = React.useState<ScheduleDay[]>([]);
+  const [todayWorkout, setTodayWorkout] = React.useState<
+    ScheduleDay | undefined
+  >();
+
+  useEffect(() => {
+    const loadSchedule = async () => {
+      // Get user preferences from Supabase
+      const { data: preferences } = await supabase
+        .from("user_preferences")
+        .select("weekly_sessions, session_duration")
+        .single();
+
+      if (preferences) {
+        const weeklySchedule = generateWeeklySchedule(
+          preferences.weekly_sessions
+        );
+        setSchedule(weeklySchedule);
+        setTodayWorkout(getTodayWorkout(weeklySchedule));
+      }
+    };
+
+    loadSchedule();
+  }, []);
 
   const onBegin = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -36,20 +66,26 @@ export default function Page() {
 
       {/* Today's Workout */}
       <View style={styles.todayContainer}>
-        <Text style={styles.day}>Tuesday</Text>
+        <Text style={styles.day}>{todayWorkout?.day || "Rest Day"}</Text>
         <View style={styles.workoutRow}>
-          <Text style={styles.workout}>20m Intermediate Core</Text>
+          <Text style={styles.workout}>
+            {todayWorkout?.workout === "Rest"
+              ? "Rest Day"
+              : todayWorkout?.workout}
+          </Text>
 
-          <TouchableOpacity style={styles.beginButton} onPress={onBegin}>
-            <Text style={styles.beginButtonText}>begin</Text>
-          </TouchableOpacity>
+          {todayWorkout?.workout !== "Rest" && (
+            <TouchableOpacity style={styles.beginButton} onPress={onBegin}>
+              <Text style={styles.beginButtonText}>begin</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
       {/* Weekly Schedule */}
       <View style={styles.scheduleContainer}>
         <Text style={styles.scheduleTitle}>This Week 🗓️</Text>
-        {WEEKLY_SCHEDULE.map(({ day, workout, isHighlighted }) => (
+        {schedule.map(({ day, workout, isHighlighted }) => (
           <View key={day} style={styles.scheduleRow}>
             <Text
               style={[styles.scheduleDay, isHighlighted && styles.highlighted]}
