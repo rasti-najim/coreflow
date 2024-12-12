@@ -1,7 +1,10 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as Haptics from "expo-haptics";
+import supabase from "@/lib/supabase";
+import { useAuth } from "@/components/auth-context";
+import { Redirect } from "expo-router";
 
 const DURATION_OPTIONS = [
   {
@@ -27,18 +30,85 @@ const DURATION_OPTIONS = [
 ];
 
 export default function Page() {
+  const { user } = useAuth();
   const safeArea = useSafeAreaInsets();
-  const [selectedDuration, setSelectedDuration] = useState<string>("15");
+  const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
+  const [initialDuration, setInitialDuration] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  if (!user) {
+    return <Redirect href="/welcome" />;
+  }
 
   const handleSelectDuration = async (duration: string) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedDuration(duration);
   };
 
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from("user_preferences")
+        .update({ session_duration: selectedDuration })
+        .eq("user_id", user.id)
+        .select();
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      console.log(data);
+
+      setInitialDuration(selectedDuration);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const hasChanges = () => {
+    if (selectedDuration !== initialDuration) return true;
+    return false;
+  };
+
+  useEffect(() => {
+    const fetchDuration = async () => {
+      const { data, error } = await supabase
+        .from("user_preferences")
+        .select("session_duration")
+        .eq("user_id", user.id)
+        .limit(1);
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      console.log(data);
+
+      setInitialDuration(data[0]?.session_duration);
+    };
+
+    fetchDuration();
+  }, []);
+
   return (
     <View style={[styles.container, { paddingTop: safeArea.top + 24 }]}>
-      <Text style={styles.title}>routine</Text>
-      <Text style={styles.sectionTitle}>Session Duration</Text>
+      <View style={styles.header}>
+        <Text style={styles.sectionTitle}>Session Duration</Text>
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={handleSave}
+          disabled={!hasChanges()}
+        >
+          <Text style={styles.saveButtonText}>
+            {isSaving ? "Saving..." : "Save"}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.optionsContainer}>
         {DURATION_OPTIONS.map(({ value, label }) => (
@@ -71,11 +141,28 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFE9D5",
     paddingHorizontal: 24,
   },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 48,
+  },
+  saveButton: {
+    backgroundColor: "#4A2318",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  saveButtonText: {
+    color: "#FFE9D5",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
   title: {
     fontSize: 48,
     fontWeight: "bold",
     color: "#4A2318",
-    marginBottom: 48,
     fontFamily: "Margin-DEMO",
   },
   sectionTitle: {
