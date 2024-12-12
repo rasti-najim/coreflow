@@ -1,6 +1,8 @@
 import supabase from "./supabase";
 
 export const createSession = async (
+  weeklyPreference: string,
+  sessionDuration: number,
   goals: string[],
   level: "beginner" | "intermediate" | "advanced"
 ) => {

@@ -35,23 +35,26 @@ export default function Page() {
         .single();
 
       const { data: goals } = await supabase
-        .from("goals")
+        .from("user_goals")
         .select("*")
         .eq("user_id", user.id);
 
-      const { data: exercises } = await supabase
-        .from("exercises")
-        .select("focus");
+      console.log(goals);
 
-      console.log(exercises);
+      const { data: exercises } = await supabase
+        .from("exercises_focus")
+        .select("*");
+
+      console.log(exercises?.map((exercise) => exercise.unnest));
 
       if (preferences && goals && exercises) {
         const weeklySchedule = generateWeeklySchedule(
           preferences.weekly_sessions,
           preferences.session_duration,
           goals.map((goal) => goal.name),
-          exercises.map((exercise) => exercise.focus)
+          exercises.map((exercise) => exercise.unnest)
         );
+        console.log(weeklySchedule);
         setSchedule(weeklySchedule);
         setTodayWorkout(getTodayWorkout(weeklySchedule));
       }
@@ -127,13 +130,6 @@ export default function Page() {
           <ProgressOptions />
         </View>
       </View>
-
-      <TouchableOpacity
-        onPress={() => createSession(["strength"], "beginner")}
-        style={styles.beginButton}
-      >
-        <Text style={styles.beginButtonText}>Create Session</Text>
-      </TouchableOpacity>
 
       {/* Today's Workout */}
       <View style={styles.todayContainer}>
