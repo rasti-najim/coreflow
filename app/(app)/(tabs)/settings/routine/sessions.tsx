@@ -28,14 +28,38 @@ export default function Page() {
   const { user } = useAuth();
   const safeArea = useSafeAreaInsets();
   const [selectedRoutine, setSelectedRoutine] = useState<string | null>();
+  const [initialRoutine, setInitialRoutine] = useState<string | null>();
 
   if (!user) {
     return <Redirect href="/welcome" />;
   }
 
+  const hasChanges = () => {
+    if (selectedRoutine !== initialRoutine) return true;
+    return false;
+  };
+
   const handleSelectRoutine = async (routine: string) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedRoutine(routine);
+  };
+
+  const handleSave = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("user_preferences")
+        .update({ weekly_sessions: selectedRoutine })
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      console.log(data);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   useEffect(() => {
@@ -56,6 +80,7 @@ export default function Page() {
 
         if (data[0]?.weekly_sessions) {
           setSelectedRoutine(data[0]?.weekly_sessions);
+          setInitialRoutine(data[0]?.weekly_sessions);
         }
       } catch (error) {
         console.error(error);
@@ -66,7 +91,19 @@ export default function Page() {
 
   return (
     <View style={[styles.container, { paddingTop: safeArea.top + 24 }]}>
-      <Text style={styles.title}>routine</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>routine</Text>
+        <TouchableOpacity
+          style={[
+            styles.saveButton,
+            !hasChanges() && styles.saveButtonDisabled,
+          ]}
+          onPress={handleSave}
+          disabled={!hasChanges()}
+        >
+          <Text style={styles.saveButtonText}>Save</Text>
+        </TouchableOpacity>
+      </View>
       <Text style={styles.sectionTitle}>Sessions Per Week</Text>
 
       <View style={styles.optionsContainer}>
@@ -110,11 +147,32 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFE9D5",
     paddingHorizontal: 24,
   },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 48,
+  },
+  saveButton: {
+    backgroundColor: "#4A2318",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: "auto",
+  },
+  saveButtonDisabled: {
+    opacity: 0.5,
+  },
+  saveButtonText: {
+    color: "#FFE9D5",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
   title: {
     fontSize: 48,
     fontWeight: "bold",
     color: "#4A2318",
-    marginBottom: 48,
     fontFamily: "Margin-DEMO",
   },
   sectionTitle: {
