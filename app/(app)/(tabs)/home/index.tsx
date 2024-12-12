@@ -11,21 +11,12 @@ import {
 } from "@/lib/create_schedule";
 import supabase from "@/lib/supabase";
 
-const WEEKLY_SCHEDULE = [
-  { day: "Mon", workout: "Glutes", isHighlighted: true },
-  { day: "Tues", workout: "Core", isHighlighted: true },
-  { day: "Weds", workout: "Legs" },
-  { day: "Thurs", workout: "Arms & Shoulders" },
-  { day: "Fri", workout: "Hips" },
-  { day: "Sat", workout: "Rest" },
-  { day: "Sun", workout: "Rest" },
-];
-
 export default function Page() {
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
   const [schedule, setSchedule] = useState<ScheduleDay[]>([]);
   const [todayWorkout, setTodayWorkout] = useState<ScheduleDay | undefined>();
+  const [showOptions, setShowOptions] = useState(false);
 
   useEffect(() => {
     const loadSchedule = async () => {
@@ -52,14 +43,67 @@ export default function Page() {
     router.push("/home/modal");
   };
 
+  const ProgressOptions = () => {
+    if (!showOptions) return null;
+
+    return (
+      <View style={styles.optionsContainer}>
+        <TouchableOpacity
+          style={styles.optionButton}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            // Handle image progress
+            setShowOptions(false);
+          }}
+        >
+          <FontAwesome6 name="image" size={18} color="#FFE9D5" />
+          <Text style={styles.optionText}>Track Progress Photo</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.optionButton}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            // Handle note progress
+            setShowOptions(false);
+          }}
+        >
+          <FontAwesome6 name="note-sticky" size={18} color="#FFE9D5" />
+          <Text style={styles.optionText}>Track Progress Note</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.optionButton}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            // Handle custom session
+            setShowOptions(false);
+          }}
+        >
+          <FontAwesome6 name="mattress-pillow" size={18} color="#FFE9D5" />
+          <Text style={styles.optionText}>Create Custom Workout</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   return (
     <View style={[styles.container, { paddingTop: safeArea.top }]}>
       <View style={styles.header}>
         <Text style={styles.logo}>coreflow</Text>
-        <TouchableOpacity style={styles.addButton}>
-          <FontAwesome6 name="plus" size={16} color="#FFE9D5" />
-          <Text style={styles.addButtonText}>Add Progress</Text>
-        </TouchableOpacity>
+        <View style={styles.addButtonContainer}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowOptions(!showOptions);
+            }}
+          >
+            <FontAwesome6 name="plus" size={18} color="#FFE9D5" />
+            {/* <Text style={styles.addButtonText}>Add Progress</Text> */}
+          </TouchableOpacity>
+          <ProgressOptions />
+        </View>
       </View>
 
       {/* Today's Workout */}
@@ -154,12 +198,11 @@ const styles = StyleSheet.create({
   addButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    // paddingTop: 8,
+    justifyContent: "center",
     backgroundColor: "#4A2318",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     marginTop: 8,
   },
   addButtonText: {
@@ -250,5 +293,43 @@ const styles = StyleSheet.create({
     bottom: 24,
     left: 24,
     right: 24,
+  },
+  addButtonContainer: {
+    position: "relative",
+  },
+  optionsContainer: {
+    position: "absolute",
+    top: "100%",
+    right: 0,
+    backgroundColor: "#4A2318",
+    borderRadius: 10,
+    // padding: 8,
+    paddingHorizontal: 16,
+    // paddingVertical: 8,
+    marginTop: 8,
+    width: 200,
+    zIndex: 1000,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  optionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 233, 213, 0.1)",
+  },
+  optionText: {
+    color: "#FFE9D5",
+    fontWeight: "bold",
+    fontSize: 14,
   },
 });

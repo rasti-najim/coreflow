@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TimelineItem = {
   date: string;
-  type: "photo" | "session" | "note";
+  type: ("photo" | "session" | "note")[];
   duration?: string;
   content?: string;
   photoUrl?: string;
@@ -22,29 +22,54 @@ export default function Page() {
   const timelineData: TimelineItem[] = [
     {
       date: "11/6",
-      type: "photo",
+      type: ["photo"],
       photoUrl: "https://picsum.photos/400/300",
     },
-    { date: "11/7", type: "session", duration: "10m Session" },
-    { date: "11/9", type: "session", duration: "10m Session" },
-    { date: "11/11", type: "session", duration: "10m Session" },
+    { date: "11/7", type: ["session"], duration: "10m Session" },
+    { date: "11/9", type: ["session"], duration: "10m Session" },
+    { date: "11/11", type: ["session"], duration: "10m Session" },
     {
       date: "11/13",
-      type: "note",
+      type: ["note"],
       content: "mood has been great and starting to see abs! :)",
     },
-    { date: "11/16", type: "session", duration: "15m Session" },
+    { date: "11/16", type: ["session"], duration: "15m Session" },
     {
       date: "11/18",
-      type: "photo",
+      type: ["photo"],
       photoUrl: "https://picsum.photos/400/300?random=2",
     },
-    { date: "11/20", type: "session", duration: "15m Session" },
-    { date: "11/22", type: "session", duration: "15m Session" },
-    { date: "11/24", type: "session", duration: "15m Session" },
-    { date: "11/26", type: "session", duration: "15m Session" },
-    { date: "11/28", type: "session", duration: "15m Session" },
-    { date: "11/30", type: "session", duration: "15m Session" },
+    { date: "11/20", type: ["session"], duration: "15m Session" },
+    { date: "11/22", type: ["session"], duration: "15m Session" },
+    { date: "11/24", type: ["session"], duration: "15m Session" },
+    { date: "11/26", type: ["session"], duration: "15m Session" },
+    { date: "11/28", type: ["session"], duration: "15m Session" },
+    { date: "11/30", type: ["session"], duration: "15m Session" },
+    {
+      date: "12/2",
+      type: ["session", "photo"],
+      duration: "15m Session",
+      photoUrl: "https://picsum.photos/400/300?random=3",
+    },
+    {
+      date: "12/4",
+      type: ["session", "note", "photo"],
+      duration: "15m Session",
+      content: "mood has been great and starting to see abs! :)",
+      photoUrl: "https://picsum.photos/400/300?random=4",
+    },
+    {
+      date: "12/6",
+      type: ["note", "photo"],
+      content: "mood has been great and starting to see abs! :)",
+      photoUrl: "https://picsum.photos/400/300?random=5",
+    },
+    {
+      date: "12/8",
+      type: ["session", "note"],
+      duration: "15m Session",
+      content: "mood has been great and starting to see abs! :)",
+    },
   ];
 
   const handleViewProgress = (type: "photo" | "note") => {
@@ -68,7 +93,15 @@ export default function Page() {
               <View style={styles.content}>
                 <Text style={styles.date}>{item.date}</Text>
                 <Text style={styles.description}>
-                  {item.type === "photo" ? "Photo" : item.duration}
+                  {item.type
+                    .map((type) =>
+                      type === "photo"
+                        ? "Photo"
+                        : type === "session"
+                        ? item.duration
+                        : "Note"
+                    )
+                    .join(" & ")}
                 </Text>
                 {item.photoUrl && (
                   <Image source={{ uri: item.photoUrl }} style={styles.photo} />
@@ -78,16 +111,17 @@ export default function Page() {
                     <Text style={styles.noteText}>"{item.content}"</Text>
                   </View>
                 )}
-                {(item.type === "photo" || item.type === "note") && (
-                  <Pressable
-                    style={styles.viewProgressButton}
-                    // onPress={() => handleViewProgress(item.type)}
-                  >
-                    <Text style={styles.viewProgressText}>
-                      view {item.type} progress
-                    </Text>
-                  </Pressable>
-                )}
+                {item.type.includes("photo") ||
+                  (item.type.includes("note") && (
+                    <Pressable
+                      style={styles.viewProgressButton}
+                      // onPress={() => handleViewProgress(item.type)}
+                    >
+                      <Text style={styles.viewProgressText}>
+                        view {item.type} progress
+                      </Text>
+                    </Pressable>
+                  ))}
               </View>
             </View>
           ))}
@@ -110,7 +144,6 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
-    marginBottom: 20,
   },
   title: {
     fontSize: 32,

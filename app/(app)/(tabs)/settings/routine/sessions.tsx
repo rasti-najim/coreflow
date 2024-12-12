@@ -105,7 +105,7 @@ export default function Page() {
             !hasChanges() && styles.saveButtonDisabled,
           ]}
           onPress={handleSave}
-          disabled={!hasChanges()}
+          disabled={!hasChanges() || isSaving}
         >
           <Text style={styles.saveButtonText}>
             {isSaving ? "Saving..." : "Save"}

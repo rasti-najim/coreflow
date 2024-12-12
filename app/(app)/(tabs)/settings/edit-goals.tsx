@@ -29,6 +29,7 @@ export default function EditGoals() {
   const safeArea = useSafeAreaInsets();
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [initialGoals, setInitialGoals] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   const { user } = useAuth();
 
   if (!user) {
@@ -41,6 +42,7 @@ export default function EditGoals() {
   };
 
   const handleSave = async () => {
+    setIsSaving(true);
     try {
       // Find goals to add (goals that are in selectedGoals but not in initialGoals)
       const goalsToAdd = selectedGoals.filter(
@@ -88,6 +90,8 @@ export default function EditGoals() {
       setInitialGoals(selectedGoals);
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -121,9 +125,10 @@ export default function EditGoals() {
           style={[
             styles.saveButton,
             !hasChanges() && styles.saveButtonDisabled,
+            isSaving && styles.saveButtonDisabled,
           ]}
           onPress={handleSave}
-          disabled={!hasChanges()}
+          disabled={!hasChanges() || isSaving}
         >
           <Text style={styles.saveButtonText}>Save</Text>
         </TouchableOpacity>
