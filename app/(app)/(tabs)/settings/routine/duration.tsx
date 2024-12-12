@@ -87,7 +87,7 @@ export default function Page() {
         return;
       }
 
-      console.log(data);
+      // console.log(data);
 
       setInitialDuration(data[0]?.session_duration);
     };
