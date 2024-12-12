@@ -89,7 +89,10 @@ export default function Page() {
 
       console.log(data);
 
-      setInitialDuration(data[0]?.session_duration);
+      if (data[0]?.session_duration) {
+        setSelectedDuration(data[0]?.session_duration);
+        setInitialDuration(data[0]?.session_duration);
+      }
     };
 
     fetchDuration();
@@ -100,7 +103,10 @@ export default function Page() {
       <View style={styles.header}>
         <Text style={styles.sectionTitle}>Session Duration</Text>
         <TouchableOpacity
-          style={styles.saveButton}
+          style={[
+            styles.saveButton,
+            !hasChanges() && styles.saveButtonDisabled,
+          ]}
           onPress={handleSave}
           disabled={!hasChanges()}
         >
@@ -158,6 +164,9 @@ const styles = StyleSheet.create({
     color: "#FFE9D5",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  saveButtonDisabled: {
+    opacity: 0.5,
   },
   title: {
     fontSize: 48,
