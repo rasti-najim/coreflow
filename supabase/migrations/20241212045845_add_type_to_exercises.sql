@@ -8,10 +8,10 @@ ALTER TABLE exercises
 -- Update existing exercises based on their lottie_file_url patterns
 UPDATE exercises
 SET type = CASE
-    WHEN lottie_file_url LIKE '%warmups/%' THEN 'warmup'
-    WHEN lottie_file_url LIKE '%cooldowns/%' THEN 'cooldown'
-    WHEN lottie_file_url LIKE '%targets/%' THEN 'target'
-    ELSE 'target'  -- Default fallback
+    WHEN lottie_file_url LIKE '%warmups/%' THEN 'warmup'::exercise_type_enum
+    WHEN lottie_file_url LIKE '%cooldowns/%' THEN 'cooldown'::exercise_type_enum
+    WHEN lottie_file_url LIKE '%targets/%' THEN 'target'::exercise_type_enum
+    ELSE 'target'::exercise_type_enum  -- Default fallback
 END;
 
 -- Remove the default constraint now that data is populated
