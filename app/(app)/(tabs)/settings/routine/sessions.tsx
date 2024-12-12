@@ -29,6 +29,7 @@ export default function Page() {
   const safeArea = useSafeAreaInsets();
   const [selectedRoutine, setSelectedRoutine] = useState<string | null>();
   const [initialRoutine, setInitialRoutine] = useState<string | null>();
+  const [isSaving, setIsSaving] = useState(false);
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -46,19 +47,24 @@ export default function Page() {
 
   const handleSave = async () => {
     try {
+      setIsSaving(true);
       const { data, error } = await supabase
         .from("user_preferences")
         .update({ weekly_sessions: selectedRoutine })
-        .eq("user_id", user.id);
-
+        .eq("user_id", user.id)
+        .select();
       if (error) {
         console.error(error);
         return;
       }
 
       console.log(data);
+
+      setInitialRoutine(selectedRoutine);
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -101,7 +107,9 @@ export default function Page() {
           onPress={handleSave}
           disabled={!hasChanges()}
         >
-          <Text style={styles.saveButtonText}>Save</Text>
+          <Text style={styles.saveButtonText}>
+            {isSaving ? "Saving..." : "Save"}
+          </Text>
         </TouchableOpacity>
       </View>
       <Text style={styles.sectionTitle}>Sessions Per Week</Text>
