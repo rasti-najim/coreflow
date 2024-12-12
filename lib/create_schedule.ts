@@ -1,3 +1,5 @@
+import supabase from "./supabase";
+
 // Types
 type WeeklySession = "1-2" | "3" | "5";
 type WorkoutFocus = "Core" | "Glutes" | "Arms & Shoulders" | "Legs" | "Hips";
@@ -14,16 +16,17 @@ interface ScheduleDay {
 function generateWeeklySchedule(
   weeklyPreference: WeeklySession,
   sessionDuration: number,
-  goals: string[]
+  goals: string[],
+  focus: string[]
 ): ScheduleDay[] {
   const DAYS = ["Mon", "Tues", "Weds", "Thurs", "Fri", "Sat", "Sun"];
-  const WORKOUTS: WorkoutFocus[] = [
-    "Core",
-    "Glutes",
-    "Legs",
-    "Arms & Shoulders",
-    "Hips",
-  ];
+  // const WORKOUTS: WorkoutFocus[] = [
+  //   "Core",
+  //   "Glutes",
+  //   "Legs",
+  //   "Arms & Shoulders",
+  //   "Hips",
+  // ];
 
   // Define workout days based on preference
   const workoutDays = {
@@ -42,7 +45,7 @@ function generateWeeklySchedule(
 
     return {
       day,
-      workout: isWorkoutDay ? WORKOUTS[index % WORKOUTS.length] : "Rest",
+      workout: isWorkoutDay ? focus[index % focus.length] : "Rest",
       duration: isWorkoutDay ? sessionDuration : 0,
       isHighlighted: isWorkoutDay && index <= adjustedToday, // Highlight completed workouts
       isToday,

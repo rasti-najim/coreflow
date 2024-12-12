@@ -9,20 +9,28 @@ export const createSession = async (
       .from("random_exercises")
       .select("*")
       .eq("type", "warmup")
-      .eq("experience_level", level),
+      .eq("skill_level", level)
+      .limit(1)
+      .single(),
     supabase
       .from("random_exercises")
       .select("*")
       .eq("type", "target")
-      .eq("experience_level", level),
+      .eq("skill_level", level)
+      .limit(1)
+      .single(),
     supabase
       .from("random_exercises")
       .select("*")
       .eq("type", "cooldown")
-      .eq("experience_level", level),
+      .eq("skill_level", level)
+      .limit(1)
+      .single(),
   ]);
 
-  console.log(warmup, target, cooldown);
+  console.log(
+    `warmup: ${warmup.data?.name}, target: ${target.data?.name}, cooldown: ${cooldown.data?.name}`
+  );
 
   return {
     warmup: warmup.data,

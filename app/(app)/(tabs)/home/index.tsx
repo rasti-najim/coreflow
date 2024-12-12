@@ -11,6 +11,7 @@ import {
 } from "@/lib/create_schedule";
 import supabase from "@/lib/supabase";
 import { useAuth } from "@/components/auth-context";
+import { createSession } from "@/lib/create-session";
 
 export default function Page() {
   const { user } = useAuth();
@@ -38,11 +39,18 @@ export default function Page() {
         .select("*")
         .eq("user_id", user.id);
 
-      if (preferences && goals) {
+      const { data: exercises } = await supabase
+        .from("exercises")
+        .select("focus");
+
+      console.log(exercises);
+
+      if (preferences && goals && exercises) {
         const weeklySchedule = generateWeeklySchedule(
           preferences.weekly_sessions,
           preferences.session_duration,
-          goals.map((goal) => goal.name)
+          goals.map((goal) => goal.name),
+          exercises.map((exercise) => exercise.focus)
         );
         setSchedule(weeklySchedule);
         setTodayWorkout(getTodayWorkout(weeklySchedule));
@@ -119,6 +127,13 @@ export default function Page() {
           <ProgressOptions />
         </View>
       </View>
+
+      <TouchableOpacity
+        onPress={() => createSession(["strength"], "beginner")}
+        style={styles.beginButton}
+      >
+        <Text style={styles.beginButtonText}>Create Session</Text>
+      </TouchableOpacity>
 
       {/* Today's Workout */}
       <View style={styles.todayContainer}>
