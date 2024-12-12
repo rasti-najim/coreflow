@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import {
   generateWeeklySchedule,
@@ -10,13 +10,19 @@ import {
   ScheduleDay,
 } from "@/lib/create_schedule";
 import supabase from "@/lib/supabase";
+import { useAuth } from "@/components/auth-context";
 
 export default function Page() {
+  const { user } = useAuth();
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
   const [schedule, setSchedule] = useState<ScheduleDay[]>([]);
   const [todayWorkout, setTodayWorkout] = useState<ScheduleDay | undefined>();
   const [showOptions, setShowOptions] = useState(false);
+
+  if (!user) {
+    return <Redirect href="/welcome" />;
+  }
 
   useEffect(() => {
     const loadSchedule = async () => {
@@ -24,11 +30,19 @@ export default function Page() {
       const { data: preferences } = await supabase
         .from("user_preferences")
         .select("weekly_sessions, session_duration")
+        .eq("user_id", user.id)
         .single();
 
-      if (preferences) {
+      const { data: goals } = await supabase
+        .from("goals")
+        .select("*")
+        .eq("user_id", user.id);
+
+      if (preferences && goals) {
         const weeklySchedule = generateWeeklySchedule(
-          preferences.weekly_sessions
+          preferences.weekly_sessions,
+          preferences.session_duration,
+          goals.map((goal) => goal.name)
         );
         setSchedule(weeklySchedule);
         setTodayWorkout(getTodayWorkout(weeklySchedule));
@@ -113,7 +127,7 @@ export default function Page() {
           <Text style={styles.workout}>
             {todayWorkout?.workout === "Rest"
               ? "Rest Day"
-              : todayWorkout?.workout}
+              : `${todayWorkout?.duration}m  ${todayWorkout?.workout}`}
           </Text>
 
           {todayWorkout?.workout !== "Rest" && (
@@ -329,6 +343,11 @@ const styles = StyleSheet.create({
   },
   optionText: {
     color: "#FFE9D5",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  workoutDuration: {
+    color: "#4A2318",
     fontWeight: "bold",
     fontSize: 14,
   },

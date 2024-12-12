@@ -5,13 +5,16 @@ type WorkoutFocus = "Core" | "Glutes" | "Arms & Shoulders" | "Legs" | "Hips";
 interface ScheduleDay {
   day: string;
   workout: string | "Rest";
+  duration: number;
   isHighlighted?: boolean;
   isToday?: boolean;
 }
 
 // Functions to generate schedule
 function generateWeeklySchedule(
-  weeklyPreference: WeeklySession
+  weeklyPreference: WeeklySession,
+  sessionDuration: number,
+  goals: string[]
 ): ScheduleDay[] {
   const DAYS = ["Mon", "Tues", "Weds", "Thurs", "Fri", "Sat", "Sun"];
   const WORKOUTS: WorkoutFocus[] = [
@@ -40,6 +43,7 @@ function generateWeeklySchedule(
     return {
       day,
       workout: isWorkoutDay ? WORKOUTS[index % WORKOUTS.length] : "Rest",
+      duration: isWorkoutDay ? sessionDuration : 0,
       isHighlighted: isWorkoutDay && index <= adjustedToday, // Highlight completed workouts
       isToday,
     };
