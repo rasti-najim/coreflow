@@ -1,7 +1,10 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import supabase from "@/lib/supabase";
+import { useAuth } from "@/components/auth-context";
+import { Redirect } from "expo-router";
 
 const ROUTINE_OPTIONS = [
   {
@@ -22,13 +25,44 @@ const ROUTINE_OPTIONS = [
 ];
 
 export default function Page() {
+  const { user } = useAuth();
   const safeArea = useSafeAreaInsets();
-  const [selectedRoutine, setSelectedRoutine] = useState<string | null>("3");
+  const [selectedRoutine, setSelectedRoutine] = useState<string | null>();
+
+  if (!user) {
+    return <Redirect href="/welcome" />;
+  }
 
   const handleSelectRoutine = async (routine: string) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedRoutine(routine);
   };
+
+  useEffect(() => {
+    const fetchRoutine = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("user_preferences")
+          .select("weekly_sessions")
+          .eq("user_id", user.id)
+          .limit(1);
+
+        if (error) {
+          console.error(error);
+          return;
+        }
+
+        console.log(data);
+
+        if (data[0]?.weekly_sessions) {
+          setSelectedRoutine(data[0]?.weekly_sessions);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchRoutine();
+  }, []);
 
   return (
     <View style={[styles.container, { paddingTop: safeArea.top + 24 }]}>
