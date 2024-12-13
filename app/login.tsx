@@ -1,0 +1,101 @@
+import React, { useState } from "react";
+import { View, StyleSheet } from "react-native";
+import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
+import { OnboardingLayout } from "@/components/onboarding-layout";
+import { CreateAccount } from "@/components/create-account";
+import { VerifyOTP } from "@/components/verify-otp";
+import supabase from "@/lib/supabase";
+
+export default function Login() {
+  const [step, setStep] = useState(0);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [otp, setOtp] = useState("");
+  const router = useRouter();
+
+  const handlePhoneSignIn = async () => {
+    if (!phoneNumber) return;
+
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const formattedPhone = phoneNumber.startsWith("+1")
+        ? phoneNumber
+        : `+1${phoneNumber}`;
+
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: formattedPhone,
+      });
+
+      if (!error) {
+        setStep(1);
+      } else {
+        console.error(error);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        phone: `+1${phoneNumber}`,
+        token: otp,
+        type: "sms",
+      });
+
+      if (!error) {
+        router.replace("/(app)/(tabs)/home");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const renderStep = () => {
+    switch (step) {
+      case 0:
+        return (
+          <CreateAccount
+            title="Welcome Back"
+            phoneNumber={phoneNumber}
+            onChangePhoneNumber={setPhoneNumber}
+            onGoogleSignIn={() => {}}
+            onAppleSignIn={() => {}}
+          />
+        );
+      case 1:
+        return (
+          <VerifyOTP
+            phoneNumber={phoneNumber}
+            code={otp}
+            onChangeCode={setOtp}
+            onVerify={handleVerifyOTP}
+            onResend={handlePhoneSignIn}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <OnboardingLayout
+      currentStep={step}
+      totalSteps={2}
+      onBack={() => (step === 0 ? router.back() : setStep(0))}
+      onNext={step === 0 ? handlePhoneSignIn : handleVerifyOTP}
+      isNextDisabled={step === 0 ? !phoneNumber : !otp}
+      nextButtonText="Continue"
+    >
+      {renderStep()}
+    </OnboardingLayout>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: 24,
+  },
+});

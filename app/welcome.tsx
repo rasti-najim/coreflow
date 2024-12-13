@@ -3,8 +3,10 @@ import { Arrow } from "@/components/arrow";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useFonts } from "expo-font";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Page() {
+  const safeArea = useSafeAreaInsets();
   const router = useRouter();
 
   return (
@@ -28,6 +30,15 @@ export default function Page() {
         }}
       >
         <Arrow color="#4A2318" />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.loginButton, { marginBottom: safeArea.bottom }]}
+        onPress={() => {
+          router.push("/login");
+        }}
+      >
+        <Text style={styles.loginText}>Already have an account? Login</Text>
       </TouchableOpacity>
     </View>
   );
@@ -61,5 +72,19 @@ const styles = StyleSheet.create({
   },
   arrowButton: {
     marginTop: 32,
+  },
+  loginButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  loginText: {
+    color: "#4A2318",
+    fontSize: 16,
+    fontWeight: "bold",
+    // fontFamily: "Apple-LiGothic-Medium",
+    // lineHeight: 24,
+    textAlign: "left",
   },
 });

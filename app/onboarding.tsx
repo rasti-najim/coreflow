@@ -257,8 +257,13 @@ export default function Onboarding() {
       case 6:
         return (
           <CreateAccount
+            title="Create Your Account"
             onGoogleSignIn={() => {
               // Handle Google sign in and skip OTP
+              handleNext();
+            }}
+            onAppleSignIn={() => {
+              // Handle Apple sign in and skip OTP
               handleNext();
             }}
             phoneNumber={onboardingData.phoneNumber || ""}

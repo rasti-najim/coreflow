@@ -17,15 +17,19 @@ import supabase from "@/lib/supabase";
 //   statusCodes,
 // } from "@react-native-google-signin/google-signin";
 interface CreateAccountProps {
+  title: string;
   onGoogleSignIn: () => void;
   phoneNumber: string;
   onChangePhoneNumber: (phoneNumber: string) => void;
+  onAppleSignIn: () => void;
 }
 
 export const CreateAccount = ({
+  title = "Create Your Account",
   onGoogleSignIn,
   phoneNumber,
   onChangePhoneNumber,
+  onAppleSignIn,
 }: CreateAccountProps) => {
   // GoogleSignin.configure({
   //   scopes: ["https://www.googleapis.com/auth/drive.readonly"],
@@ -69,7 +73,7 @@ export const CreateAccount = ({
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
-        <Text style={styles.title}>Create Your{"\n"}Account</Text>
+        <Text style={styles.title}>{title}</Text>
 
         <TouchableOpacity
           style={styles.googleButton}
