@@ -111,7 +111,7 @@ export default function Onboarding() {
         await handlePhoneSignIn(onboardingData.phoneNumber || "");
       }
       if (step === 7) {
-        await handleVerifyOTP(onboardingData.otp || "");
+        await handleVerifyOTP();
       }
       setStep(step + 1);
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -178,17 +178,17 @@ export default function Onboarding() {
     }
   };
 
-  const handleVerifyOTP = async (code: string) => {
+  const handleVerifyOTP = async () => {
     try {
       const { error } = await supabase.auth.verifyOtp({
         phone: onboardingData.phoneNumber || "",
-        token: code,
+        token: onboardingData.otp || "",
         type: "sms",
       });
 
       if (!error) {
         setOnboardingData((prev) => ({ ...prev, hasAccount: true }));
-        handleNext();
+        await handleNext();
       }
     } catch (error) {
       console.error(error);

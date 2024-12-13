@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     fontFamily: "Margin-DEMO",
   },
   googleButton: {
-    paddingVertical: 16,
+    paddingVertical: 12,
     borderRadius: 5,
     borderWidth: 1,
     borderColor: "#4A2318",

@@ -56,7 +56,7 @@ interface GoalsDetailsProps {
 
 export const GoalsDetails = ({ selectedGoals }: GoalsDetailsProps) => {
   return (
-    <ScrollView style={styles.container} showsVertiwcalScrollIndicator={false}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <Text style={styles.mainTitle}>
         Pilates Helps You{"\n"}Achieve Your Goals
       </Text>

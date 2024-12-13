@@ -7,12 +7,14 @@ import {
   TouchableOpacity,
 } from "react-native";
 import * as Haptics from "expo-haptics";
+import { OTPInput } from "./otp-input";
+import { OtpInput } from "react-native-otp-entry";
 
 interface VerifyOTPProps {
   phoneNumber: string;
   code: string;
   onChangeCode: (code: string) => void;
-  onVerify: (code: string) => void;
+  onVerify: (code: string) => Promise<void>;
   onResend: () => void;
 }
 
@@ -25,14 +27,14 @@ export const VerifyOTP = ({
 }: VerifyOTPProps) => {
   const handleVerify = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onVerify(code);
+    await onVerify(code);
   };
 
-  const handleCodeChange = (text: string) => {
+  const handleCodeChange = async (text: string) => {
     onChangeCode(text);
     // If the code length is 6 (complete), automatically verify
     if (text.length === 6) {
-      handleVerify();
+      await handleVerify();
     }
   };
 
@@ -98,7 +100,9 @@ export const VerifyOTP = ({
       <Text style={styles.title}>Verify Your{"\n"}Phone Number</Text>
       <Text style={styles.subtitle}>Enter the code sent to {phoneNumber}</Text>
 
-      <TextInput
+      <OTPInput value={code} onChange={handleCodeChange} />
+
+      {/* <TextInput
         style={styles.otpInput}
         placeholder="Enter verification code"
         placeholderTextColor="#666666"
@@ -106,7 +110,7 @@ export const VerifyOTP = ({
         value={code}
         onChangeText={handleCodeChange}
         maxLength={6}
-      />
+      /> */}
 
       <TouchableOpacity style={styles.resendButton} onPress={onResend}>
         <Text style={styles.resendButtonText}>Resend Code</Text>
