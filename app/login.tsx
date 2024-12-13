@@ -18,12 +18,9 @@ export default function Login() {
 
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const formattedPhone = phoneNumber.startsWith("+1")
-        ? phoneNumber
-        : `+1${phoneNumber}`;
 
       const { error } = await supabase.auth.signInWithOtp({
-        phone: formattedPhone,
+        phone: phoneNumber,
       });
 
       if (!error) {
@@ -39,7 +36,7 @@ export default function Login() {
   const handleVerifyOTP = async () => {
     try {
       const { error } = await supabase.auth.verifyOtp({
-        phone: `+1${phoneNumber}`,
+        phone: phoneNumber,
         token: otp,
         type: "sms",
       });

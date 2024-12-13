@@ -59,12 +59,12 @@ export default function Onboarding() {
     // Update the onboarding data with the phone number
     setOnboardingData((prev) => ({
       ...prev,
-      phoneNumber: `+1${phoneNumber}`,
+      phoneNumber: phoneNumber,
     }));
 
     try {
       await supabase.auth.signInWithOtp({
-        phone: `+1${phoneNumber}`,
+        phone: phoneNumber,
       });
     } catch (error) {
       console.error(error);

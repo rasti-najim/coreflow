@@ -12,6 +12,7 @@ import * as Haptics from "expo-haptics";
 import { AntDesign } from "@expo/vector-icons";
 import * as AppleAuthentication from "expo-apple-authentication";
 import supabase from "@/lib/supabase";
+import { PhoneInput } from "./phone-input";
 // import {
 //   GoogleSignin,
 //   statusCodes,
@@ -128,18 +129,10 @@ export const CreateAccount = ({
 
         <Text style={styles.orText}>Or</Text>
 
-        <View style={styles.phoneContainer}>
-          <TextInput
-            style={styles.phoneInput}
-            placeholder="Enter phone number"
-            placeholderTextColor="#666666"
-            keyboardType="phone-pad"
-            value={phoneNumber}
-            onChangeText={(text) => {
-              onChangePhoneNumber(text);
-            }}
-          />
-        </View>
+        <PhoneInput
+          phoneNumber={phoneNumber}
+          onChangePhoneNumber={onChangePhoneNumber}
+        />
       </View>
     </TouchableWithoutFeedback>
   );
