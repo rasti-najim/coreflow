@@ -4,7 +4,7 @@ USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can insert their own progress" ON "progress"
 FOR INSERT
-USING (auth.uid() = user_id);
+WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Users can update their own progress" ON "progress"
 FOR UPDATE
