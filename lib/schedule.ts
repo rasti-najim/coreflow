@@ -142,54 +142,54 @@ function shuffle<T>(array: T[]): T[] {
 export async function createSession(
   sessionDuration: number, // in minutes
   focus: Focus
-) {
-  try {
-    const totalSessionSeconds = sessionDuration * 60;
-    const availableTimeForTargets =
-      totalSessionSeconds - EXERCISE_TIMING.WARMUP_COOLDOWN_TIME;
-    const numberOfTargetExercises = Math.floor(
-      availableTimeForTargets / EXERCISE_TIMING.TOTAL_TIME
-    );
+): Promise<{
+  warmup_exercise: string;
+  target_exercises: string[];
+  cooldown_exercise: string;
+}> {
+  const totalSessionSeconds = sessionDuration * 60;
+  const availableTimeForTargets =
+    totalSessionSeconds - EXERCISE_TIMING.WARMUP_COOLDOWN_TIME;
+  const numberOfTargetExercises = Math.floor(
+    availableTimeForTargets / EXERCISE_TIMING.TOTAL_TIME
+  );
 
-    // Get warmup exercise
-    const { data: warmup_exercise } = await supabase
-      .from("random_exercises")
-      .select("*")
-      .eq("type", "warmup")
-      .limit(1)
-      .single();
+  // Get warmup exercise
+  const { data: warmup_exercise } = await supabase
+    .from("random_exercises")
+    .select("id")
+    .eq("type", "warmup")
+    .limit(1)
+    .single();
 
-    // Get target exercises based on focus
-    let targetQuery = supabase
-      .from("random_exercises")
-      .select("*")
-      .eq("type", "target");
+  // Get target exercises based on focus
+  let targetQuery = supabase
+    .from("random_exercises")
+    .select("id")
+    .eq("type", "target");
 
-    // Add focus-specific filters using the FOCUS_MAP
-    if (focus !== "full body") {
-      targetQuery = targetQuery.overlaps("focus", FOCUS_MAP[focus]);
-    }
-
-    const { data: target_exercises } = await targetQuery.limit(
-      numberOfTargetExercises
-    );
-
-    // Get cooldown exercise
-    const { data: cooldown_exercise } = await supabase
-      .from("random_exercises")
-      .select("*")
-      .eq("type", "cooldown")
-      .limit(1)
-      .single();
-
-    return {
-      warmup_exercise,
-      target_exercises,
-      cooldown_exercise,
-    };
-  } catch (error) {
-    console.error(error);
+  // Add focus-specific filters using the FOCUS_MAP
+  if (focus !== "full body") {
+    targetQuery = targetQuery.overlaps("focus", FOCUS_MAP[focus]);
   }
+
+  const { data: target_exercises } = await targetQuery.limit(
+    numberOfTargetExercises
+  );
+
+  // Get cooldown exercise
+  const { data: cooldown_exercise } = await supabase
+    .from("random_exercises")
+    .select("id")
+    .eq("type", "cooldown")
+    .limit(1)
+    .single();
+
+  return {
+    warmup_exercise: warmup_exercise?.id ?? "",
+    target_exercises: target_exercises?.map((ex) => ex.id) ?? [],
+    cooldown_exercise: cooldown_exercise?.id ?? "",
+  };
 }
 
 export async function createSchedule(userId: string) {
