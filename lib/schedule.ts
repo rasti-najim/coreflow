@@ -64,6 +64,8 @@ export function createMonthlyRoutine(
       startDate
     );
     schedule.push(...weeklySchedule);
+
+    console.log("weeklySchedule", weeklySchedule);
   }
 
   return schedule;
@@ -207,7 +209,7 @@ export async function createSession(
 export async function createSchedule(
   userId: string,
   action: ScheduleAction = "create",
-  weekOffset: number = 0
+  weeksToSchedule: number = 4
 ) {
   try {
     const { data, error } = await supabase
@@ -254,8 +256,10 @@ export async function createSchedule(
     const schedule = createMonthlyRoutine(
       data.weekly_sessions,
       startDate,
-      weekOffset
+      weeksToSchedule
     );
+
+    console.log("schedule", schedule);
 
     if (action === "update" || action === "create") {
       // Delete any existing scheduled (not completed) sessions
@@ -273,6 +277,8 @@ export async function createSchedule(
       if (!session) continue;
 
       const { warmup_exercise, target_exercises, cooldown_exercise } = session;
+
+      console.log(warmup_exercise, target_exercises, cooldown_exercise);
 
       const { data: sessionData, error: sessionError } = await supabase
         .from("sessions")
@@ -296,6 +302,42 @@ export async function createSchedule(
     }
 
     return schedule;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export async function checkScheduleStatus(userId: string) {
+  try {
+    const { data: futureSessions, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("status", "scheduled")
+      .gte("scheduled_date", new Date().toISOString().split("T")[0])
+      .order("scheduled_date", { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    if (!futureSessions || futureSessions.length === 0) {
+      await createSchedule(userId, "extend");
+    }
+
+    // Check if less than a week of sessions remaining
+    const lastSessionDate = new Date(
+      futureSessions[futureSessions.length - 1].scheduled_date
+    );
+    const daysRemaining = Math.ceil(
+      (lastSessionDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (daysRemaining <= 7) {
+      return await createSchedule(userId, "extend");
+    }
+
+    return futureSessions;
   } catch (error) {
     console.error(error);
   }

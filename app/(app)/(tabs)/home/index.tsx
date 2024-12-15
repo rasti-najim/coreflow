@@ -6,7 +6,7 @@ import { Redirect, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import supabase from "@/lib/supabase";
 import { useAuth } from "@/components/auth-context";
-import { createSchedule } from "@/lib/schedule";
+import { createSchedule, checkScheduleStatus } from "@/lib/schedule";
 
 export default function Page() {
   const { user } = useAuth();
@@ -19,6 +19,15 @@ export default function Page() {
   if (!user) {
     return <Redirect href="/welcome" />;
   }
+
+  useEffect(() => {
+    const checkSchedule = async () => {
+      const futureSessions = await checkScheduleStatus(user.id);
+      console.log("futureSessions", futureSessions);
+    };
+
+    checkSchedule();
+  }, []);
 
   useEffect(() => {
     const loadSchedule = async () => {

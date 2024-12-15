@@ -130,7 +130,7 @@ export default function Onboarding() {
 
         const [onboardingError, scheduleError] = await Promise.all([
           saveOnboardingData(user.id),
-          createSchedule(user.id),
+          createSchedule(user.id, "create"),
         ]);
 
         if (onboardingError !== undefined) throw onboardingError;
