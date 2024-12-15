@@ -4,21 +4,16 @@ import { FontAwesome6 } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
-import {
-  generateWeeklySchedule,
-  getTodayWorkout,
-  ScheduleDay,
-} from "@/lib/create_schedule";
 import supabase from "@/lib/supabase";
 import { useAuth } from "@/components/auth-context";
-import { createSession } from "@/lib/create-session";
+import { createWeeklyRoutine, createMonthlyRoutine } from "@/lib/schedule";
 
 export default function Page() {
   const { user } = useAuth();
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
-  const [schedule, setSchedule] = useState<ScheduleDay[]>([]);
-  const [todayWorkout, setTodayWorkout] = useState<ScheduleDay | undefined>();
+  const [schedule, setSchedule] = useState<any[]>([]);
+  const [todayWorkout, setTodayWorkout] = useState<any | undefined>();
   const [showOptions, setShowOptions] = useState(false);
 
   if (!user) {
@@ -27,39 +22,15 @@ export default function Page() {
 
   useEffect(() => {
     const loadSchedule = async () => {
-      // Get user preferences from Supabase
-      const { data: preferences } = await supabase
-        .from("user_preferences")
-        .select("weekly_sessions, session_duration")
-        .eq("user_id", user.id)
-        .single();
-
-      const { data: goals } = await supabase
-        .from("user_goals")
+      const { data: weekSchedule } = await supabase
+        .from("weekly_sessions")
         .select("*")
-        .eq("user_id", user.id);
-
-      console.log(goals);
-
-      const { data: exercises } = await supabase
-        .from("exercises_focus")
-        .select("*");
-
-      console.log(exercises?.map((exercise) => exercise.unnest));
-
-      if (preferences && goals && exercises) {
-        const weeklySchedule = generateWeeklySchedule(
-          preferences.weekly_sessions,
-          preferences.session_duration,
-          goals.map((goal) => goal.name),
-          exercises.map((exercise) => exercise.unnest)
-        );
-        console.log(weeklySchedule);
-        setSchedule(weeklySchedule);
-        setTodayWorkout(getTodayWorkout(weeklySchedule));
-      }
+        .eq("user_id", user.id)
+        .gte("week_start", new Date().toISOString())
+        .limit(1)
+        .single();
+      setSchedule(weekSchedule.sessions);
     };
-
     loadSchedule();
   }, []);
 
@@ -152,21 +123,12 @@ export default function Page() {
       {/* Weekly Schedule */}
       <View style={styles.scheduleContainer}>
         <Text style={styles.scheduleTitle}>This Week 🗓️</Text>
-        {schedule.map(({ day, workout, isHighlighted }) => (
-          <View key={day} style={styles.scheduleRow}>
-            <Text
-              style={[styles.scheduleDay, isHighlighted && styles.highlighted]}
-            >
-              {day} {">"}
+        {schedule.map(({ scheduled_date, focus }) => (
+          <View key={scheduled_date} style={styles.scheduleRow}>
+            <Text style={styles.scheduleDay}>
+              {scheduled_date} {">"}{" "}
             </Text>
-            <Text
-              style={[
-                styles.scheduleWorkout,
-                isHighlighted && styles.highlighted,
-              ]}
-            >
-              {workout}
-            </Text>
+            <Text style={styles.scheduleWorkout}>{focus}</Text>
           </View>
         ))}
       </View>

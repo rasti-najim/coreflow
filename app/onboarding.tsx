@@ -15,6 +15,7 @@ import {
 } from "@/components/starting-journey";
 import supabase from "@/lib/supabase";
 import { VerifyOTP } from "@/components/verify-otp";
+import { createSchedule } from "@/lib/schedule";
 
 interface OnboardingData {
   pilatesLevel: "beginner" | "intermediate" | "advanced" | null;
@@ -128,6 +129,8 @@ export default function Onboarding() {
         // console.log("onboarding data", onboardingData);
 
         await saveOnboardingData(user.id);
+        await createSchedule(user.id);
+
         await Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Success
         );
