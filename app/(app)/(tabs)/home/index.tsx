@@ -23,25 +23,36 @@ export default function Page() {
   useEffect(() => {
     const loadSchedule = async () => {
       try {
-        await createSchedule(user.id);
+        const { data: weekSchedule } = await supabase
+          .from("weekly_sessions")
+          .select("*")
+          .eq("user_id", user.id)
+          .gte("week_start", new Date().toISOString())
+          .order("week_start", { ascending: true })
+          .limit(1)
+          .single();
+
+        if (weekSchedule) {
+          setSchedule(weekSchedule.sessions);
+
+          // Get today's date in YYYY-MM-DD format
+          const today = new Date().toISOString().split("T")[0];
+
+          // Find today's workout from the sessions array
+          const todaySession = weekSchedule.sessions.find(
+            (session: any) => session.scheduled_date === today
+          );
+
+          setTodayWorkout(todaySession);
+
+          console.log("todayWorkout", todaySession);
+          console.log("weekSchedule", weekSchedule);
+        }
       } catch (error) {
-        console.error(error);
+        console.error("Error loading schedule:", error);
       }
     };
-    loadSchedule();
-  }, []);
 
-  useEffect(() => {
-    const loadSchedule = async () => {
-      const { data: weekSchedule } = await supabase
-        .from("weekly_sessions")
-        .select("*")
-        .eq("user_id", user.id)
-        .gte("week_start", new Date().toISOString())
-        .limit(1)
-        .single();
-      setSchedule(weekSchedule.sessions);
-    };
     loadSchedule();
   }, []);
 
@@ -94,6 +105,14 @@ export default function Page() {
     );
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      timeZone: "UTC",
+    });
+  };
+
   return (
     <View style={[styles.container, { paddingTop: safeArea.top }]}>
       <View style={styles.header}>
@@ -115,13 +134,9 @@ export default function Page() {
 
       {/* Today's Workout */}
       <View style={styles.todayContainer}>
-        <Text style={styles.day}>{todayWorkout?.day || "Rest Day"}</Text>
+        <Text style={styles.day}>{todayWorkout?.focus || "Rest Day"}</Text>
         <View style={styles.workoutRow}>
-          <Text style={styles.workout}>
-            {todayWorkout?.workout === "Rest"
-              ? "Rest Day"
-              : `${todayWorkout?.duration}m  ${todayWorkout?.workout}`}
-          </Text>
+          <Text style={styles.workout}>{todayWorkout?.workout}</Text>
 
           {todayWorkout?.workout !== "Rest" && (
             <TouchableOpacity style={styles.beginButton} onPress={onBegin}>
@@ -134,12 +149,19 @@ export default function Page() {
       {/* Weekly Schedule */}
       <View style={styles.scheduleContainer}>
         <Text style={styles.scheduleTitle}>This Week 🗓️</Text>
-        {schedule.map(({ scheduled_date, focus }) => (
+        {schedule.map(({ scheduled_date, focus, status }) => (
           <View key={scheduled_date} style={styles.scheduleRow}>
             <Text style={styles.scheduleDay}>
-              {scheduled_date} {">"}{" "}
+              {formatDate(scheduled_date)} {">"}
             </Text>
-            <Text style={styles.scheduleWorkout}>{focus}</Text>
+            <Text
+              style={[
+                styles.scheduleWorkout,
+                status === "completed" && styles.highlighted,
+              ]}
+            >
+              {focus}
+            </Text>
           </View>
         ))}
       </View>

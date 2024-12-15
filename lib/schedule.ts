@@ -9,7 +9,7 @@ export interface ScheduledWorkout {
   focus: Focus;
 }
 
-const FOCUS_MAP = {
+export const FOCUS_MAP = {
   "full body": [
     "Abs",
     "Arms",
