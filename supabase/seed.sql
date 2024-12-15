@@ -1,9 +1,9 @@
 -- Clear existing data (if needed)
 TRUNCATE TABLE progress CASCADE;
 TRUNCATE TABLE user_goals CASCADE;
-TRUNCATE TABLE exercises CASCADE;
 TRUNCATE TABLE user_preferences CASCADE;
 TRUNCATE TABLE users CASCADE;
+TRUNCATE TABLE exercises CASCADE;
 TRUNCATE TABLE sessions CASCADE;
 
 -- Insert sample users
@@ -81,6 +81,15 @@ VALUES
    NULL,
    CURRENT_TIMESTAMP - INTERVAL '2 days');
 
+-- Verify the data
+SELECT 
+    'Users' as table_name, COUNT(*) as count FROM users
+    UNION ALL
+SELECT 'Preferences', COUNT(*) FROM user_preferences
+    UNION ALL
+SELECT 'Goals', COUNT(*) FROM user_goals
+    UNION ALL
+SELECT 'Progress', COUNT(*) FROM progress;
 
 -- Warmup Exercises
 INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided, lottie_file_url) VALUES
