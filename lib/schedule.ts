@@ -193,43 +193,58 @@ export async function createSession(
 }
 
 export async function createSchedule(userId: string) {
-  const { data, error } = await supabase
-    .from("user_preferences")
-    .select("weekly_sessions, session_duration")
-    .eq("user_id", userId)
-    .limit(1)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from("user_preferences")
+      .select("weekly_sessions, session_duration")
+      .eq("user_id", userId)
+      .limit(1)
+      .single();
 
-  if (error) {
-    throw error;
-  }
+    if (error) {
+      throw error;
+    }
 
-  // Create a 4-week schedule
-  const schedule = createMonthlyRoutine(data.weekly_sessions);
+    // Create a 4-week schedule
+    const schedule = createMonthlyRoutine(data.weekly_sessions);
 
-  // Delete any existing scheduled (not completed) sessions
-  await supabase
-    .from("sessions")
-    .delete()
-    .eq("user_id", userId)
-    .eq("status", "scheduled");
+    // Delete any existing scheduled (not completed) sessions
+    await supabase
+      .from("sessions")
+      .delete()
+      .eq("user_id", userId)
+      .eq("status", "scheduled");
 
-  // Create sessions for each day in the schedule
-  for (const day of schedule) {
-    const session = await createSession(data.session_duration, day.focus);
-    if (!session) continue;
+    // Create sessions for each day in the schedule
+    for (const day of schedule) {
+      const session = await createSession(data.session_duration, day.focus);
+      if (!session) continue;
 
-    const { warmup_exercise, target_exercises, cooldown_exercise } = session;
+      const { warmup_exercise, target_exercises, cooldown_exercise } = session;
 
-    await supabase.from("sessions").insert({
-      user_id: userId,
-      focus: day.focus,
-      scheduled_date: day.date,
-      warmup_exercise: warmup_exercise,
-      target_exercises: target_exercises,
-      cooldown_exercise: cooldown_exercise,
-      status: "scheduled",
-      is_custom: false,
-    });
+      const { data: sessionData, error: sessionError } = await supabase
+        .from("sessions")
+        .insert({
+          user_id: userId,
+          focus: day.focus,
+          scheduled_date: day.date,
+          warmup_exercise: warmup_exercise,
+          target_exercises: target_exercises,
+          cooldown_exercise: cooldown_exercise,
+          status: "scheduled",
+          is_custom: false,
+        })
+        .select();
+
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      console.log(sessionData);
+    }
+
+    return schedule;
+  } catch (error) {
+    console.error(error);
   }
 }

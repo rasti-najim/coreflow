@@ -128,8 +128,13 @@ export default function Onboarding() {
 
         // console.log("onboarding data", onboardingData);
 
-        await saveOnboardingData(user.id);
-        await createSchedule(user.id);
+        const [onboardingError, scheduleError] = await Promise.all([
+          saveOnboardingData(user.id),
+          createSchedule(user.id),
+        ]);
+
+        if (onboardingError !== undefined) throw onboardingError;
+        if (scheduleError !== undefined) throw scheduleError;
 
         await Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Success
