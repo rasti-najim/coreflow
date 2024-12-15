@@ -1,3 +1,6 @@
+-- Clear existing data (if needed)
+TRUNCATE TABLE exercises CASCADE;
+
 -- Warmup Exercises
 INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided, lottie_file_url) VALUES
     ('Seated Spine Roll',

@@ -3,7 +3,6 @@ TRUNCATE TABLE progress CASCADE;
 TRUNCATE TABLE user_goals CASCADE;
 TRUNCATE TABLE user_preferences CASCADE;
 TRUNCATE TABLE users CASCADE;
-TRUNCATE TABLE exercises CASCADE;
 TRUNCATE TABLE sessions CASCADE;
 
 -- Insert sample users
@@ -81,13 +80,6 @@ VALUES
    NULL,
    CURRENT_TIMESTAMP - INTERVAL '2 days');
 
--- Insert sample exercises first (minimal set for seeding)
-INSERT INTO exercises (id, name, description, skill_level, focus, type)
-VALUES
-  ('e1111111-1111-1111-1111-111111111111', 'Basic Warmup', 'Simple warmup routine', 'beginner', ARRAY['full body'], 'warmup'),
-  ('e2222222-2222-2222-2222-222222222222', 'Core Strengthening', 'Basic core exercise', 'beginner', ARRAY['core'], 'target'),
-  ('e3333333-3333-3333-3333-333333333333', 'Basic Cooldown', 'Simple cooldown routine', 'beginner', ARRAY['full body'], 'cooldown');
-
 -- Insert sessions
 INSERT INTO sessions (id, user_id, focus, scheduled_date, status, warmup_exercise, target_exercise, cooldown_exercise, is_custom)
 VALUES
@@ -97,9 +89,9 @@ VALUES
    'full body',
    CURRENT_DATE + INTERVAL '1 day',
    'scheduled',
-   'e1111111-1111-1111-1111-111111111111',
-   'e2222222-2222-2222-2222-222222222222',
-   'e3333333-3333-3333-3333-333333333333',
+   '004e693a-2882-4474-a831-8db9c1078658',
+   '004e693a-2882-4474-a831-8db9c1078658',
+   '004e693a-2882-4474-a831-8db9c1078658',
    false),
 
   -- Mike's completed session
@@ -109,8 +101,8 @@ VALUES
    CURRENT_DATE - INTERVAL '1 day',
    'completed',
    'e1111111-1111-1111-1111-111111111111',
-   'e2222222-2222-2222-2222-222222222222', 
-   'e3333333-3333-3333-3333-333333333333',
+   '004e693a-2882-4474-a831-8db9c1078658',
+   '004e693a-2882-4474-a831-8db9c1078658',
    false),
 
   -- Emma's future session
@@ -120,8 +112,8 @@ VALUES
    CURRENT_DATE + INTERVAL '3 days',
    'scheduled',
    'e1111111-1111-1111-1111-111111111111',
-   'e2222222-2222-2222-2222-222222222222',
-   'e3333333-3333-3333-3333-333333333333',
+   '004e693a-2882-4474-a831-8db9c1078658',
+   '004e693a-2882-4474-a831-8db9c1078658',
    false);
 
 -- Update verification query to include sessions
