@@ -3,6 +3,7 @@ import supabase from "./supabase";
 type WeeklySession = "1-2" | "3" | "5";
 type Focus = "full body" | "upper body" | "lower body" | "core";
 type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri";
+type ScheduleAction = "create" | "update" | "extend";
 
 export interface ScheduledWorkout {
   date: Date;
@@ -31,8 +32,12 @@ const EXERCISE_TIMING = {
   WARMUP_COOLDOWN_TIME: 120, // 2 minutes for warmup/cooldown combined
 };
 
-function getNextDate(day: Day, weekOffset: number = 0): Date {
-  const today = new Date();
+function getNextDate(
+  day: Day,
+  weekOffset: number = 0,
+  startDate: Date = new Date()
+): Date {
+  const today = startDate;
   const dayIndex = ["Mon", "Tue", "Wed", "Thu", "Fri"].indexOf(day);
   const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
   const targetDay = dayIndex + 1; // Add 1 because our days start from Monday=1
@@ -45,13 +50,19 @@ function getNextDate(day: Day, weekOffset: number = 0): Date {
 }
 
 export function createMonthlyRoutine(
-  weekly_preference: WeeklySession
+  weekly_preference: WeeklySession,
+  startDate: Date = new Date(),
+  weeksToSchedule: number = 4
 ): ScheduledWorkout[] {
   const schedule: ScheduledWorkout[] = [];
 
   // Create 4 weeks of workouts
-  for (let week = 0; week < 4; week++) {
-    const weeklySchedule = createWeeklyRoutine(weekly_preference, week);
+  for (let week = 0; week < weeksToSchedule; week++) {
+    const weeklySchedule = createWeeklyRoutine(
+      weekly_preference,
+      week,
+      startDate
+    );
     schedule.push(...weeklySchedule);
   }
 
@@ -60,7 +71,8 @@ export function createMonthlyRoutine(
 
 export function createWeeklyRoutine(
   weekly_preference: WeeklySession,
-  weekOffset: number = 0
+  weekOffset: number = 0,
+  startDate: Date = new Date()
 ): ScheduledWorkout[] {
   const availableDays: Day[] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
   const schedule: ScheduledWorkout[] = [];
@@ -78,7 +90,7 @@ export function createWeeklyRoutine(
 
       selectedDays.forEach((day) => {
         schedule.push({
-          date: getNextDate(day, weekOffset),
+          date: getNextDate(day, weekOffset, startDate),
           focus: "full body",
         });
       });
@@ -96,7 +108,7 @@ export function createWeeklyRoutine(
 
       workoutDays.forEach((day, index) => {
         schedule.push({
-          date: getNextDate(day, weekOffset),
+          date: getNextDate(day, weekOffset, startDate),
           focus: focuses[index],
         });
       });
@@ -119,7 +131,7 @@ export function createWeeklyRoutine(
         }
 
         schedule.push({
-          date: getNextDate(day, weekOffset),
+          date: getNextDate(day, weekOffset, startDate),
           focus,
         });
       });
@@ -192,7 +204,11 @@ export async function createSession(
   };
 }
 
-export async function createSchedule(userId: string) {
+export async function createSchedule(
+  userId: string,
+  action: ScheduleAction = "create",
+  weekOffset: number = 0
+) {
   try {
     const { data, error } = await supabase
       .from("user_preferences")
@@ -205,15 +221,51 @@ export async function createSchedule(userId: string) {
       throw error;
     }
 
-    // Create a 4-week schedule
-    const schedule = createMonthlyRoutine(data.weekly_sessions);
+    // Get the start date based on action
+    let startDate: Date;
+    switch (action) {
+      case "create":
+        // Start from today for new schedules
+        startDate = new Date();
+        break;
+      case "update":
+        // Start from today for updates
+        startDate = new Date();
+        break;
+      case "extend":
+        // Get the last scheduled session date
+        const { data: lastSession } = await supabase
+          .from("sessions")
+          .select("scheduled_date")
+          .eq("user_id", userId)
+          .order("scheduled_date", { ascending: false })
+          .limit(1)
+          .single();
 
-    // Delete any existing scheduled (not completed) sessions
-    await supabase
-      .from("sessions")
-      .delete()
-      .eq("user_id", userId)
-      .eq("status", "scheduled");
+        // Start from the day after the last session
+        startDate = lastSession
+          ? new Date(lastSession.scheduled_date)
+          : new Date();
+        startDate.setDate(startDate.getDate() + 1);
+        break;
+    }
+
+    // Create a 4-week schedule
+    const schedule = createMonthlyRoutine(
+      data.weekly_sessions,
+      startDate,
+      weekOffset
+    );
+
+    if (action === "update" || action === "create") {
+      // Delete any existing scheduled (not completed) sessions
+      await supabase
+        .from("sessions")
+        .delete()
+        .eq("user_id", userId)
+        .eq("status", "scheduled")
+        .gte("scheduled_date", new Date().toISOString().split("T")[0]);
+    }
 
     // Create sessions for each day in the schedule
     for (const day of schedule) {

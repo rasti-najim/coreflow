@@ -1,10 +1,11 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabase";
 import { useAuth } from "@/components/auth-context";
 import { Redirect } from "expo-router";
+import { createSchedule } from "@/lib/schedule";
 
 const ROUTINE_OPTIONS = [
   {
@@ -46,26 +47,44 @@ export default function Page() {
   };
 
   const handleSave = async () => {
-    try {
-      setIsSaving(true);
-      const { data, error } = await supabase
-        .from("user_preferences")
-        .update({ weekly_sessions: selectedRoutine })
-        .eq("user_id", user.id)
-        .select();
-      if (error) {
-        console.error(error);
-        return;
-      }
+    Alert.alert(
+      "Update Routine",
+      "Updating your weekly sessions will delete all future scheduled workouts and create new ones. Are you sure you want to continue?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Update",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setIsSaving(true);
+              const { data, error } = await supabase
+                .from("user_preferences")
+                .update({ weekly_sessions: selectedRoutine })
+                .eq("user_id", user.id)
+                .select();
 
-      console.log(data);
+              if (error) {
+                console.error(error);
+                return;
+              }
 
-      setInitialRoutine(selectedRoutine);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsSaving(false);
-    }
+              const schedule = await createSchedule(user.id, "update");
+              console.log(schedule);
+
+              setInitialRoutine(selectedRoutine);
+            } catch (error) {
+              console.error(error);
+            } finally {
+              setIsSaving(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   useEffect(() => {

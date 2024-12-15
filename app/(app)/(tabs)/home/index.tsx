@@ -138,7 +138,7 @@ export default function Page() {
         <View style={styles.workoutRow}>
           <Text style={styles.workout}>{todayWorkout?.workout}</Text>
 
-          {todayWorkout?.workout !== "Rest" && (
+          {todayWorkout?.workout && (
             <TouchableOpacity style={styles.beginButton} onPress={onBegin}>
               <Text style={styles.beginButtonText}>begin</Text>
             </TouchableOpacity>
