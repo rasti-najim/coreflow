@@ -6,7 +6,6 @@ import { Redirect, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import supabase from "@/lib/supabase";
 import { useAuth } from "@/components/auth-context";
-import { createWeeklyRoutine, createMonthlyRoutine } from "@/lib/schedule";
 
 export default function Page() {
   const { user } = useAuth();
