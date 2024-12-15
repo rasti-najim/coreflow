@@ -81,6 +81,7 @@ export default function Page() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             // Handle image progress
             setShowOptions(false);
+            router.push("/home/track-picture");
           }}
         >
           <FontAwesome6 name="image" size={18} color="#FFE9D5" />
@@ -93,6 +94,7 @@ export default function Page() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             // Handle note progress
             setShowOptions(false);
+            router.push("/home/track-mood");
           }}
         >
           <FontAwesome6 name="note-sticky" size={18} color="#FFE9D5" />
@@ -105,6 +107,7 @@ export default function Page() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             // Handle custom session
             setShowOptions(false);
+            router.push("/home/modal");
           }}
         >
           <FontAwesome6 name="mattress-pillow" size={18} color="#FFE9D5" />

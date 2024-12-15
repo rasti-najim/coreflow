@@ -8,6 +8,14 @@ export default function HomeLayout() {
         name="modal"
         options={{ presentation: "fullScreenModal" }}
       />
+      <Stack.Screen
+        name="track-picture"
+        options={{ presentation: "fullScreenModal" }}
+      />
+      <Stack.Screen
+        name="track-mood"
+        options={{ presentation: "fullScreenModal" }}
+      />
     </Stack>
   );
 }
