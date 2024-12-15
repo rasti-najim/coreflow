@@ -1,14 +1,20 @@
 CREATE POLICY "Users can upload photos" ON storage.objects
 FOR INSERT WITH CHECK (
-    auth.uid() = user_id
+    bucket_id = 'photo-progress'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+    AND (select auth.role()) = 'authenticated'
 );
 
 CREATE POLICY "Users can view photos" ON storage.objects
 FOR SELECT USING (
-    auth.uid() = user_id
+    bucket_id = 'photo-progress'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+    AND (select auth.role()) = 'authenticated'
 );
 
 CREATE POLICY "Users can delete photos" ON storage.objects
 FOR DELETE USING (
-    auth.uid() = user_id
+    bucket_id = 'photo-progress'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+    AND (select auth.role()) = 'authenticated'
 );

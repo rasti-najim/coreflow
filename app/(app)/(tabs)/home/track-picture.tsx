@@ -4,6 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import supabase from "@/lib/supabase";
 export default function Page() {
   const [photo, setPhoto] = useState<string | null>(null);
   const safeArea = useSafeAreaInsets();
