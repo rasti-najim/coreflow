@@ -7,7 +7,7 @@ TRUNCATE TABLE exercises CASCADE;
 TRUNCATE TABLE sessions CASCADE;
 
 -- Insert sample users
-INSERT INTO users (user_id, email, phone_number, experience_level) 
+INSERT INTO users (id, email, phone_number, experience_level) 
 VALUES
   ('11111111-1111-1111-1111-111111111111', 'sarah@example.com', '+1234567890', 'beginner'),
   ('22222222-2222-2222-2222-222222222222', 'mike@example.com', '+1234567891', 'intermediate'),
@@ -22,7 +22,7 @@ VALUES
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '00000000-0000-0000-0000-000000000002', '3', '30-45', 'pictures');
 
 -- Insert user goals
-INSERT INTO user_goals (goal_id, user_id, name)
+INSERT INTO user_goals (id, user_id, name)
 VALUES
   ('11111111-aaaa-1111-aaaa-111111111111', '11111111-1111-1111-1111-111111111111', 'Improve core strength'),
   ('22222222-aaaa-2222-aaaa-222222222222', '11111111-1111-1111-1111-111111111111', 'Better posture'),
