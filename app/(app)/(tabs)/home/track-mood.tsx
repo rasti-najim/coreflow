@@ -34,6 +34,7 @@ export default function Page() {
           mood_description: mood,
           entry_type: "mood",
           user_id: user.id,
+          added_on: new Date().toISOString().split("T")[0],
         })
         .select();
 

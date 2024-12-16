@@ -6,12 +6,13 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import supabase from "@/lib/supabase";
 import { useAuth } from "@/components/auth-context";
-import { Redirect } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { decode } from "base64-arraybuffer";
 import { nanoid } from "nanoid";
 
 export default function Page() {
   const { user } = useAuth();
+  const router = useRouter();
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const safeArea = useSafeAreaInsets();
 
@@ -66,7 +67,22 @@ export default function Page() {
         console.error(error);
       }
 
+      const { data: progressData, error: progressError } = await supabase
+        .from("progress")
+        .insert({
+          user_id: user.id,
+          entry_type: "picture",
+          picture_url: data?.path?.split("/")[1],
+          added_on: new Date().toISOString().split("T")[0],
+        });
+
+      if (progressError) {
+        console.error(progressError);
+      }
+
       console.log("photo uploaded", data);
+
+      router.dismiss();
     } catch (error) {
       console.error(error);
     }
