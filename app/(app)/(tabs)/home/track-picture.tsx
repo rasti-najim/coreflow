@@ -5,9 +5,20 @@ import { Image } from "expo-image";
 import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import supabase from "@/lib/supabase";
+import { useAuth } from "@/components/auth-context";
+import { Redirect } from "expo-router";
+import { decode } from "base64-arraybuffer";
+import { nanoid } from "nanoid";
+
 export default function Page() {
-  const [photo, setPhoto] = useState<string | null>(null);
+  const { user } = useAuth();
+  const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const safeArea = useSafeAreaInsets();
+
+  if (!user) {
+    return <Redirect href="/welcome" />;
+  }
+
   const handleSelectPhoto = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
@@ -20,20 +31,45 @@ export default function Page() {
 
     // Pick the image
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
+      base64: true,
     });
 
+    console.log(result);
+
     if (!result.canceled && result.assets[0].uri) {
-      setPhoto(result.assets[0].uri);
+      setPhoto(result.assets[0]);
       //   onPhotoSelect?.(result.assets[0].uri);
     }
   };
 
   const handleAddUpdate = async () => {
-    console.log("add update");
+    console.log("uploading photo");
+
+    try {
+      const { data, error } = await supabase.storage
+        .from("photo-progress")
+        .upload(
+          `${user.id}/${new Date().toISOString()}.${
+            photo?.fileName?.split(".")[1]
+          }`,
+          decode(photo?.base64 || ""),
+          {
+            contentType: `${photo?.mimeType}`,
+          }
+        );
+
+      if (error) {
+        console.error(error);
+      }
+
+      console.log("photo uploaded", data);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -48,7 +84,9 @@ export default function Page() {
         <Text style={styles.uploadButtonText}>take or upload a picture</Text>
       </TouchableOpacity>
 
-      {photo && <Image source={{ uri: photo }} style={styles.previewImage} />}
+      {photo && (
+        <Image source={{ uri: photo.uri }} style={styles.previewImage} />
+      )}
 
       <TouchableOpacity style={styles.button} onPress={handleAddUpdate}>
         <Text style={styles.buttonText}>add update</Text>
