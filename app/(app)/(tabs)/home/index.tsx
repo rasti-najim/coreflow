@@ -8,17 +8,39 @@ import supabase from "@/lib/supabase";
 import { useAuth } from "@/components/auth-context";
 import { createSchedule, checkScheduleStatus } from "@/lib/schedule";
 
+type Session = {
+  focus: string;
+  is_custom: boolean;
+  scheduled_date: string;
+  session_id: string;
+  status: string;
+};
+
 export default function Page() {
   const { user } = useAuth();
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
-  const [schedule, setSchedule] = useState<any[]>([]);
-  const [todayWorkout, setTodayWorkout] = useState<any | undefined>();
+  const [schedule, setSchedule] = useState<Session[]>([]);
+  const [todaySession, setTodaySession] = useState<Session | undefined>();
   const [showOptions, setShowOptions] = useState(false);
+  const [duration, setDuration] = useState<string>("");
 
   if (!user) {
     return <Redirect href="/welcome" />;
   }
+
+  useEffect(() => {
+    const getDuration = async () => {
+      const { data: duration } = await supabase
+        .from("user_preferences")
+        .select("session_duration")
+        .eq("user_id", user.id)
+        .limit(1)
+        .single();
+      setDuration(duration?.session_duration || "15m");
+    };
+    getDuration();
+  }, []);
 
   useEffect(() => {
     const checkSchedule = async () => {
@@ -48,13 +70,13 @@ export default function Page() {
           const today = new Date().toISOString().split("T")[0];
 
           // Find today's workout from the sessions array
-          const todaySession = weekSchedule.sessions.find(
+          const session = weekSchedule.sessions.find(
             (session: any) => session.scheduled_date === today
           );
 
-          setTodayWorkout(todaySession);
+          setTodaySession(session);
 
-          console.log("todayWorkout", todaySession);
+          console.log("todayWorkout", session);
           console.log("weekSchedule", weekSchedule);
         }
       } catch (error) {
@@ -67,7 +89,10 @@ export default function Page() {
 
   const onBegin = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push("/home/modal");
+    router.push({
+      pathname: "/home/session",
+      params: { session_id: todaySession?.session_id },
+    });
   };
 
   const ProgressOptions = () => {
@@ -107,7 +132,7 @@ export default function Page() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             // Handle custom session
             setShowOptions(false);
-            router.push("/home/modal");
+            router.push("/home/session");
           }}
         >
           <FontAwesome6 name="mattress-pillow" size={18} color="#FFE9D5" />
@@ -146,11 +171,18 @@ export default function Page() {
 
       {/* Today's Workout */}
       <View style={styles.todayContainer}>
-        <Text style={styles.day}>{todayWorkout?.focus || "Rest Day"}</Text>
+        <Text style={styles.day}>
+          {new Date().toLocaleDateString("en-US", {
+            weekday: "long",
+            timeZone: "UTC",
+          })}
+        </Text>
         <View style={styles.workoutRow}>
-          <Text style={styles.workout}>{todayWorkout?.workout}</Text>
+          <Text style={styles.workout}>
+            {duration}m {todaySession?.focus}
+          </Text>
 
-          {todayWorkout?.workout && (
+          {todaySession?.focus && (
             <TouchableOpacity style={styles.beginButton} onPress={onBegin}>
               <Text style={styles.beginButtonText}>begin</Text>
             </TouchableOpacity>

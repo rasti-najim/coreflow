@@ -5,7 +5,7 @@ export default function HomeLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen
-        name="modal"
+        name="session"
         options={{ presentation: "fullScreenModal" }}
       />
       <Stack.Screen

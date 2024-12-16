@@ -3,15 +3,9 @@ import supabase from "@/lib/supabase";
 import { LinearGradient } from "expo-linear-gradient";
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Pressable,
-  Image,
-} from "react-native";
+import { View, Text, ScrollView, StyleSheet, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Image } from "expo-image";
 
 type TimelineItem = {
   id: string;
@@ -22,147 +16,236 @@ type TimelineItem = {
   photoUrl?: string;
 };
 
+const groupByDate = (items: TimelineItem[]): Record<string, TimelineItem[]> => {
+  return items.reduce((groups, item) => {
+    const date = item.date;
+    if (!groups[date]) {
+      groups[date] = [];
+    }
+    groups[date].push(item);
+    return groups;
+  }, {} as Record<string, TimelineItem[]>);
+};
+
 export default function Page() {
   const { user } = useAuth();
   const safeArea = useSafeAreaInsets();
-  const [timelineData, setTimelineData] = useState<TimelineItem[]>([]);
+  // const [timelineData, setTimelineData] = useState<TimelineItem[]>([]);
 
   if (!user) {
     return <Redirect href="/welcome" />;
   }
 
-  // const timelineData: TimelineItem[] = [
-  //   {
-  //     date: "11/6",
-  //     type: ["picture"],
-  //     photoUrl: "https://picsum.photos/400/300",
-  //   },
-  //   { date: "11/7", type: ["session"], duration: "10m Session" },
-  //   { date: "11/9", type: ["session"], duration: "10m Session" },
-  //   { date: "11/11", type: ["session"], duration: "10m Session" },
-  //   {
-  //     date: "11/13",
-  //     type: ["mood"],
-  //     content: "mood has been great and starting to see abs! :)",
-  //   },
-  //   { date: "11/16", type: ["session"], duration: "15m Session" },
-  //   {
-  //     date: "11/18",
-  //     type: ["picture"],
-  //     photoUrl: "https://picsum.photos/400/300?random=2",
-  //   },
-  //   { date: "11/20", type: ["session"], duration: "15m Session" },
-  //   { date: "11/22", type: ["session"], duration: "15m Session" },
-  //   { date: "11/24", type: ["session"], duration: "15m Session" },
-  //   { date: "11/26", type: ["session"], duration: "15m Session" },
-  //   { date: "11/28", type: ["session"], duration: "15m Session" },
-  //   { date: "11/30", type: ["session"], duration: "15m Session" },
-  //   {
-  //     date: "12/2",
-  //     type: ["session", "picture"],
-  //     duration: "15m Session",
-  //     photoUrl: "https://picsum.photos/400/300?random=3",
-  //   },
-  //   {
-  //     date: "12/4",
-  //     type: ["session", "mood", "picture"],
-  //     duration: "15m Session",
-  //     content: "mood has been great and starting to see abs! :)",
-  //     photoUrl: "https://picsum.photos/400/300?random=4",
-  //   },
-  //   {
-  //     date: "12/6",
-  //     type: ["session", "mood", "picture"],
-  //     duration: "15m Session",
-  //     content: "mood has been great and starting to see abs! :)",
-  //     photoUrl: "https://picsum.photos/400/300?random=5",
-  //   },
-  //   {
-  //     date: "12/8",
-  //     type: ["session", "mood"],
-  //     duration: "15m Session",
-  //     content: "mood has been great and starting to see abs! :)",
-  //   },
-  // ];
+  const timelineData: TimelineItem[] = [
+    {
+      id: "1",
+      date: "11/6",
+      type: ["picture"],
+      photoUrl: "https://picsum.photos/400/300",
+    },
+    {
+      id: "2",
+      date: "11/7",
+      type: ["session"],
+      duration: "10m Session",
+    },
+    {
+      id: "3",
+      date: "11/9",
+      type: ["session"],
+      duration: "10m Session",
+    },
+    {
+      id: "4",
+      date: "11/11",
+      type: ["session"],
+      duration: "10m Session",
+    },
+    {
+      id: "5",
+      date: "11/13",
+      type: ["mood"],
+      note: "mood has been great and starting to see abs! :)",
+    },
+    {
+      id: "6",
+      date: "11/16",
+      type: ["session"],
+      duration: "15m Session",
+    },
+    {
+      id: "7",
+      date: "11/18",
+      type: ["picture"],
+      photoUrl: "https://picsum.photos/400/300?random=2",
+    },
+    {
+      id: "8",
+      date: "11/20",
+      type: ["session"],
+      duration: "15m Session",
+    },
+    {
+      id: "9",
+      date: "11/22",
+      type: ["session"],
+      duration: "15m Session",
+    },
+    {
+      id: "10",
+      date: "11/24",
+      type: ["session"],
+      duration: "15m Session",
+    },
+    {
+      id: "11",
+      date: "11/26",
+      type: ["session"],
+      duration: "15m Session",
+    },
+    {
+      id: "12",
+      date: "11/28",
+      type: ["session"],
+      duration: "15m Session",
+    },
+    {
+      id: "13",
+      date: "11/30",
+      type: ["session"],
+      duration: "15m Session",
+    },
+    {
+      id: "14",
+      date: "12/2",
+      type: ["session", "picture"],
+      duration: "15m Session",
+      photoUrl: "https://picsum.photos/400/300?random=3",
+    },
+    {
+      id: "15",
+      date: "12/4",
+      type: ["session", "mood", "picture"],
+      duration: "15m Session",
+      note: "mood has been great and starting to see abs! :)",
+      photoUrl: "https://picsum.photos/400/300?random=4",
+    },
+    {
+      id: "16",
+      date: "12/6",
+      type: ["session", "mood", "picture"],
+      duration: "15m Session",
+      note: "mood has been great and starting to see abs! :)",
+      photoUrl: "https://picsum.photos/400/300?random=5",
+    },
+    {
+      id: "17",
+      date: "12/8",
+      type: ["session", "mood"],
+      duration: "15m Session",
+      note: "mood has been great and starting to see abs! :)",
+    },
+    {
+      id: "18",
+      date: "12/10",
+      type: ["session", "mood"],
+      duration: "15m Session",
+      note: "mood has been great and starting to see abs! :)",
+    },
+    {
+      id: "19",
+      date: "12/10",
+      type: ["session", "mood"],
+      duration: "15m Session",
+      note: "mood has been great and starting to see abs! :)",
+    },
+    {
+      id: "20",
+      date: "12/10",
+      type: ["session", "picture"],
+      duration: "15m Session",
+      photoUrl: "https://picsum.photos/400/300?random=6",
+    },
+  ];
 
   const handleViewProgress = (type: "photo" | "note") => {
     // Handle viewing progress
     console.log(`View ${type} progress`);
   };
 
-  useEffect(() => {
-    const fetchTimeline = async () => {
-      // 1. First get progress data
-      const { data, error } = await supabase
-        .from("progress")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+  // useEffect(() => {
+  //   const fetchTimeline = async () => {
+  //     // 1. First get progress data
+  //     const { data, error } = await supabase
+  //       .from("progress")
+  //       .select("*")
+  //       .eq("user_id", user.id)
+  //       .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error(error);
-        return;
-      }
+  //     if (error) {
+  //       console.error(error);
+  //       return;
+  //     }
 
-      // 2. Map base data with unique IDs
-      const mappedData = data?.map((item) => ({
-        id: item.id, // Add unique ID from the progress entry
-        date: new Date(item.created_at)
-          .toLocaleDateString("en-US", {
-            month: "numeric",
-            day: "numeric",
-          })
-          .replace("/", "/"),
-        type: [item.entry_type],
-        note: item.mood_description,
-        photoUrl: undefined,
-      }));
+  //     // 2. Map base data with unique IDs
+  //     const mappedData = data?.map((item) => ({
+  //       id: item.id, // Add unique ID from the progress entry
+  //       date: new Date(item.added_on)
+  //         .toLocaleDateString("en-US", {
+  //           month: "numeric",
+  //           day: "numeric",
+  //         })
+  //         .replace("/", "/"),
+  //       type: [item.entry_type],
+  //       note: item.mood_description,
+  //       photoUrl: undefined,
+  //     }));
 
-      setTimelineData(mappedData || []);
+  //     setTimelineData(mappedData || []);
 
-      // 3. Handle photos with private storage
-      const photoPromises = data
-        ?.filter((item) => item.picture_url)
-        .map(async (item) => {
-          try {
-            const { data: imageData, error } = await supabase.storage
-              .from("photo-progress")
-              .download(`${user.id}/${item.picture_url}`);
+  //     // 3. Handle photos with private storage
+  //     const photoPromises = data
+  //       ?.filter((item) => item.picture_url)
+  //       .map(async (item) => {
+  //         try {
+  //           const { data: imageData, error } = await supabase.storage
+  //             .from("photo-progress")
+  //             .download(`${user.id}/${item.picture_url}`);
 
-            if (error) throw error;
+  //           if (error) throw error;
 
-            // Convert blob to base64
-            return new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.readAsDataURL(imageData);
-              reader.onload = () => {
-                resolve({
-                  id: item.id, // Use ID instead of date for matching
-                  photoUrl: reader.result as string,
-                });
-              };
-              reader.onerror = reject;
-            });
-          } catch (error) {
-            console.error("Error downloading photo:", error);
-          }
-        });
+  //           // Convert blob to base64
+  //           return new Promise((resolve, reject) => {
+  //             const reader = new FileReader();
+  //             reader.readAsDataURL(imageData);
+  //             reader.onload = () => {
+  //               resolve({
+  //                 id: item.id, // Use ID instead of date for matching
+  //                 photoUrl: reader.result as string,
+  //               });
+  //             };
+  //             reader.onerror = reject;
+  //           });
+  //         } catch (error) {
+  //           console.error("Error downloading photo:", error);
+  //         }
+  //       });
 
-      // 4. Update state with photo URLs using ID matching
-      if (photoPromises) {
-        const photoResults = await Promise.all(photoPromises);
+  //     // 4. Update state with photo URLs using ID matching
+  //     if (photoPromises) {
+  //       const photoResults = await Promise.all(photoPromises);
 
-        setTimelineData((prev) =>
-          prev.map((item) => {
-            const photoData = photoResults.find((p) => p?.id === item.id);
-            return photoData ? { ...item, photoUrl: photoData.photoUrl } : item;
-          })
-        );
-      }
-    };
+  //       setTimelineData((prev) =>
+  //         prev.map((item) => {
+  //           const photoData = photoResults.find((p) => p?.id === item.id);
+  //           return photoData ? { ...item, photoUrl: photoData.photoUrl } : item;
+  //         })
+  //       );
+  //     }
+  //   };
 
-    fetchTimeline();
-  }, []);
+  //   fetchTimeline();
+  // }, []);
 
   return (
     <View style={[styles.container, { paddingTop: safeArea.top + 40 }]}>
@@ -173,42 +256,51 @@ export default function Page() {
         showsVerticalScrollIndicator={false}
       >
         <View>
-          {timelineData.map((item, index) => (
-            <View key={index} style={styles.timelineItem}>
+          {Object.entries(groupByDate(timelineData)).map(([date, items]) => (
+            <View key={date} style={styles.timelineItem}>
               <View style={styles.timelineLine} />
               <View style={styles.timelineDot} />
               <View style={styles.content}>
-                <Text style={styles.date}>{item.date}</Text>
-                <Text style={styles.description}>
-                  {item.type
-                    .map((type) =>
-                      type === "picture"
-                        ? "Photo"
-                        : type === "session"
-                        ? item.duration
-                        : "Note"
-                    )
-                    .join(" & ")}
-                </Text>
-                {item.photoUrl && (
-                  <Image source={{ uri: item.photoUrl }} style={styles.photo} />
-                )}
-                {item.note && (
-                  <View style={styles.noteContainer}>
-                    <Text style={styles.noteText}>"{item.note}"</Text>
+                <Text style={styles.date}>{date}</Text>
+                {items.map((item, index) => (
+                  <View key={item.id + index}>
+                    <Text style={styles.description}>
+                      {item.type
+                        .map((type) =>
+                          type === "picture"
+                            ? "Photo"
+                            : type === "session"
+                            ? item.duration
+                            : "Note"
+                        )
+                        .join(" & ")}
+                    </Text>
+                    {item.photoUrl && (
+                      <Image
+                        source={{ uri: item.photoUrl }}
+                        style={styles.photo}
+                      />
+                    )}
+                    {item.note && (
+                      <View style={styles.noteContainer}>
+                        <Text style={styles.noteText}>"{item.note}"</Text>
+                      </View>
+                    )}
+                    {(item.type.includes("picture") ||
+                      item.type.includes("mood")) && (
+                      <Pressable
+                        style={styles.viewProgressButton}
+                        onPress={() =>
+                          handleViewProgress(item.type[0] as "photo" | "note")
+                        }
+                      >
+                        <Text style={styles.viewProgressText}>
+                          view {item.type} progress
+                        </Text>
+                      </Pressable>
+                    )}
                   </View>
-                )}
-                {item.type.includes("picture") ||
-                  (item.type.includes("mood") && (
-                    <Pressable
-                      style={styles.viewProgressButton}
-                      // onPress={() => handleViewProgress(item.type)}
-                    >
-                      <Text style={styles.viewProgressText}>
-                        view {item.type} progress
-                      </Text>
-                    </Pressable>
-                  ))}
+                ))}
               </View>
             </View>
           ))}
@@ -265,6 +357,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingBottom: 20,
+    gap: 8,
   },
   date: {
     fontSize: 18,

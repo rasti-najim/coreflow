@@ -5,14 +5,19 @@ import * as Haptics from "expo-haptics";
 import { useFonts } from "expo-font";
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface ExerciseLayoutProps {
   title: string;
   description: string;
   type: "Warmup" | "Cooldown" | "Target";
   animationSource: string;
-  duration: number; // in seconds
+  duration: number;
   onComplete?: () => void;
+  onQuit?: () => void;
+  onDifferentExercise?: () => void;
+  totalExercises?: number;
+  currentExercise?: number;
 }
 
 export const ExerciseLayout = ({
@@ -22,21 +27,35 @@ export const ExerciseLayout = ({
   animationSource,
   duration,
   onComplete,
+  onQuit,
+  onDifferentExercise,
+  totalExercises,
+  currentExercise,
 }: ExerciseLayoutProps) => {
   const [timeLeft, setTimeLeft] = useState(duration);
   const [isActive, setIsActive] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
   const animation = useRef<LottieView>(null);
   const router = useRouter();
   const [fontsLoaded] = useFonts({
     KeeponTruckin: require("../assets/fonts/KeeponTruckin.ttf"),
   });
 
-  const onQuit = () => {
-    router.dismiss();
-  };
+  useEffect(() => {
+    setTimeLeft(duration);
+    setIsActive(false);
+    setIsCompleted(false);
 
-  const onDifferentExercise = () => {
-    router.dismiss();
+    // Reset animation
+    if (animation.current) {
+      animation.current.reset();
+      animation.current.pause();
+    }
+  }, [currentExercise, duration, animationSource]);
+
+  const handleQuit = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onQuit?.() || router.dismiss();
   };
 
   useEffect(() => {
@@ -48,7 +67,8 @@ export const ExerciseLayout = ({
           if (time <= 1) {
             clearInterval(interval);
             setIsActive(false);
-            onComplete?.();
+            setIsCompleted(true);
+            animation.current?.pause();
             return 0;
           }
           return time - 1;
@@ -57,7 +77,7 @@ export const ExerciseLayout = ({
     }
 
     return () => clearInterval(interval);
-  }, [isActive, timeLeft, onComplete]);
+  }, [isActive, timeLeft]);
 
   const handleStart = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -71,26 +91,46 @@ export const ExerciseLayout = ({
     animation.current?.pause();
   };
 
+  const handleNext = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onComplete?.();
+  };
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView edges={["top", "bottom"]} style={styles.container}>
+      {totalExercises && currentExercise && (
+        <Text style={styles.progress}>
+          Exercise {currentExercise} of {totalExercises}
+        </Text>
+      )}
+
       <Text style={styles.title}>
         {type}: {title}
       </Text>
       <Text style={styles.description}>{description}</Text>
 
       <LottieView
+        key={animationSource}
         ref={animation}
         source={{ uri: animationSource }}
-        autoPlay={true}
-        loop={true}
+        autoPlay={false}
+        loop
         style={styles.animation}
       />
 
       <View style={styles.timerContainer}>
-        <Text style={styles.timerText}>{timeLeft} sec</Text>
+        <Text style={isCompleted ? styles.completedText : styles.timerText}>
+          {isCompleted ? "Complete!" : `${timeLeft} sec`}
+        </Text>
       </View>
 
-      {!isActive ? (
+      {isCompleted ? (
+        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+          <Text style={styles.nextButtonText}>
+            {currentExercise === totalExercises ? "Finish" : "Next Exercise"}
+          </Text>
+        </TouchableOpacity>
+      ) : !isActive ? (
         <TouchableOpacity style={styles.beginButton} onPress={handleStart}>
           <Text style={styles.beginButtonText}>begin</Text>
         </TouchableOpacity>
@@ -101,20 +141,22 @@ export const ExerciseLayout = ({
       )}
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.quitButton} onPress={onQuit}>
+        <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
           <Text style={styles.quitButtonText}>quit</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.differentExerciseButton}
-          onPress={onDifferentExercise}
-        >
-          <Text style={styles.differentExerciseButtonText}>
-            different exercise
-          </Text>
-          <FontAwesome name="refresh" size={16} color="#4A2318" />
-        </TouchableOpacity>
+        {!isCompleted && (
+          <TouchableOpacity
+            style={styles.differentExerciseButton}
+            onPress={onDifferentExercise}
+          >
+            <Text style={styles.differentExerciseButtonText}>
+              different exercise
+            </Text>
+            <FontAwesome name="refresh" size={16} color="#4A2318" />
+          </TouchableOpacity>
+        )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -123,8 +165,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFE9D5",
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 24,
-    paddingTop: 40,
+    // paddingVertical: 32,
   },
   title: {
     fontSize: 24,
@@ -141,8 +184,14 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   animation: {
+    flex: 1,
     width: "100%",
-    height: 300,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    // backgroundColor: "red",
     // marginBottom: 32,
   },
   timerContainer: {
@@ -153,6 +202,12 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontFamily: "KeeponTruckin",
     color: "#4A2318",
+    textAlign: "center",
+  },
+  completedText: {
+    fontSize: 48,
+    fontFamily: "KeeponTruckin",
+    color: "#2E8B57",
     textAlign: "center",
   },
   beginButton: {
@@ -198,6 +253,25 @@ const styles = StyleSheet.create({
   differentExerciseButtonText: {
     fontSize: 18,
     color: "#4A2318",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  progress: {
+    fontSize: 18,
+    color: "#4A2318",
+    marginBottom: 8,
+    alignSelf: "flex-start",
+  },
+  nextButton: {
+    backgroundColor: "#4A2318",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  nextButtonText: {
+    color: "#FFE9D5",
+    fontSize: 20,
     fontWeight: "bold",
     textAlign: "center",
   },
