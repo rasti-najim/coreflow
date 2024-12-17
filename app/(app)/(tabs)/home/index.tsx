@@ -75,8 +75,7 @@ export default function Page() {
           setSchedule(weekSchedule.sessions);
 
           // Get today's date in YYYY-MM-DD format using local timezone
-          // const today = DateTime.now().toISODate();
-          const today = "2024-12-18";
+          const today = DateTime.now().toISODate();
           console.log("today", today);
           // Find today's workout from the sessions array
           const session = weekSchedule.sessions.find(
@@ -98,8 +97,9 @@ export default function Page() {
 
   useEffect(() => {
     const getConsistency = async () => {
-      const consistency = await calculateConsistency(user.id);
-      console.log("consistency", consistency);
+      const consistencyStats = await calculateConsistency(user.id);
+      console.log("consistency", consistencyStats);
+      setConsistency(consistencyStats);
     };
     getConsistency();
   }, [schedule]);
@@ -210,11 +210,28 @@ export default function Page() {
             <Text
               style={[
                 styles.scheduleWorkout,
-                status === "completed" && styles.highlighted,
+                // status === "completed" && styles.completedWorkout,
+                // status === "skipped" && styles.skippedWorkout,
               ]}
             >
               {focus}
             </Text>
+            {status === "completed" && (
+              <FontAwesome6
+                name="check"
+                size={16}
+                color="#40874C"
+                style={styles.statusIcon}
+              />
+            )}
+            {status === "skipped" && (
+              <FontAwesome6
+                name="xmark"
+                size={16}
+                color="#FF6B6B"
+                style={styles.statusIcon}
+              />
+            )}
           </View>
         ))}
       </View>
@@ -333,11 +350,11 @@ const styles = StyleSheet.create({
   scheduleRow: {
     flexDirection: "row",
     marginBottom: 8,
+    alignItems: "center",
   },
   scheduleDay: {
     fontWeight: "bold",
     fontSize: 18,
-    // color: "#4A2318",
     opacity: 0.7,
     width: 80,
   },
@@ -345,6 +362,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     opacity: 0.7,
+    marginRight: 8,
+  },
+  completedWorkout: {
+    color: "#40874C",
+  },
+  skippedWorkout: {
+    color: "#FF6B6B",
+  },
+  statusIcon: {
+    marginLeft: 4,
   },
   highlighted: {
     color: "#40874C",
