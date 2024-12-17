@@ -13,7 +13,7 @@ interface ExerciseLayoutProps {
   type: "Warmup" | "Cooldown" | "Target";
   animationSource: string;
   duration: number;
-  onComplete?: () => void;
+  onNext?: () => void;
   onQuit?: () => void;
   onDifferentExercise?: () => void;
   totalExercises?: number;
@@ -26,7 +26,7 @@ export const ExerciseLayout = ({
   type,
   animationSource,
   duration,
-  onComplete,
+  onNext,
   onQuit,
   onDifferentExercise,
   totalExercises,
@@ -93,7 +93,7 @@ export const ExerciseLayout = ({
 
   const handleNext = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onComplete?.();
+    onNext?.();
   };
 
   return (

@@ -23,12 +23,27 @@ export default function Modal() {
     return <Redirect href="/welcome" />;
   }
 
-  const handleExerciseComplete = () => {
+  const handleNext = async () => {
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
     } else {
       // Session completed
-      router.back();
+      try {
+        const { data, error } = await supabase
+          .from("sessions")
+          .update({ status: "completed" })
+          .eq("id", session_id)
+          .eq("user_id", user.id);
+
+        if (error) {
+          console.error("Error updating session status:", error);
+        }
+
+        console.log("session updated", data);
+        router.dismiss();
+      } catch (error) {
+        console.error("Error updating session status:", error);
+      }
     }
   };
 
@@ -148,11 +163,11 @@ export default function Modal() {
       <ExerciseLayout
         title={currentExercise.name}
         description={currentExercise.description}
-        duration={20}
+        duration={2}
         animationSource={animationSources[currentExercise.id]}
         type={currentExercise.type}
-        onComplete={handleExerciseComplete}
-        onQuit={() => router.back()}
+        onNext={handleNext}
+        onQuit={() => router.dismiss()}
         totalExercises={exercises.length}
         currentExercise={currentExerciseIndex + 1}
       />

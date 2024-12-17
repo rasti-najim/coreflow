@@ -75,7 +75,8 @@ export default function Page() {
           setSchedule(weekSchedule.sessions);
 
           // Get today's date in YYYY-MM-DD format using local timezone
-          const today = DateTime.now().toISODate();
+          // const today = DateTime.now().toISODate();
+          const today = "2024-12-18";
           console.log("today", today);
           // Find today's workout from the sessions array
           const session = weekSchedule.sessions.find(
