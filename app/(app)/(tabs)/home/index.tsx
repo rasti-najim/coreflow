@@ -7,6 +7,7 @@ import * as Haptics from "expo-haptics";
 import supabase from "@/lib/supabase";
 import { useAuth } from "@/components/auth-context";
 import { createSchedule, checkScheduleStatus } from "@/lib/schedule";
+import { DateTime } from "luxon";
 
 type Session = {
   focus: string;
@@ -58,17 +59,18 @@ export default function Page() {
           .from("weekly_sessions")
           .select("*")
           .eq("user_id", user.id)
-          .gte("week_start", new Date().toISOString())
+          .gte("week_start", DateTime.now().toISODate())
           .order("week_start", { ascending: true })
           .limit(1)
           .single();
 
         if (weekSchedule) {
+          console.log("weekSchedule", weekSchedule);
           setSchedule(weekSchedule.sessions);
 
-          // Get today's date in YYYY-MM-DD format
-          const today = new Date().toISOString().split("T")[0];
-
+          // Get today's date in YYYY-MM-DD format using local timezone
+          const today = DateTime.now().toISODate();
+          console.log("today", today);
           // Find today's workout from the sessions array
           const session = weekSchedule.sessions.find(
             (session: any) => session.scheduled_date === today
@@ -143,11 +145,8 @@ export default function Page() {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
-      timeZone: "UTC",
-    });
+    const date = DateTime.fromISO(dateString);
+    return date.toFormat("EEE");
   };
 
   return (
@@ -171,15 +170,10 @@ export default function Page() {
 
       {/* Today's Workout */}
       <View style={styles.todayContainer}>
-        <Text style={styles.day}>
-          {new Date().toLocaleDateString("en-US", {
-            weekday: "long",
-            timeZone: "UTC",
-          })}
-        </Text>
+        <Text style={styles.day}>{DateTime.now().toFormat("EEEE")}</Text>
         <View style={styles.workoutRow}>
           <Text style={styles.workout}>
-            {duration}m {todaySession?.focus}
+            {todaySession?.focus ?? "No workout scheduled. Enjoy your day!"}
           </Text>
 
           {todaySession?.focus && (

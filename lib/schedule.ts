@@ -1,4 +1,5 @@
 import supabase from "./supabase";
+import { DateTime } from "luxon";
 
 type WeeklySession = "1-2" | "3" | "5";
 type Focus = "full body" | "upper body" | "lower body" | "core";
@@ -6,7 +7,7 @@ type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri";
 type ScheduleAction = "create" | "update" | "extend";
 
 export interface ScheduledWorkout {
-  date: Date;
+  date: DateTime;
   focus: Focus;
 }
 
@@ -35,23 +36,23 @@ const EXERCISE_TIMING = {
 function getNextDate(
   day: Day,
   weekOffset: number = 0,
-  startDate: Date = new Date()
-): Date {
-  const today = startDate;
+  startDate: DateTime = DateTime.now()
+): DateTime {
   const dayIndex = ["Mon", "Tue", "Wed", "Thu", "Fri"].indexOf(day);
-  const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  const currentDay = startDate.weekday; // 1 = Monday, 7 = Sunday
   const targetDay = dayIndex + 1; // Add 1 because our days start from Monday=1
 
-  const date = new Date(today);
-  const daysToAdd = (targetDay + 7 - currentDay) % 7;
-  // Add the week offset (0 for current week, 7 for next week, etc.)
-  date.setDate(date.getDate() + daysToAdd + weekOffset * 7);
-  return date;
+  let daysToAdd = targetDay - currentDay;
+  if (daysToAdd <= 0) {
+    daysToAdd += 7;
+  }
+
+  return startDate.plus({ days: daysToAdd + weekOffset * 7 });
 }
 
 export function createMonthlyRoutine(
   weekly_preference: WeeklySession,
-  startDate: Date = new Date(),
+  startDate: DateTime = DateTime.now(),
   weeksToSchedule: number = 4
 ): ScheduledWorkout[] {
   const schedule: ScheduledWorkout[] = [];
@@ -74,7 +75,7 @@ export function createMonthlyRoutine(
 export function createWeeklyRoutine(
   weekly_preference: WeeklySession,
   weekOffset: number = 0,
-  startDate: Date = new Date()
+  startDate: DateTime = DateTime.now()
 ): ScheduledWorkout[] {
   const availableDays: Day[] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
   const schedule: ScheduledWorkout[] = [];
@@ -224,18 +225,13 @@ export async function createSchedule(
     }
 
     // Get the start date based on action
-    let startDate: Date;
+    let startDate: DateTime;
     switch (action) {
       case "create":
-        // Start from today for new schedules
-        startDate = new Date();
-        break;
       case "update":
-        // Start from today for updates
-        startDate = new Date();
+        startDate = DateTime.now();
         break;
       case "extend":
-        // Get the last scheduled session date
         const { data: lastSession } = await supabase
           .from("sessions")
           .select("scheduled_date")
@@ -244,11 +240,10 @@ export async function createSchedule(
           .limit(1)
           .single();
 
-        // Start from the day after the last session
         startDate = lastSession
-          ? new Date(lastSession.scheduled_date)
-          : new Date();
-        startDate.setDate(startDate.getDate() + 1);
+          ? DateTime.fromISO(lastSession.scheduled_date)
+          : DateTime.now();
+        startDate = startDate.plus({ days: 1 });
         break;
     }
 
@@ -268,7 +263,7 @@ export async function createSchedule(
         .delete()
         .eq("user_id", userId)
         .eq("status", "scheduled")
-        .gte("scheduled_date", new Date().toISOString().split("T")[0]);
+        .gte("scheduled_date", DateTime.now().toISODate());
     }
 
     // Create sessions for each day in the schedule
@@ -285,7 +280,7 @@ export async function createSchedule(
         .insert({
           user_id: userId,
           focus: day.focus,
-          scheduled_date: day.date,
+          scheduled_date: day.date.toISODate(),
           warmup_exercise: warmup_exercise,
           target_exercises: target_exercises,
           cooldown_exercise: cooldown_exercise,
@@ -309,12 +304,14 @@ export async function createSchedule(
 
 export async function checkScheduleStatus(userId: string) {
   try {
+    const today = DateTime.now().toISODate();
+
     const { data: futureSessions, error } = await supabase
       .from("sessions")
       .select("*")
       .eq("user_id", userId)
       .eq("status", "scheduled")
-      .gte("scheduled_date", new Date().toISOString().split("T")[0])
+      .gte("scheduled_date", today)
       .order("scheduled_date", { ascending: true });
 
     if (error) {
@@ -322,20 +319,21 @@ export async function checkScheduleStatus(userId: string) {
     }
 
     if (!futureSessions || futureSessions.length === 0) {
-      await createSchedule(userId, "extend");
+      return await createSchedule(userId, "extend");
     }
 
     // Check if less than a week of sessions remaining
-    const lastSessionDate = new Date(
+    const lastSessionDate = DateTime.fromISO(
       futureSessions[futureSessions.length - 1].scheduled_date
     );
-    const daysRemaining = Math.ceil(
-      (lastSessionDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-    );
+    const daysRemaining = lastSessionDate.diff(DateTime.now(), "days").days;
 
     if (daysRemaining <= 7) {
+      console.log("creating future sessions");
       return await createSchedule(userId, "extend");
     }
+
+    console.log("no future sessions created");
 
     return futureSessions;
   } catch (error) {
