@@ -8,6 +8,7 @@ import supabase from "@/lib/supabase";
 import { useAuth } from "@/components/auth-context";
 import { createSchedule, checkScheduleStatus } from "@/lib/schedule";
 import { DateTime } from "luxon";
+import { calculateConsistency, ConsistencyStats } from "@/lib/consistency";
 
 type Session = {
   focus: string;
@@ -25,6 +26,11 @@ export default function Page() {
   const [todaySession, setTodaySession] = useState<Session | undefined>();
   const [showOptions, setShowOptions] = useState(false);
   const [duration, setDuration] = useState<string>("");
+  const [consistency, setConsistency] = useState<ConsistencyStats>({
+    currentWeekCount: 0,
+    weeklyStreak: 0,
+    dailyStreak: 0,
+  });
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -88,6 +94,14 @@ export default function Page() {
 
     loadSchedule();
   }, []);
+
+  useEffect(() => {
+    const getConsistency = async () => {
+      const consistency = await calculateConsistency(user.id);
+      console.log("consistency", consistency);
+    };
+    getConsistency();
+  }, [schedule]);
 
   const onBegin = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -210,12 +224,24 @@ export default function Page() {
           <Text style={styles.consistencyTitle}>Patience & Persistence 🔑</Text>
         </View>
         <Text style={styles.consistencyText}>
-          <Text style={{ textDecorationLine: "underline" }}>3 weeks</Text>{" "}
+          <Text style={{ textDecorationLine: "underline" }}>
+            {consistency.weeklyStreak} weeks
+          </Text>{" "}
           consistent
         </Text>
         <Text style={styles.consistencyText}>
-          <Text style={{ textDecorationLine: "underline" }}>1 day(s)</Text>{" "}
+          <Text style={{ textDecorationLine: "underline" }}>
+            {consistency.currentWeekCount}{" "}
+            {consistency.currentWeekCount === 1 ? "day" : "days"}
+          </Text>{" "}
           consistent this week
+        </Text>
+        <Text style={styles.consistencyText}>
+          <Text style={{ textDecorationLine: "underline" }}>
+            {consistency.dailyStreak}{" "}
+            {consistency.dailyStreak === 1 ? "day" : "days"}
+          </Text>{" "}
+          daily streak
         </Text>
       </View>
 
