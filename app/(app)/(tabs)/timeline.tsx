@@ -3,10 +3,18 @@ import supabase from "@/lib/supabase";
 import { LinearGradient } from "expo-linear-gradient";
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Pressable,
+  RefreshControl,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { DateTime } from "luxon";
+import { PhotoSkeleton } from "@/components/photo-skeleton";
 
 type TimelineItem = {
   id: string;
@@ -32,216 +40,98 @@ export default function Page() {
   const { user } = useAuth();
   const safeArea = useSafeAreaInsets();
   const [timelineData, setTimelineData] = useState<TimelineItem[]>([]);
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   if (!user) {
     return <Redirect href="/welcome" />;
   }
 
-  // const timelineData: TimelineItem[] = [
-  //   {
-  //     id: "1",
-  //     date: "11/6",
-  //     type: ["picture"],
-  //     photoUrl: "https://picsum.photos/400/300",
-  //   },
-  //   {
-  //     id: "2",
-  //     date: "11/7",
-  //     type: ["session"],
-  //     duration: "10m Session",
-  //   },
-  //   {
-  //     id: "3",
-  //     date: "11/9",
-  //     type: ["session"],
-  //     duration: "10m Session",
-  //   },
-  //   {
-  //     id: "4",
-  //     date: "11/11",
-  //     type: ["session"],
-  //     duration: "10m Session",
-  //   },
-  //   {
-  //     id: "5",
-  //     date: "11/13",
-  //     type: ["mood"],
-  //     note: "mood has been great and starting to see abs! :)",
-  //   },
-  //   {
-  //     id: "6",
-  //     date: "11/16",
-  //     type: ["session"],
-  //     duration: "15m Session",
-  //   },
-  //   {
-  //     id: "7",
-  //     date: "11/18",
-  //     type: ["picture"],
-  //     photoUrl: "https://picsum.photos/400/300?random=2",
-  //   },
-  //   {
-  //     id: "8",
-  //     date: "11/20",
-  //     type: ["session"],
-  //     duration: "15m Session",
-  //   },
-  //   {
-  //     id: "9",
-  //     date: "11/22",
-  //     type: ["session"],
-  //     duration: "15m Session",
-  //   },
-  //   {
-  //     id: "10",
-  //     date: "11/24",
-  //     type: ["session"],
-  //     duration: "15m Session",
-  //   },
-  //   {
-  //     id: "11",
-  //     date: "11/26",
-  //     type: ["session"],
-  //     duration: "15m Session",
-  //   },
-  //   {
-  //     id: "12",
-  //     date: "11/28",
-  //     type: ["session"],
-  //     duration: "15m Session",
-  //   },
-  //   {
-  //     id: "13",
-  //     date: "11/30",
-  //     type: ["session"],
-  //     duration: "15m Session",
-  //   },
-  //   {
-  //     id: "14",
-  //     date: "12/2",
-  //     type: ["session", "picture"],
-  //     duration: "15m Session",
-  //     photoUrl: "https://picsum.photos/400/300?random=3",
-  //   },
-  //   {
-  //     id: "15",
-  //     date: "12/4",
-  //     type: ["session", "mood", "picture"],
-  //     duration: "15m Session",
-  //     note: "mood has been great and starting to see abs! :)",
-  //     photoUrl: "https://picsum.photos/400/300?random=4",
-  //   },
-  //   {
-  //     id: "16",
-  //     date: "12/6",
-  //     type: ["session", "mood", "picture"],
-  //     duration: "15m Session",
-  //     note: "mood has been great and starting to see abs! :)",
-  //     photoUrl: "https://picsum.photos/400/300?random=5",
-  //   },
-  //   {
-  //     id: "17",
-  //     date: "12/8",
-  //     type: ["session", "mood"],
-  //     duration: "15m Session",
-  //     note: "mood has been great and starting to see abs! :)",
-  //   },
-  //   {
-  //     id: "18",
-  //     date: "12/10",
-  //     type: ["session", "mood"],
-  //     duration: "15m Session",
-  //     note: "mood has been great and starting to see abs! :)",
-  //   },
-  //   {
-  //     id: "19",
-  //     date: "12/10",
-  //     type: ["session", "mood"],
-  //     duration: "15m Session",
-  //     note: "mood has been great and starting to see abs! :)",
-  //   },
-  //   {
-  //     id: "20",
-  //     date: "12/10",
-  //     type: ["session", "picture"],
-  //     duration: "15m Session",
-  //     photoUrl: "https://picsum.photos/400/300?random=6",
-  //   },
-  // ];
+  const fetchBasicData = async () => {
+    const { data, error } = await supabase
+      .from("progress")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    const mappedData = data?.map((item) => ({
+      id: item.id,
+      date: DateTime.fromISO(item.added_on).toFormat("MM/dd"),
+      type: [item.entry_type],
+      note: item.mood_description,
+      photoUrl: undefined,
+    }));
+
+    setTimelineData(mappedData || []);
+
+    if (data?.some((item) => item.picture_url)) {
+      setIsLoadingPhotos(true);
+      loadPhotos(data);
+    }
+  };
+
+  const loadPhotos = async (data: any[]) => {
+    const photoPromises = data
+      .filter((item) => item.picture_url)
+      .map(async (item) => {
+        try {
+          const { data: imageData, error } = await supabase.storage
+            .from("photo-progress")
+            .download(`${user.id}/${item.picture_url}`);
+
+          if (error) throw error;
+
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(imageData);
+            reader.onload = () => {
+              resolve({
+                id: item.id,
+                photoUrl: reader.result as string,
+              });
+            };
+            reader.onerror = reject;
+          });
+        } catch (error) {
+          console.error("Error downloading photo:", error);
+          return null;
+        }
+      });
+
+    const photoResults = await Promise.all(photoPromises);
+
+    setTimelineData((prev) =>
+      prev.map((item) => {
+        const photoData = photoResults.find((p) => p?.id === item.id);
+        return photoData ? { ...item, photoUrl: photoData.photoUrl } : item;
+      })
+    );
+    setIsLoadingPhotos(false);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchBasicData();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    fetchBasicData();
+  }, []);
+
+  if (!user) {
+    return <Redirect href="/welcome" />;
+  }
 
   const handleViewProgress = (type: "photo" | "note") => {
     // Handle viewing progress
     console.log(`View ${type} progress`);
   };
-
-  useEffect(() => {
-    const fetchTimeline = async () => {
-      // 1. First get progress data
-      const { data, error } = await supabase
-        .from("progress")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error(error);
-        return;
-      }
-
-      // 2. Map base data with unique IDs
-      const mappedData = data?.map((item) => ({
-        id: item.id, // Add unique ID from the progress entry
-        date: DateTime.fromISO(item.added_on).toFormat("MM/dd"),
-        type: [item.entry_type],
-        note: item.mood_description,
-        photoUrl: undefined,
-      }));
-
-      setTimelineData(mappedData || []);
-
-      // 3. Handle photos with private storage
-      const photoPromises = data
-        ?.filter((item) => item.picture_url)
-        .map(async (item) => {
-          try {
-            const { data: imageData, error } = await supabase.storage
-              .from("photo-progress")
-              .download(`${user.id}/${item.picture_url}`);
-
-            if (error) throw error;
-
-            // Convert blob to base64
-            return new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.readAsDataURL(imageData);
-              reader.onload = () => {
-                resolve({
-                  id: item.id, // Use ID instead of date for matching
-                  photoUrl: reader.result as string,
-                });
-              };
-              reader.onerror = reject;
-            });
-          } catch (error) {
-            console.error("Error downloading photo:", error);
-          }
-        });
-
-      // 4. Update state with photo URLs using ID matching
-      if (photoPromises) {
-        const photoResults = await Promise.all(photoPromises);
-
-        setTimelineData((prev) =>
-          prev.map((item) => {
-            const photoData = photoResults.find((p) => p?.id === item.id);
-            return photoData ? { ...item, photoUrl: photoData.photoUrl } : item;
-          })
-        );
-      }
-    };
-
-    fetchTimeline();
-  }, []);
 
   return (
     <View style={[styles.container, { paddingTop: safeArea.top + 40 }]}>
@@ -250,6 +140,9 @@ export default function Page() {
         style={styles.scrollContainer}
         contentContainerStyle={styles.timeline}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         <View>
           {Object.entries(groupByDate(timelineData)).map(([date, items]) => (
@@ -271,11 +164,21 @@ export default function Page() {
                         )
                         .join(" & ")}
                     </Text>
-                    {item.photoUrl && (
-                      <Image
-                        source={{ uri: item.photoUrl }}
-                        style={styles.photo}
-                      />
+                    {item.type.includes("picture") && (
+                      <>
+                        {!item.photoUrl ? (
+                          <PhotoSkeleton
+                            width="100%"
+                            height={200}
+                            borderRadius={8}
+                          />
+                        ) : (
+                          <Image
+                            source={{ uri: item.photoUrl }}
+                            style={styles.photo}
+                          />
+                        )}
+                      </>
                     )}
                     {item.note && (
                       <View style={styles.noteContainer}>
