@@ -14,11 +14,14 @@ import { useAuth } from "@/components/auth-context";
 import supabase from "@/lib/supabase";
 import { DateTime } from "luxon";
 import { FontAwesome } from "@expo/vector-icons";
+import { Toast } from "@/components/toast";
 export default function Page() {
   const { user } = useAuth();
   const [mood, setMood] = useState("");
   const router = useRouter();
   const safeArea = useSafeAreaInsets();
+  const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -27,6 +30,7 @@ export default function Page() {
   const handleAddUpdate = async () => {
     // Handle saving the mood update
     console.log("Mood update:", mood);
+    setIsSaving(true);
 
     try {
       const { data, error } = await supabase
@@ -41,13 +45,18 @@ export default function Page() {
 
       if (error) {
         console.error("Error adding mood update:", error);
+        setToast("Error adding mood update");
       } else {
         console.log("Mood update added successfully:", data);
+        setToast("Mood update added successfully");
       }
 
       router.dismiss();
     } catch (error) {
       console.error("Error adding mood update:", error);
+      setToast("Error adding mood update");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -78,12 +87,24 @@ export default function Page() {
         />
 
         <TouchableOpacity
-          style={[styles.button, { opacity: mood.length > 0 ? 1 : 0.5 }]}
+          style={[
+            styles.button,
+            { opacity: mood.length > 0 && !isSaving ? 1 : 0.5 },
+          ]}
           onPress={handleAddUpdate}
-          disabled={mood.length === 0}
+          disabled={mood.length === 0 || isSaving}
         >
-          <Text style={styles.buttonText}>add update</Text>
+          <Text style={styles.buttonText}>
+            {isSaving ? "Saving..." : "Add Update"}
+          </Text>
         </TouchableOpacity>
+        {toast && (
+          <Toast
+            message={toast}
+            onHide={() => setToast(null)}
+            type={toast.includes("Error") ? "error" : "success"}
+          />
+        )}
       </View>
     </TouchableWithoutFeedback>
   );

@@ -13,13 +13,15 @@ import { DateTime } from "luxon";
 import { CustomCameraView } from "@/components/camera-view";
 import { Camera, CameraView } from "expo-camera";
 import { FontAwesome, FontAwesome6 } from "@expo/vector-icons";
-
+import { Toast } from "@/components/toast";
 export default function Page() {
   const { user } = useAuth();
   const router = useRouter();
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const safeArea = useSafeAreaInsets();
   const [showCamera, setShowCamera] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -62,6 +64,7 @@ export default function Page() {
   };
 
   const handleAddUpdate = async () => {
+    setIsSaving(true);
     console.log("uploading photo");
 
     try {
@@ -79,6 +82,8 @@ export default function Page() {
 
       if (error) {
         console.error(error);
+        setToast("Error adding picture update");
+        return;
       }
 
       const { data: progressData, error: progressError } = await supabase
@@ -92,13 +97,18 @@ export default function Page() {
 
       if (progressError) {
         console.error(progressError);
+        setToast("Error adding picture update");
+        return;
       }
 
       console.log("photo uploaded", data);
-
+      setToast("Picture update added successfully");
       router.dismiss();
     } catch (error) {
       console.error(error);
+      setToast("Error adding picture update");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -141,15 +151,17 @@ export default function Page() {
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={styles.uploadButton}
+            style={[styles.uploadButton, { opacity: !isSaving ? 1 : 0.5 }]}
             onPress={handleTakePhoto}
+            disabled={isSaving}
           >
             <Text style={styles.uploadButtonText}>Take Photo</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.uploadButton}
+            style={[styles.uploadButton, { opacity: !isSaving ? 1 : 0.5 }]}
             onPress={handleSelectFromLibrary}
+            disabled={isSaving}
           >
             <Text style={styles.uploadButtonText}>Choose from Library</Text>
           </TouchableOpacity>
@@ -163,9 +175,13 @@ export default function Page() {
       </View>
 
       <TouchableOpacity
-        style={[styles.button, !photo && styles.buttonDisabled]}
+        style={[
+          styles.button,
+          !photo && styles.buttonDisabled,
+          { opacity: !isSaving ? 1 : 0.5 },
+        ]}
         onPress={handleAddUpdate}
-        disabled={!photo}
+        disabled={!photo || isSaving}
       >
         <View style={styles.buttonContent}>
           <Text
@@ -175,6 +191,13 @@ export default function Page() {
           </Text>
         </View>
       </TouchableOpacity>
+      {toast && (
+        <Toast
+          message={toast}
+          onHide={() => setToast(null)}
+          type={toast.includes("Error") ? "error" : "success"}
+        />
+      )}
     </View>
   );
 }
