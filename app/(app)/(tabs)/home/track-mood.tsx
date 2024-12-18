@@ -12,7 +12,8 @@ import { Redirect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/components/auth-context";
 import supabase from "@/lib/supabase";
-
+import { DateTime } from "luxon";
+import { FontAwesome } from "@expo/vector-icons";
 export default function Page() {
   const { user } = useAuth();
   const [mood, setMood] = useState("");
@@ -34,7 +35,7 @@ export default function Page() {
           mood_description: mood,
           entry_type: "mood",
           user_id: user.id,
-          added_on: new Date().toISOString().split("T")[0],
+          added_on: DateTime.now().toISODate(),
         })
         .select();
 
@@ -52,7 +53,15 @@ export default function Page() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={[styles.container, { paddingTop: safeArea.top + 40 }]}>
+      <View style={[styles.container, { paddingTop: safeArea.top }]}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.dismissButton}
+            onPress={() => router.dismiss()}
+          >
+            <FontAwesome name="times" size={24} color="#4A2318" />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.title}>Add Text Update</Text>
         <Text style={styles.subtitle}>
           Describe your current mood or status:
@@ -68,7 +77,11 @@ export default function Page() {
           autoFocus
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleAddUpdate}>
+        <TouchableOpacity
+          style={[styles.button, { opacity: mood.length > 0 ? 1 : 0.5 }]}
+          onPress={handleAddUpdate}
+          disabled={mood.length === 0}
+        >
           <Text style={styles.buttonText}>add update</Text>
         </TouchableOpacity>
       </View>
@@ -81,6 +94,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFE9D5",
     paddingHorizontal: 24,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    // paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  dismissButton: {
+    padding: 8,
   },
   title: {
     fontSize: 40,

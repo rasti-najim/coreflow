@@ -72,6 +72,14 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.241331490609-ru0e1cbhj9eb9g56i2if9009aa8uekff"
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
+          "recordAudioAndroid": true
+        }
       ]
     ],
     "experiments": {

@@ -6,6 +6,7 @@ import { FontAwesome } from "@expo/vector-icons";
 import supabase from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-context";
+import { DateTime } from "luxon";
 
 export default function Modal() {
   const { user } = useAuth();
@@ -29,17 +30,32 @@ export default function Modal() {
     } else {
       // Session completed
       try {
-        const { data, error } = await supabase
-          .from("sessions")
-          .update({ status: "completed" })
-          .eq("id", session_id)
-          .eq("user_id", user.id);
+        const [sessionUpdate, progressInsert] = await Promise.all([
+          supabase
+            .from("sessions")
+            .update({ status: "completed" })
+            .eq("id", session_id)
+            .eq("user_id", user.id),
+          supabase.from("progress").insert({
+            user_id: user.id,
+            entry_type: "session",
+            added_on: DateTime.now().toISODate(),
+          }),
+        ]);
 
-        if (error) {
-          console.error("Error updating session status:", error);
+        const { data: sessionData, error: sessionError } = sessionUpdate;
+        const { data: progressData, error: progressError } = progressInsert;
+
+        if (sessionError) {
+          console.error("Error updating session status:", sessionError);
         }
 
-        console.log("session updated", data);
+        if (progressError) {
+          console.error("Error inserting progress:", progressError);
+        }
+
+        console.log("session updated", sessionData);
+        console.log("progress inserted", progressData);
         router.dismiss();
       } catch (error) {
         console.error("Error updating session status:", error);
