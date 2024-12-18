@@ -83,7 +83,7 @@ export default function Page() {
 
           // Find today's workout from the sessions array
           const session = weekSchedule.sessions.find(
-            (session: any) => session.scheduled_date === today
+            (session: any) => session.scheduled_date === today.toISODate()
           );
 
           setTodaySession(session);
@@ -189,10 +189,12 @@ export default function Page() {
         <Text style={styles.day}>{DateTime.now().toFormat("EEEE")}</Text>
         <View style={styles.workoutRow}>
           <Text style={styles.workout}>
-            {todaySession?.focus ?? "No workout scheduled. Enjoy your day!"}
+            {todaySession?.status === "completed"
+              ? "🎉 You completed your workout!"
+              : todaySession?.focus ?? "No workout scheduled. Enjoy your day!"}
           </Text>
 
-          {todaySession?.focus && (
+          {todaySession?.status !== "completed" && (
             <TouchableOpacity style={styles.beginButton} onPress={onBegin}>
               <Text style={styles.beginButtonText}>begin</Text>
             </TouchableOpacity>
@@ -255,13 +257,13 @@ export default function Page() {
           </Text>{" "}
           consistent this week
         </Text>
-        <Text style={styles.consistencyText}>
+        {/* <Text style={styles.consistencyText}>
           <Text style={{ textDecorationLine: "underline" }}>
             {consistency.dailyStreak}{" "}
             {consistency.dailyStreak === 1 ? "day" : "days"}
           </Text>{" "}
           daily streak
-        </Text>
+        </Text> */}
       </View>
 
       {/* Navigation Bar */}

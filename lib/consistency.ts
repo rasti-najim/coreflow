@@ -15,19 +15,24 @@ export async function calculateConsistency(
       .from("weekly_sessions")
       .select("*")
       .eq("user_id", userId)
-      .order("week_start", { ascending: false });
+      .order("week_start", { ascending: true });
 
     if (error) {
       throw error;
     }
 
+    const today = DateTime.now();
+    const mondayOfThisWeek = today.startOf("week");
+    const weekStartStr = mondayOfThisWeek.toISODate();
+
     // Get current week sessions
-    const currentWeekSessions = weeklySessions.find((session) =>
-      session.week_start.includes(DateTime.now().toISODate())
+    const currentWeekSessions = weeklySessions.find(
+      (session) => session.week_start >= weekStartStr
     );
 
     // Calculate current week consistency - only count consecutive completed sessions
     let currentWeekCount = 0;
+    console.log("currentWeekSessions", currentWeekSessions);
     if (currentWeekSessions?.sessions) {
       const sortedSessions = [...currentWeekSessions.sessions].sort(
         (a, b) =>
@@ -54,14 +59,13 @@ export async function calculateConsistency(
     // Calculate weekly streak
     let weeklyStreak = 0;
     for (const weekSession of weeklySessions) {
-      if (weekSession.completed_sessions > 0) {
+      if (weekSession.completed_sessions >= weekSession.total_sessions) {
         weeklyStreak++;
       } else {
         break;
       }
     }
 
-    // For now, return 0 for daily streak (can implement later)
     let dailyStreak = 0;
 
     for (const weekSession of weeklySessions) {
