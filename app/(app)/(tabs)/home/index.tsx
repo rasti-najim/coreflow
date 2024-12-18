@@ -61,31 +61,32 @@ export default function Page() {
   useEffect(() => {
     const loadSchedule = async () => {
       try {
+        const today = DateTime.now();
+        const mondayOfThisWeek = today.startOf("week");
+        const weekStartStr = mondayOfThisWeek.toISODate();
+
         const { data: weekSchedule } = await supabase
           .from("weekly_sessions")
           .select("*")
           .eq("user_id", user.id)
-          .gte("week_start", DateTime.now().toISODate())
+          .gte("week_start", weekStartStr)
+          // .gte("week_start", weekStartStr)
+          // .lte("week_end", weekEndStr)
           .order("week_start", { ascending: true })
           .limit(1)
           .single();
 
+        console.log("weekSchedule", weekSchedule);
+
         if (weekSchedule) {
-          console.log("weekSchedule", weekSchedule);
           setSchedule(weekSchedule.sessions);
 
-          // Get today's date in YYYY-MM-DD format using local timezone
-          const today = DateTime.now().toISODate();
-          console.log("today", today);
           // Find today's workout from the sessions array
           const session = weekSchedule.sessions.find(
             (session: any) => session.scheduled_date === today
           );
 
           setTodaySession(session);
-
-          console.log("todayWorkout", session);
-          console.log("weekSchedule", weekSchedule);
         }
       } catch (error) {
         console.error("Error loading schedule:", error);
