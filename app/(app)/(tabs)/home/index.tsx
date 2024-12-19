@@ -37,6 +37,7 @@ export default function Page() {
   }
 
   useEffect(() => {
+    console.log("user", user);
     const getDuration = async () => {
       const { data: duration } = await supabase
         .from("user_preferences")

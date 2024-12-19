@@ -33,6 +33,7 @@ export default function Page() {
   const [selectedFocus, setSelectedFocus] = useState<string | null>(null);
   const [exercises, setExercises] = useState<any[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const [animationSources, setAnimationSources] = useState<{
     [key: string]: string;
   }>({});
@@ -47,6 +48,7 @@ export default function Page() {
 
   const handleCreateWorkout = async () => {
     if (!selectedDuration || !selectedFocus || !user) return;
+    setIsLoading(true);
 
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -132,8 +134,10 @@ export default function Page() {
       }
 
       setSessionId(sessionData?.id);
+      setIsLoading(false);
     } catch (error) {
       console.error("Error creating custom workout:", error);
+      setIsLoading(false);
     }
   };
 
@@ -189,13 +193,18 @@ export default function Page() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: safeArea.top }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: safeArea.top + 8, paddingHorizontal: 16 },
+      ]}
+    >
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.dismissButton}
           onPress={() => router.back()}
         >
-          <FontAwesome name="times" size={24} color="#4A2318" />
+          <FontAwesome name="times" size={20} color="#4A2318" />
         </TouchableOpacity>
         <Text style={styles.title}>Custom Workout</Text>
       </View>
@@ -249,12 +258,15 @@ export default function Page() {
       <TouchableOpacity
         style={[
           styles.createButton,
+          isLoading && styles.createButtonDisabled,
           (!selectedDuration || !selectedFocus) && styles.createButtonDisabled,
         ]}
         onPress={handleCreateWorkout}
-        disabled={!selectedDuration || !selectedFocus}
+        disabled={!selectedDuration || !selectedFocus || isLoading}
       >
-        <Text style={styles.createButtonText}>Create Workout</Text>
+        <Text style={styles.createButtonText}>
+          {isLoading ? "Creating..." : "Create Workout"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -268,8 +280,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "flex-start",
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingHorizontal: 8,
+    paddingBottom: 4,
   },
   progressHeader: {
     flexDirection: "row",
@@ -287,25 +299,25 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#4A2318",
-    marginLeft: 16,
+    marginLeft: 12,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#4A2318",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   optionsContainer: {
-    gap: 12,
-    marginBottom: 32,
+    gap: 8,
+    marginBottom: 24,
   },
   optionButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: "#4A2318",
     alignItems: "center",
@@ -314,7 +326,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#4A2318",
   },
   optionText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "bold",
     color: "#4A2318",
   },
@@ -323,17 +335,17 @@ const styles = StyleSheet.create({
   },
   createButton: {
     backgroundColor: "#4A2318",
-    paddingVertical: 16,
-    borderRadius: 10,
+    paddingVertical: 14,
+    borderRadius: 8,
     alignItems: "center",
     marginTop: "auto",
-    marginBottom: 32,
+    marginBottom: 24,
   },
   createButtonDisabled: {
     opacity: 0.5,
   },
   createButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#FFE9D5",
   },
