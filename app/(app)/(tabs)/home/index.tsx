@@ -148,9 +148,8 @@ export default function Page() {
           style={styles.optionButton}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            // Handle custom session
             setShowOptions(false);
-            router.push("/home/session");
+            router.push("/home/custom");
           }}
         >
           <FontAwesome6 name="mattress-pillow" size={18} color="#FFE9D5" />

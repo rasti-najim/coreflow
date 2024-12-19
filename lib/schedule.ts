@@ -311,6 +311,7 @@ export async function checkScheduleStatus(userId: string) {
       .select("*")
       .eq("user_id", userId)
       .eq("status", "scheduled")
+      .eq("is_custom", false)
       .gte("scheduled_date", today)
       .order("scheduled_date", { ascending: true });
 

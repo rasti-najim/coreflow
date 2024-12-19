@@ -16,6 +16,10 @@ export default function HomeLayout() {
         name="track-mood"
         options={{ presentation: "fullScreenModal" }}
       />
+      <Stack.Screen
+        name="custom"
+        options={{ presentation: "fullScreenModal" }}
+      />
     </Stack>
   );
 }

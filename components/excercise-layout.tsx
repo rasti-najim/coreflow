@@ -141,9 +141,9 @@ export const ExerciseLayout = ({
       )}
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
+        {/* <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
           <Text style={styles.quitButtonText}>quit</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         {!isCompleted && (
           <TouchableOpacity
             style={styles.differentExerciseButton}
