@@ -109,10 +109,18 @@ export default function Onboarding() {
   const handleNext = async () => {
     if (step < totalSteps - 1) {
       if (step === 6) {
-        await handlePhoneSignIn(onboardingData.phoneNumber || "");
+        if (onboardingData.phoneNumber) {
+          await handlePhoneSignIn(onboardingData.phoneNumber);
+        } else {
+          setStep(step + 2);
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          return;
+        }
       }
       if (step === 7) {
-        await handleVerifyOTP();
+        if (onboardingData.phoneNumber) {
+          await handleVerifyOTP();
+        }
       }
       setStep(step + 1);
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -270,13 +278,22 @@ export default function Onboarding() {
               // Handle Google sign in and skip OTP
               handleNext();
             }}
-            onAppleSignIn={() => {
+            onAppleSignIn={async (user) => {
               // Handle Apple sign in and skip OTP
-              handleNext();
+              setOnboardingData((prev) => ({
+                ...prev,
+                email: user.email,
+                hasAccount: true,
+              }));
+              await handleNext();
             }}
             phoneNumber={onboardingData.phoneNumber || ""}
             onChangePhoneNumber={(phoneNumber) =>
-              setOnboardingData((prev) => ({ ...prev, phoneNumber }))
+              setOnboardingData((prev) => ({
+                ...prev,
+                phoneNumber,
+                hasAccount: true,
+              }))
             }
           />
         );

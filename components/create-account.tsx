@@ -13,6 +13,7 @@ import { AntDesign } from "@expo/vector-icons";
 import * as AppleAuthentication from "expo-apple-authentication";
 import supabase from "@/lib/supabase";
 import { PhoneInput } from "./phone-input";
+import { User } from "@supabase/supabase-js";
 // import {
 //   GoogleSignin,
 //   statusCodes,
@@ -22,7 +23,7 @@ interface CreateAccountProps {
   onGoogleSignIn: () => void;
   phoneNumber: string;
   onChangePhoneNumber: (phoneNumber: string) => void;
-  onAppleSignIn: () => void;
+  onAppleSignIn: (user: User) => void;
 }
 
 export const CreateAccount = ({
@@ -111,8 +112,9 @@ export const CreateAccount = ({
                   token: credential.identityToken,
                 });
                 console.log(JSON.stringify({ error, user }, null, 2));
-                if (!error) {
+                if (!error && user) {
                   // User is signed in.
+                  onAppleSignIn(user);
                 }
               } else {
                 throw new Error("No identityToken.");

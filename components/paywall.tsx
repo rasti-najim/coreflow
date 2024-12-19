@@ -9,6 +9,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import Superwall from "@superwall/react-native-superwall";
 
 interface PaywallScreenProps {
   onPurchase: () => void;
@@ -79,7 +80,14 @@ export const PaywallScreen = ({ onPurchase, onSkip }: PaywallScreenProps) => {
             style={[styles.priceButton, styles.bestValueButton]}
             onPress={async () => {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onPurchase();
+              Superwall.shared
+                .register("AnnualSubscription")
+                .then(() => {
+                  onPurchase();
+                })
+                .catch((error) => {
+                  console.error("Error registering subscription", error);
+                });
             }}
           >
             <View style={styles.bestValueTag}>

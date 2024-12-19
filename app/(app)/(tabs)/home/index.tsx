@@ -194,11 +194,12 @@ export default function Page() {
               : todaySession?.focus ?? "No workout scheduled. Enjoy your day!"}
           </Text>
 
-          {todaySession?.status !== "completed" && (
-            <TouchableOpacity style={styles.beginButton} onPress={onBegin}>
-              <Text style={styles.beginButtonText}>begin</Text>
-            </TouchableOpacity>
-          )}
+          {todaySession?.status !== "completed" &&
+            (todaySession?.focus ? (
+              <TouchableOpacity style={styles.beginButton} onPress={onBegin}>
+                <Text style={styles.beginButtonText}>begin</Text>
+              </TouchableOpacity>
+            ) : null)}
         </View>
       </View>
 
