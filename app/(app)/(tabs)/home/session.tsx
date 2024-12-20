@@ -7,10 +7,11 @@ import supabase from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { DateTime } from "luxon";
+import mixpanel from "@/lib/mixpanel";
 
 export default function Modal() {
   const { user } = useAuth();
-  const { session_id } = useLocalSearchParams();
+  const { session_id, duration } = useLocalSearchParams();
   console.log("session_id", session_id);
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
@@ -54,6 +55,10 @@ export default function Modal() {
           console.error("Error inserting progress:", progressError);
         }
 
+        mixpanel.track("Session Completed", {
+          duration: duration,
+          session_id: session_id,
+        });
         console.log("session updated", sessionData);
         console.log("progress inserted", progressData);
         router.dismiss();

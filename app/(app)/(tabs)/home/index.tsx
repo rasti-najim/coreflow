@@ -9,6 +9,7 @@ import { useAuth } from "@/components/auth-context";
 import { createSchedule, checkScheduleStatus } from "@/lib/schedule";
 import { DateTime } from "luxon";
 import { calculateConsistency, ConsistencyStats } from "@/lib/consistency";
+import mixpanel from "@/lib/mixpanel";
 
 type Session = {
   focus: string;
@@ -108,9 +109,16 @@ export default function Page() {
 
   const onBegin = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    mixpanel.track("Begin Workout Session", {
+      duration: duration,
+      session_id: todaySession?.session_id,
+    });
     router.push({
       pathname: "/home/session",
-      params: { session_id: todaySession?.session_id },
+      params: {
+        session_id: todaySession?.session_id,
+        duration: duration,
+      },
     });
   };
 

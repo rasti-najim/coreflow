@@ -9,6 +9,7 @@ import { useAuth } from "@/components/auth-context";
 import { createSession } from "@/lib/schedule";
 import { ExerciseLayout } from "@/components/excercise-layout";
 import { DateTime } from "luxon";
+import mixpanel from "@/lib/mixpanel";
 
 const DURATION_OPTIONS = [
   { value: "5", label: "5 minutes" },
@@ -133,6 +134,12 @@ export default function Page() {
         console.error("Error creating custom workout:", sessionError);
       }
 
+      mixpanel.track("Create Custom Workout Session", {
+        duration: selectedDuration,
+        focus: selectedFocus,
+        session_id: sessionData?.id,
+      });
+
       setSessionId(sessionData?.id);
       setIsLoading(false);
     } catch (error) {
@@ -157,6 +164,12 @@ export default function Page() {
           .update({ status: "completed" })
           .eq("id", session_id)
           .eq("user_id", user.id);
+
+        mixpanel.track("Custom Workout Session Completed", {
+          duration: selectedDuration,
+          session_id: session_id,
+        });
+
         router.dismiss();
       } catch (error) {
         console.error("Error saving progress:", error);

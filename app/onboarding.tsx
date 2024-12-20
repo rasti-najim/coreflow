@@ -16,6 +16,7 @@ import {
 import supabase from "@/lib/supabase";
 import { VerifyOTP } from "@/components/verify-otp";
 import { createSchedule } from "@/lib/schedule";
+import mixpanel from "@/lib/mixpanel";
 
 interface OnboardingData {
   pilatesLevel: "beginner" | "intermediate" | "advanced" | null;
@@ -67,6 +68,8 @@ export default function Onboarding() {
       await supabase.auth.signInWithOtp({
         phone: phoneNumber,
       });
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await handleNext();
     } catch (error) {
       console.error(error);
     }
@@ -147,6 +150,8 @@ export default function Onboarding() {
         await Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Success
         );
+        mixpanel.identify(user.id);
+        mixpanel.track("Sign Up");
         router.push("/(app)/(tabs)/home");
       } catch (error: any) {
         console.error("Failed to save onboarding data:", error.message);
@@ -204,6 +209,7 @@ export default function Onboarding() {
 
       if (!error) {
         setOnboardingData((prev) => ({ ...prev, hasAccount: true }));
+        mixpanel.track("Verify OTP");
         await handleNext();
       }
     } catch (error) {
@@ -233,39 +239,51 @@ export default function Onboarding() {
         return (
           <SelectGoals
             selectedGoals={onboardingData.goals}
-            onSelectGoal={(goals) =>
-              setOnboardingData((prev) => ({ ...prev, goals: goals }))
-            }
+            onSelectGoal={(goals) => {
+              setOnboardingData((prev) => ({ ...prev, goals: goals }));
+              mixpanel.track("Select Goals", {
+                goals: goals,
+              });
+            }}
           />
         );
       case 1:
         return (
           <PilatesExperience
             selectedLevel={onboardingData.pilatesLevel}
-            onSelectLevel={(level) =>
+            onSelectLevel={(level) => {
               setOnboardingData((prev) => ({
                 ...prev,
                 pilatesLevel: level as "beginner" | "intermediate" | "advanced",
-              }))
-            }
+              }));
+              mixpanel.track("Select Pilates Level", {
+                level: level,
+              });
+            }}
           />
         );
       case 2:
         return (
           <SelectRoutine
             selectedRoutine={onboardingData.routine}
-            onSelectRoutine={(routine) =>
-              setOnboardingData((prev) => ({ ...prev, routine: routine }))
-            }
+            onSelectRoutine={(routine) => {
+              setOnboardingData((prev) => ({ ...prev, routine: routine }));
+              mixpanel.track("Select Routine", {
+                routine: routine,
+              });
+            }}
           />
         );
       case 3:
         return (
           <SelectDuration
             selectedDuration={onboardingData.duration}
-            onSelectDuration={(duration) =>
-              setOnboardingData((prev) => ({ ...prev, duration: duration }))
-            }
+            onSelectDuration={(duration) => {
+              setOnboardingData((prev) => ({ ...prev, duration: duration }));
+              mixpanel.track("Select Duration", {
+                duration: duration,
+              });
+            }}
           />
         );
       case 4:
@@ -274,9 +292,15 @@ export default function Onboarding() {
         return (
           <CreateAccount
             title="Create Your Account"
-            onGoogleSignIn={() => {
+            onGoogleSignIn={async (user) => {
               // Handle Google sign in and skip OTP
-              handleNext();
+              setOnboardingData((prev) => ({
+                ...prev,
+                email: user.email,
+                hasAccount: true,
+              }));
+              mixpanel.track("Google Sign In");
+              await handleNext();
             }}
             onAppleSignIn={async (user) => {
               // Handle Apple sign in and skip OTP
@@ -285,16 +309,18 @@ export default function Onboarding() {
                 email: user.email,
                 hasAccount: true,
               }));
+              mixpanel.track("Apple Sign In");
               await handleNext();
             }}
             phoneNumber={onboardingData.phoneNumber || ""}
-            onChangePhoneNumber={(phoneNumber) =>
+            onChangePhoneNumber={(phoneNumber) => {
               setOnboardingData((prev) => ({
                 ...prev,
                 phoneNumber,
                 hasAccount: true,
-              }))
-            }
+              }));
+              mixpanel.track("Phone Number");
+            }}
           />
         );
       case 7:
@@ -313,26 +339,31 @@ export default function Onboarding() {
         return (
           <Tracking
             selectedTracking={onboardingData.tracking}
-            onSelectTracking={(tracking) =>
-              setOnboardingData((prev) => ({ ...prev, tracking: tracking }))
-            }
+            onSelectTracking={(tracking) => {
+              setOnboardingData((prev) => ({ ...prev, tracking: tracking }));
+              mixpanel.track("Select Tracking", {
+                tracking: tracking,
+              });
+            }}
           />
         );
       case 9:
         if (onboardingData.tracking === "pictures") {
           return (
             <StartingJourneyPhoto
-              onPhotoSelect={(photo) =>
-                setOnboardingData((prev) => ({ ...prev, photo: photo }))
-              }
+              onPhotoSelect={(photo) => {
+                setOnboardingData((prev) => ({ ...prev, photo: photo }));
+                mixpanel.track("Starting Journey Photo");
+              }}
             />
           );
         }
         return (
           <StartingJourney
-            onMoodChange={(mood) =>
-              setOnboardingData((prev) => ({ ...prev, mood: mood }))
-            }
+            onMoodChange={(mood) => {
+              setOnboardingData((prev) => ({ ...prev, mood: mood }));
+              mixpanel.track("Starting Journey Mood");
+            }}
           />
         );
       default:

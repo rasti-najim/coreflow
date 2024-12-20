@@ -6,6 +6,7 @@ import { OnboardingLayout } from "@/components/onboarding-layout";
 import { CreateAccount } from "@/components/create-account";
 import { VerifyOTP } from "@/components/verify-otp";
 import supabase from "@/lib/supabase";
+import mixpanel from "@/lib/mixpanel";
 
 export default function Login() {
   const [step, setStep] = useState(0);
@@ -35,13 +36,18 @@ export default function Login() {
 
   const handleVerifyOTP = async () => {
     try {
-      const { error } = await supabase.auth.verifyOtp({
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.verifyOtp({
         phone: phoneNumber,
         token: otp,
         type: "sms",
       });
 
-      if (!error) {
+      if (!error && user) {
+        mixpanel.identify(user.id);
+        mixpanel.track("Sign In");
         router.replace("/(app)/(tabs)/home");
       }
     } catch (error) {

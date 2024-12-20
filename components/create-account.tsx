@@ -14,13 +14,13 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import supabase from "@/lib/supabase";
 import { PhoneInput } from "./phone-input";
 import { User } from "@supabase/supabase-js";
-// import {
-//   GoogleSignin,
-//   statusCodes,
-// } from "@react-native-google-signin/google-signin";
+import {
+  GoogleSignin,
+  statusCodes,
+} from "@react-native-google-signin/google-signin";
 interface CreateAccountProps {
   title: string;
-  onGoogleSignIn: () => void;
+  onGoogleSignIn: (user: User) => void;
   phoneNumber: string;
   onChangePhoneNumber: (phoneNumber: string) => void;
   onAppleSignIn: (user: User) => void;
@@ -33,44 +33,49 @@ export const CreateAccount = ({
   onChangePhoneNumber,
   onAppleSignIn,
 }: CreateAccountProps) => {
-  // GoogleSignin.configure({
-  //   scopes: ["https://www.googleapis.com/auth/drive.readonly"],
-  //   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
-  // });
+  GoogleSignin.configure({
+    scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+  });
 
-  // const handleGoogleSignIn = async () => {
-  //   try {
-  //     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const handleGoogleSignIn = async () => {
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-  //     await GoogleSignin.hasPlayServices();
-  //     const userInfo = await GoogleSignin.signIn();
-  //     console.log(userInfo);
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      console.log(userInfo);
 
-  //     if (userInfo?.data?.idToken) {
-  //       const { data, error } = await supabase.auth.signInWithIdToken({
-  //         provider: "google",
-  //         token: userInfo.data.idToken,
-  //       });
-  //       console.log(error, data);
+      if (userInfo?.data?.idToken) {
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: userInfo.data.idToken,
+        });
+        console.log(error, user);
 
-  //       if (!error) {
-  //         // User is signed in.
-  //       }
-  //     } else {
-  //       throw new Error("no ID token present!");
-  //     }
-  //   } catch (error: any) {
-  //     if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-  //       // user cancelled the login flow
-  //     } else if (error.code === statusCodes.IN_PROGRESS) {
-  //       // operation (e.g. sign in) is in progress already
-  //     } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-  //       // play services not available or outdated
-  //     } else {
-  //       // some other error happened
-  //     }
-  //   }
-  // };
+        if (!error && user) {
+          // User is signed in.
+          console.log("google user", user);
+          onGoogleSignIn(user);
+        }
+      } else {
+        throw new Error("no ID token present!");
+      }
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        // user cancelled the login flow
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        // operation (e.g. sign in) is in progress already
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        // play services not available or outdated
+      } else {
+        // some other error happened
+      }
+    }
+  };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -79,7 +84,7 @@ export const CreateAccount = ({
 
         <TouchableOpacity
           style={styles.googleButton}
-          // onPress={handleGoogleSignIn}
+          onPress={handleGoogleSignIn}
         >
           <View style={styles.googleButtonContent}>
             <AntDesign name="google" size={24} style={{ paddingRight: 4 }} />
@@ -114,6 +119,7 @@ export const CreateAccount = ({
                 console.log(JSON.stringify({ error, user }, null, 2));
                 if (!error && user) {
                   // User is signed in.
+                  console.log("apple user", user);
                   onAppleSignIn(user);
                 }
               } else {
