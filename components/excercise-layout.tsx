@@ -6,6 +6,7 @@ import { useFonts } from "expo-font";
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+// import { Audio } from "expo-av";
 
 interface ExerciseLayoutProps {
   title: string;
@@ -18,6 +19,8 @@ interface ExerciseLayoutProps {
   onDifferentExercise?: () => void;
   totalExercises?: number;
   currentExercise?: number;
+  autoPlay?: boolean;
+  onAutoPlay?: () => void;
 }
 
 export const ExerciseLayout = ({
@@ -31,6 +34,8 @@ export const ExerciseLayout = ({
   onDifferentExercise,
   totalExercises,
   currentExercise,
+  autoPlay = false,
+  onAutoPlay,
 }: ExerciseLayoutProps) => {
   const [timeLeft, setTimeLeft] = useState(duration);
   const [isActive, setIsActive] = useState(false);
@@ -49,14 +54,17 @@ export const ExerciseLayout = ({
     // Reset animation
     if (animation.current) {
       animation.current.reset();
-      animation.current.pause();
+    }
+
+    // Add a small delay before auto-starting the next exercise
+    if (autoPlay) {
+      const timer = setTimeout(() => {
+        handleStart();
+      }, 1000); // 1 second delay
+
+      return () => clearTimeout(timer);
     }
   }, [currentExercise, duration, animationSource]);
-
-  const handleQuit = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onQuit?.() || router.dismiss();
-  };
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -68,7 +76,9 @@ export const ExerciseLayout = ({
             clearInterval(interval);
             setIsActive(false);
             setIsCompleted(true);
-            animation.current?.pause();
+            if (autoPlay) {
+              handleNext();
+            }
             return 0;
           }
           return time - 1;
@@ -82,13 +92,11 @@ export const ExerciseLayout = ({
   const handleStart = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setIsActive(true);
-    animation.current?.play();
   };
 
   const handleStop = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsActive(false);
-    animation.current?.pause();
   };
 
   const handleNext = async () => {
@@ -96,8 +104,29 @@ export const ExerciseLayout = ({
     onNext?.();
   };
 
+  // const playCompletionSound = async () => {
+  //   try {
+  //     const { sound } = await Audio.Sound.createAsync(
+  //       require("../assets/sounds/exercise-complete.mp3")
+  //     );
+  //     setSound(sound);
+  //     await sound.playAsync();
+  //   } catch (error) {
+  //     console.error("Error playing sound:", error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   return sound
+  //     ? () => {
+  //         console.log("Unloading Sound");
+  //         sound.unloadAsync();
+  //       }
+  //     : undefined;
+  // }, [sound]);
+
   return (
-    <SafeAreaView edges={["top", "bottom"]} style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {totalExercises && currentExercise && (
         <Text style={styles.progress}>
           Exercise {currentExercise} of {totalExercises}
@@ -113,7 +142,7 @@ export const ExerciseLayout = ({
         key={animationSource}
         ref={animation}
         source={{ uri: animationSource }}
-        autoPlay={false}
+        autoPlay
         loop
         style={styles.animation}
       />
@@ -144,6 +173,34 @@ export const ExerciseLayout = ({
         {/* <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
           <Text style={styles.quitButtonText}>quit</Text>
         </TouchableOpacity> */}
+
+        {/* <TouchableOpacity
+          style={[
+            styles.autoPlayButton,
+            autoPlay && styles.autoPlayButtonActive,
+          ]}
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onAutoPlay?.();
+          }}
+        >
+          <View style={styles.autoPlayContent}>
+            <FontAwesome
+              name="forward"
+              size={14}
+              color={autoPlay ? "#FFE9D5" : "#4A2318"}
+            />
+            <Text
+              style={[
+                styles.autoPlayText,
+                autoPlay && styles.autoPlayTextActive,
+              ]}
+            >
+              {autoPlay ? "auto-advance" : "auto-advance"}
+            </Text>
+          </View>
+        </TouchableOpacity> */}
+
         {!isCompleted && (
           <TouchableOpacity
             style={styles.differentExerciseButton}
@@ -274,5 +331,32 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     textAlign: "center",
+  },
+  autoPlayContainer: {
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  autoPlayButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#4A2318",
+  },
+  autoPlayButtonActive: {
+    backgroundColor: "#4A2318",
+  },
+  autoPlayText: {
+    fontSize: 16,
+    color: "#4A2318",
+    fontWeight: "bold",
+  },
+  autoPlayTextActive: {
+    color: "#FFE9D5",
+  },
+  autoPlayContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
 });

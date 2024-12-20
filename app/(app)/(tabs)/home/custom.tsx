@@ -42,6 +42,7 @@ export default function Page() {
   const [session_id, setSessionId] = useState<string | null>(null);
   const currentExercise = exercises[currentExerciseIndex];
   const progress = `${currentExerciseIndex + 1}/${exercises.length}`;
+  const [autoPlay, setAutoPlay] = useState(false);
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -193,13 +194,15 @@ export default function Page() {
         <ExerciseLayout
           title={currentExercise.name}
           description={currentExercise.description}
-          duration={2}
+          duration={20}
           animationSource={animationSources[currentExercise.id]}
           type={currentExercise.type}
           onNext={handleNext}
           onQuit={() => router.back()}
           totalExercises={exercises.length}
           currentExercise={currentExerciseIndex + 1}
+          autoPlay={autoPlay}
+          onAutoPlay={() => setAutoPlay(!autoPlay)}
         />
       </View>
     );
