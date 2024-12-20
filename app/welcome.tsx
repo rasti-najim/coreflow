@@ -32,14 +32,15 @@ export default function Page() {
         <Arrow color="#4A2318" />
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[styles.loginButton, { marginBottom: safeArea.bottom }]}
-        onPress={() => {
-          router.push("/login");
-        }}
-      >
-        <Text style={styles.loginText}>Already have an account? Login</Text>
-      </TouchableOpacity>
+      <View style={[styles.loginButton, { marginBottom: safeArea.bottom }]}>
+        <TouchableOpacity
+          onPress={() => {
+            router.push("/login");
+          }}
+        >
+          <Text style={styles.loginText}>Already have an account? Login</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

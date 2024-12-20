@@ -63,8 +63,18 @@ export default function Login() {
             title="Welcome Back"
             phoneNumber={phoneNumber}
             onChangePhoneNumber={setPhoneNumber}
-            onGoogleSignIn={() => {}}
-            onAppleSignIn={() => {}}
+            onGoogleSignIn={async (user) => {
+              // Handle Google sign in and skip OTP
+              console.log("google user", user);
+              mixpanel.track("Google Sign In");
+              router.replace("/(app)/(tabs)/home");
+            }}
+            onAppleSignIn={async (user) => {
+              // Handle Apple sign in and skip OTP
+              console.log("apple user", user);
+              mixpanel.track("Apple Sign In");
+              router.replace("/(app)/(tabs)/home");
+            }}
           />
         );
       case 1:

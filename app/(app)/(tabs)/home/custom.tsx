@@ -43,6 +43,7 @@ export default function Page() {
   const currentExercise = exercises[currentExerciseIndex];
   const progress = `${currentExerciseIndex + 1}/${exercises.length}`;
   const [autoPlay, setAutoPlay] = useState(false);
+  const [isSavingProgress, setIsSavingProgress] = useState(false);
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -154,17 +155,28 @@ export default function Page() {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
     } else {
       // Workout completed
+      setIsSavingProgress(true);
       try {
-        await supabase.from("progress").insert({
-          user_id: user.id,
-          entry_type: "session",
-          added_on: DateTime.now().toISODate(),
-        });
-        await supabase
-          .from("sessions")
-          .update({ status: "completed" })
-          .eq("id", session_id)
-          .eq("user_id", user.id);
+        const [progress, session] = await Promise.all([
+          supabase.from("progress").insert({
+            user_id: user.id,
+            entry_type: "session",
+            session_id: session_id,
+            added_on: DateTime.now().toISODate(),
+          }),
+          supabase
+            .from("sessions")
+            .update({ status: "completed" })
+            .eq("id", session_id)
+            .eq("user_id", user.id),
+        ]);
+
+        if (progress.error || session.error) {
+          console.error(
+            "Error saving progress:",
+            progress.error || session.error
+          );
+        }
 
         mixpanel.track("Custom Workout Session Completed", {
           duration: selectedDuration,
@@ -174,6 +186,8 @@ export default function Page() {
         router.dismiss();
       } catch (error) {
         console.error("Error saving progress:", error);
+      } finally {
+        setIsSavingProgress(false);
       }
     }
   };
@@ -203,6 +217,7 @@ export default function Page() {
           currentExercise={currentExerciseIndex + 1}
           autoPlay={autoPlay}
           onAutoPlay={() => setAutoPlay(!autoPlay)}
+          isSavingProgress={isSavingProgress}
         />
       </View>
     );

@@ -58,18 +58,17 @@ export default function Onboarding() {
     console.log("Phone sign in with", phoneNumber);
     if (!phoneNumber) return;
 
-    // Update the onboarding data with the phone number
-    setOnboardingData((prev) => ({
-      ...prev,
-      phoneNumber: phoneNumber,
-    }));
-
     try {
+      // Update the onboarding data with the phone number
+      setOnboardingData((prev) => ({
+        ...prev,
+        phoneNumber: phoneNumber,
+      }));
+
       await supabase.auth.signInWithOtp({
         phone: phoneNumber,
       });
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await handleNext();
     } catch (error) {
       console.error(error);
     }
@@ -114,11 +113,10 @@ export default function Onboarding() {
       if (step === 6) {
         if (onboardingData.phoneNumber) {
           await handlePhoneSignIn(onboardingData.phoneNumber);
-        } else {
-          setStep(step + 2);
-          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          return;
         }
+        setStep(step + 1);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        return;
       }
       if (step === 7) {
         if (onboardingData.phoneNumber) {

@@ -23,6 +23,7 @@ type TimelineItem = {
   id: string;
   date: string;
   type: ("picture" | "session" | "mood")[];
+  session_added_on?: string;
   duration?: string;
   note?: string;
   photoUrl?: string;
@@ -54,9 +55,20 @@ export default function Page() {
   const fetchBasicData = async () => {
     const { data, error } = await supabase
       .from("progress")
-      .select("*")
+      .select(
+        `
+        *,
+        sessions:session_id (
+          focus,
+          scheduled_date,
+          status
+        )
+      `
+      )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
+
+    console.log("timeline data", data);
 
     if (error) {
       console.error(error);
@@ -67,8 +79,10 @@ export default function Page() {
       id: item.id,
       date: DateTime.fromISO(item.added_on).toFormat("MM/dd"),
       type: [item.entry_type],
+      session_added_on: item.sessions?.scheduled_date,
+      duration: item.sessions?.status === "completed" ? "Completed" : "Skipped",
       note: item.mood_description,
-      photoUrl: undefined,
+      photoUrl: item.picture_url ? undefined : undefined,
     }));
 
     setTimelineData(mappedData || []);
@@ -124,9 +138,9 @@ export default function Page() {
     setRefreshing(false);
   };
 
-  // useEffect(() => {
-  //   fetchBasicData();
-  // }, []);
+  useEffect(() => {
+    fetchBasicData();
+  }, []);
 
   if (!user) {
     return <Redirect href="/welcome" />;

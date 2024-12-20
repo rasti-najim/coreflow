@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   Text,
@@ -13,6 +12,7 @@ import {
 import { FontAwesome6 } from "@expo/vector-icons";
 import { ArrowRight } from "lucide-react-native";
 import { Arrow } from "./arrow";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface OnboardingLayoutProps {
   children: React.ReactNode;
@@ -46,7 +46,6 @@ export const OnboardingLayout = ({
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" />
         <View style={styles.scrollContent}>
           {/* <View style={styles.header}>
             <TouchableOpacity
@@ -94,7 +93,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFE9D5",
-    marginBottom: 20,
   },
   scrollContent: {
     flexGrow: 1,

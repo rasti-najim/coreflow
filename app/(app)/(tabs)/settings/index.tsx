@@ -4,6 +4,7 @@ import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/components/auth-context";
 import * as Haptics from "expo-haptics";
 import { FontAwesome6 } from "@expo/vector-icons";
+import mixpanel from "@/lib/mixpanel";
 
 export default function Settings() {
   const safeArea = useSafeAreaInsets();
@@ -13,6 +14,7 @@ export default function Settings() {
   const handleLogout = async () => {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      mixpanel.track("Logout");
       await signOut();
     } catch (error) {
       console.error("Error signing out:", error);
@@ -34,6 +36,7 @@ export default function Settings() {
           onPress: async () => {
             try {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              mixpanel.track("Delete Account");
               await deleteAccount();
               // The auth context will handle the redirect to welcome screen
             } catch (error) {

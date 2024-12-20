@@ -21,6 +21,7 @@ interface ExerciseLayoutProps {
   currentExercise?: number;
   autoPlay?: boolean;
   onAutoPlay?: () => void;
+  isSavingProgress?: boolean;
 }
 
 export const ExerciseLayout = ({
@@ -36,6 +37,7 @@ export const ExerciseLayout = ({
   currentExercise,
   autoPlay = false,
   onAutoPlay,
+  isSavingProgress = false,
 }: ExerciseLayoutProps) => {
   const [timeLeft, setTimeLeft] = useState(duration);
   const [isActive, setIsActive] = useState(false);
@@ -154,9 +156,17 @@ export const ExerciseLayout = ({
       </View>
 
       {isCompleted ? (
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+        <TouchableOpacity
+          style={styles.nextButton}
+          onPress={handleNext}
+          disabled={isSavingProgress}
+        >
           <Text style={styles.nextButtonText}>
-            {currentExercise === totalExercises ? "Finish" : "Next Exercise"}
+            {currentExercise === totalExercises
+              ? "Finish"
+              : isSavingProgress
+              ? "Saving..."
+              : "Next Exercise"}
           </Text>
         </TouchableOpacity>
       ) : !isActive ? (
@@ -224,7 +234,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24,
-    // paddingVertical: 32,
+    paddingBottom: 32,
   },
   title: {
     fontSize: 24,
