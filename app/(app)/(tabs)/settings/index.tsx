@@ -74,12 +74,12 @@ export default function Settings() {
 
         <TouchableOpacity style={[styles.menuItem]} onPress={handleLogout}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <FontAwesome6 name="right-from-bracket" size={24} color="#FF0000" />
+            <FontAwesome6 name="right-from-bracket" size={24} color="#4A2318" />
             <Text style={styles.logoutText}>Log Out</Text>
           </View>
         </TouchableOpacity>
 
-        {/* <TouchableOpacity
+        <TouchableOpacity
           style={[styles.menuItem, styles.deleteAccountItem]}
           onPress={handleDeleteAccount}
         >
@@ -87,7 +87,7 @@ export default function Settings() {
             <FontAwesome6 name="trash-can" size={24} color="#FF0000" />
             <Text style={styles.deleteAccountText}>Delete Account</Text>
           </View>
-        </TouchableOpacity> */}
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -116,11 +116,11 @@ const styles = StyleSheet.create({
     fontSize: 32,
   },
   logoutText: {
-    color: "#FF0000",
+    color: "#4A2318",
     fontSize: 24,
   },
   deleteAccountItem: {
-    marginTop: 24,
+    // marginTop: 24,
   },
   deleteAccountText: {
     color: "#FF0000",
