@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { DateTime } from "luxon";
 import mixpanel from "@/lib/mixpanel";
+import { Loading } from "@/components/loading";
 
 export default function Modal() {
   const { user } = useAuth();
@@ -161,7 +162,7 @@ export default function Modal() {
             <FontAwesome name="times" size={24} color="#4A2318" />
           </TouchableOpacity>
         </View>
-        <Text>Loading...</Text>
+        <Loading />
       </View>
     );
   }
