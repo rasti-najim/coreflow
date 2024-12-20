@@ -10,11 +10,14 @@ import {
   StyleSheet,
   Pressable,
   RefreshControl,
+  TouchableOpacity,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { DateTime } from "luxon";
 import { PhotoSkeleton } from "@/components/photo-skeleton";
+import { FontAwesome6 } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 type TimelineItem = {
   id: string;
@@ -42,6 +45,7 @@ export default function Page() {
   const [timelineData, setTimelineData] = useState<TimelineItem[]>([]);
   const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -120,9 +124,9 @@ export default function Page() {
     setRefreshing(false);
   };
 
-  useEffect(() => {
-    fetchBasicData();
-  }, []);
+  // useEffect(() => {
+  //   fetchBasicData();
+  // }, []);
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -144,71 +148,97 @@ export default function Page() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <View>
-          {Object.entries(groupByDate(timelineData)).map(([date, items]) => (
-            <View key={date} style={styles.timelineItem}>
-              <View style={styles.timelineLine} />
-              <View style={styles.timelineDot} />
-              <View style={styles.content}>
-                <Text style={styles.date}>{date}</Text>
-                {items.map((item, index) => (
-                  <View key={item.id + index}>
-                    <Text style={styles.description}>
-                      {item.type
-                        .map((type) =>
-                          type === "picture"
-                            ? "Photo"
-                            : type === "session"
-                            ? item.duration
-                            : "Note"
-                        )
-                        .join(" & ")}
-                    </Text>
-                    {item.type.includes("picture") && (
-                      <>
-                        {!item.photoUrl ? (
-                          <PhotoSkeleton
-                            width="100%"
-                            height={200}
-                            borderRadius={8}
-                          />
-                        ) : (
-                          <Image
-                            source={{ uri: item.photoUrl }}
-                            style={styles.photo}
-                          />
-                        )}
-                      </>
-                    )}
-                    {item.note && (
-                      <View style={styles.noteContainer}>
-                        <Text style={styles.noteText}>
-                          "{item.note}"
-                          {/* {item.note.length > 100
-                            ? item.note.substring(0, 100) + "..."
-                            : item.note} */}
-                        </Text>
-                      </View>
-                    )}
-                    {(item.type.includes("picture") ||
-                      item.type.includes("mood")) && (
-                      <Pressable
-                        style={styles.viewProgressButton}
-                        onPress={() =>
-                          handleViewProgress(item.type[0] as "photo" | "note")
-                        }
-                      >
-                        <Text style={styles.viewProgressText}>
-                          view {item.type} progress
-                        </Text>
-                      </Pressable>
-                    )}
-                  </View>
-                ))}
-              </View>
+        {timelineData.length === 0 ? (
+          <View style={styles.emptyStateContainer}>
+            <Text style={styles.emptyStateTitle}>No progress tracked yet</Text>
+            <Text style={styles.emptyStateText}>
+              Start tracking your progress through photos and mood descriptions
+              to see your journey here.
+            </Text>
+            <View style={styles.emptyStateButtonsContainer}>
+              <TouchableOpacity
+                style={styles.emptyStateButton}
+                onPress={() => router.push("/home/track-picture")}
+              >
+                <FontAwesome6 name="image" size={18} color="#FFE9D5" />
+                <Text style={styles.emptyStateButtonText}>Add Photo</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.emptyStateButton}
+                onPress={() => router.push("/home/track-mood")}
+              >
+                <FontAwesome6 name="note-sticky" size={18} color="#FFE9D5" />
+                <Text style={styles.emptyStateButtonText}>Add Note</Text>
+              </TouchableOpacity>
             </View>
-          ))}
-        </View>
+          </View>
+        ) : (
+          <View>
+            {Object.entries(groupByDate(timelineData)).map(([date, items]) => (
+              <View key={date} style={styles.timelineItem}>
+                <View style={styles.timelineLine} />
+                <View style={styles.timelineDot} />
+                <View style={styles.content}>
+                  <Text style={styles.date}>{date}</Text>
+                  {items.map((item, index) => (
+                    <View key={item.id + index}>
+                      <Text style={styles.description}>
+                        {item.type
+                          .map((type) =>
+                            type === "picture"
+                              ? "Photo"
+                              : type === "session"
+                              ? item.duration
+                              : "Note"
+                          )
+                          .join(" & ")}
+                      </Text>
+                      {item.type.includes("picture") && (
+                        <>
+                          {!item.photoUrl ? (
+                            <PhotoSkeleton
+                              width="100%"
+                              height={200}
+                              borderRadius={8}
+                            />
+                          ) : (
+                            <Image
+                              source={{ uri: item.photoUrl }}
+                              style={styles.photo}
+                            />
+                          )}
+                        </>
+                      )}
+                      {item.note && (
+                        <View style={styles.noteContainer}>
+                          <Text style={styles.noteText}>
+                            "{item.note}"
+                            {/* {item.note.length > 100
+                              ? item.note.substring(0, 100) + "..."
+                              : item.note} */}
+                          </Text>
+                        </View>
+                      )}
+                      {(item.type.includes("picture") ||
+                        item.type.includes("mood")) && (
+                        <Pressable
+                          style={styles.viewProgressButton}
+                          onPress={() =>
+                            handleViewProgress(item.type[0] as "photo" | "note")
+                          }
+                        >
+                          <Text style={styles.viewProgressText}>
+                            view {item.type} progress
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
       <LinearGradient
         colors={["rgba(255, 233, 213, 0)", "#FFE9D5"]}
@@ -320,5 +350,41 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 8,
     marginBottom: 8,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  emptyStateTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#4A2B29",
+    marginBottom: 10,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: "#4A2B29",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  emptyStateButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  emptyStateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: "#4A2B29",
+  },
+  emptyStateButtonText: {
+    color: "#FFE9D5",
+    fontSize: 16,
+    fontWeight: "500",
+    marginLeft: 10,
   },
 });
