@@ -118,6 +118,7 @@ export default function Page() {
       params: {
         session_id: todaySession?.session_id,
         duration: duration,
+        focus: todaySession?.focus,
       },
     });
   };

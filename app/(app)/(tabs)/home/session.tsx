@@ -9,10 +9,11 @@ import { useAuth } from "@/components/auth-context";
 import { DateTime } from "luxon";
 import mixpanel from "@/lib/mixpanel";
 import { Loading } from "@/components/loading";
+import { FOCUS_MAP } from "@/lib/schedule";
 
 export default function Modal() {
   const { user } = useAuth();
-  const { session_id, duration } = useLocalSearchParams();
+  const { session_id, duration, focus } = useLocalSearchParams();
   console.log("session_id", session_id);
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
@@ -73,10 +74,16 @@ export default function Modal() {
     const fetchSession = async () => {
       const { data, error } = await supabase
         .from("sessions")
-        .select("*")
+        .select(
+          `
+          *,
+          warmup:exercises!sessions_warmup_exercise_fkey(*),
+          cooldown:exercises!sessions_cooldown_exercise_fkey(*),
+          target_exercises
+        `
+        )
         .eq("id", session_id)
         .eq("user_id", user.id)
-        .limit(1)
         .single();
 
       if (error) {
@@ -87,57 +94,41 @@ export default function Modal() {
       console.log("data", data);
       const allExercises = [];
 
-      // Fetch warmup exercise
-      const { data: warmupData, error: warmupError } = await supabase
-        .from("exercises")
-        .select("*")
-        .eq("id", data.warmup_exercise)
-        .single();
-
-      if (warmupError) {
-        console.error("Error fetching warmup exercise:", warmupError);
-      } else {
-        allExercises.push({ ...warmupData, type: "Warmup" });
+      // Add warmup exercise
+      if (data.warmup) {
+        allExercises.push({ ...data.warmup, type: "Warmup" });
       }
 
-      // Fetch target exercises
-      for (const exerciseId of data.target_exercises) {
-        const { data: exerciseData, error: exerciseError } = await supabase
+      // Fetch target exercises in a single query
+      if (data.target_exercises && data.target_exercises.length > 0) {
+        const { data: targetData, error: targetError } = await supabase
           .from("exercises")
           .select("*")
-          .eq("id", exerciseId)
-          .single();
+          .in("id", data.target_exercises);
 
-        if (exerciseError) {
-          console.error("Error fetching target exercise:", exerciseError);
+        if (targetError) {
+          console.error("Error fetching target exercises:", targetError);
         } else {
-          allExercises.push({ ...exerciseData, type: "Target" });
+          allExercises.push(
+            ...targetData.map((exercise) => ({ ...exercise, type: "Target" }))
+          );
         }
       }
 
-      // Fetch cooldown exercise
-      const { data: cooldownData, error: cooldownError } = await supabase
-        .from("exercises")
-        .select("*")
-        .eq("id", data.cooldown_exercise)
-        .single();
-
-      if (cooldownError) {
-        console.error("Error fetching cooldown exercise:", cooldownError);
-      } else {
-        allExercises.push({ ...cooldownData, type: "Cooldown" });
+      // Add cooldown exercise
+      if (data.cooldown) {
+        allExercises.push({ ...data.cooldown, type: "Cooldown" });
       }
 
       console.log("allExercises", allExercises, "length", allExercises.length);
 
-      // After fetching all exercises, get signed URLs for their animations
+      // Get animation URLs
       for (const exercise of allExercises) {
         if (exercise.lottie_file_url) {
           const { data: animationUrl } = supabase.storage
-            .from("exercise_animations") // replace with your bucket name
+            .from("exercise_animations")
             .getPublicUrl(exercise.lottie_file_url);
 
-          console.log("animationUrl", animationUrl.publicUrl);
           setAnimationSources((prev) => ({
             ...prev,
             [exercise.id]: animationUrl.publicUrl,
@@ -150,6 +141,52 @@ export default function Modal() {
 
     fetchSession();
   }, [session_id, user.id]);
+
+  // const handleDifferentExercise = async (
+  //   currentExerciseId: string,
+  //   type: "warmup" | "cooldown" | "target",
+  //   focus: string
+  // ) => {
+  //   try {
+  //     // Fetch random exercise based on type
+  //     const baseQuery = supabase
+  //       .from("random_exercises")
+  //       .select("*")
+  //       .eq("type", type);
+
+  //     // Add focus filter for target exercises
+  //     const query =
+  //       type === "target"
+  //         ? baseQuery.overlaps(
+  //             "focus",
+  //             FOCUS_MAP[focus as keyof typeof FOCUS_MAP]
+  //           )
+  //         : baseQuery;
+
+  //     const { data: exercise, error } = await query.limit(1).single();
+
+  //     if (error) throw error;
+  //     if (!exercise?.lottie_file_url) throw new Error("No animation URL found");
+
+  //     // Get animation URL
+  //     const { data: animationUrl } = supabase.storage
+  //       .from("exercise_animations")
+  //       .getPublicUrl(exercise.lottie_file_url);
+
+  //     // Update state in one batch
+  //     setExercises((prev) => {
+  //       const filtered = prev.filter((e) => e.id !== currentExerciseId);
+  //       return [...filtered, exercise];
+  //     });
+
+  //     setAnimationSources((prev) => ({
+  //       ...prev,
+  //       [exercise.id]: animationUrl.publicUrl,
+  //     }));
+  //   } catch (error) {
+  //     console.error("Error fetching random exercise:", error);
+  //   }
+  // };
 
   if (exercises.length === 0) {
     return (
@@ -183,8 +220,10 @@ export default function Modal() {
       </View>
 
       <ExerciseLayout
+        id={currentExercise.id}
         title={currentExercise.name}
         description={currentExercise.description}
+        focus={currentExercise.focus}
         duration={2}
         animationSource={animationSources[currentExercise.id]}
         type={currentExercise.type}
@@ -192,6 +231,7 @@ export default function Modal() {
         onQuit={() => router.dismiss()}
         totalExercises={exercises.length}
         currentExercise={currentExerciseIndex + 1}
+        // onDifferentExercise={handleDifferentExercise}
       />
     </View>
   );

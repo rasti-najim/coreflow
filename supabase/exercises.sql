@@ -2,22 +2,25 @@
 TRUNCATE TABLE exercises CASCADE;
 
 -- Warmup Exercises
-INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided, lottie_file_url) VALUES
+INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided, lottie_file_url, voice_description_url) VALUES
     ('Seated Spine Roll',
      'Sit tall, knees bent, feet flat, and hands resting on your thighs. Inhale to lengthen your spine, then exhale as you gently tuck your pelvis, round your back, and roll down into a C-curve. Pause, breathe deeply, then inhale to roll back up, stacking your spine one vertebra at a time.',
      ARRAY['Breathing'],
      'beginner'::experience_level_enum,
      'warmup'::exercise_type_enum,
      false,
-     'warmups/SeatedSpineRoll.json'),
+     'warmups/SeatedSpineRoll.json',
+     'warmups/SeatedSpineRoll.mp3'),
      
+
     ('Abdominal Breathing',
      'Lie on your back, knees bent, feet grounded. Rest your hands gently on your belly. Take a deep inhale through your nose, letting your belly rise under your hands. Exhale slowly through your mouth, feeling your belly soften and sink. Let each breath flow naturally, connecting your body and breath.',
      ARRAY['Breathing'],
      'beginner'::experience_level_enum,
      'warmup'::exercise_type_enum,
      false,
-     'warmups/AbdominalBreathing.json'),
+     'warmups/AbdominalBreathing.json',
+     'warmups/AbdominalBreathing.mp3'),
      
     ('Pilates Half Roll-Up',
      'Sit tall, knees bent, feet flat, and arms reaching forward. Inhale to prepare, then exhale as you tuck your pelvis, creating a C-curve with your spine, and slowly roll back halfway. Hold for a breath, keeping your core engaged, then inhale to roll back up with control. Feel your abs working the entire time!',
@@ -25,7 +28,8 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'warmup'::exercise_type_enum,
      false,
-     'warmups/PilatesHalfRollUp.json'),
+     'warmups/PilatesHalfRollUp.json',
+     'warmups/PilatesHalfRollUp.mp3'),
      
     ('Donkey Kick',
      'Come onto all fours with wrists under shoulders and knees under hips. Keep your core engaged and back flat. Lift one leg, bending at 90 degrees, with your foot flexed. Exhale as you press your heel toward the ceiling, squeezing your glute. Inhale to lower slightly without touching down, then repeat on the opposite side.',
@@ -33,15 +37,18 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'warmup'::exercise_type_enum,
      true,
-     'warmups/DonkeyKick.json'),
-     
+     'warmups/DonkeyKick.json',
+     'warmups/DonkeyKick.mp3'),
+
+    ('Spine Stretch Forward',
     ('Spine Stretch Forward',
      'Sit tall with your legs straight and slightly apart, arms reaching forward. Inhale to grow taller, then exhale as you round forward, reaching past your toes. Inhale to sit back up tall, stacking your spine one vertebra at a time.',
      ARRAY['Mobility & Flexibility'],
      'beginner'::experience_level_enum,
      'warmup'::exercise_type_enum,
      false,
-     'warmups/SpineStretchForward.json'),
+     'warmups/SpineStretchForward.json',
+     'warmups/SpineStretchForward.mp3'),
      
     ('Cat-Cow Stretch',
      'Come onto all fours, hands under shoulders, knees under hips. Inhale as you arch your back, lifting your head and tailbone. Exhale as you round your spine, tucking your chin and pelvis. Flow gently between the two.',
@@ -49,7 +56,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'warmup'::exercise_type_enum,
      false,
-     'warmups/CatCowStretch.json'),
+     'warmups/CatCowStretch.json',
+     'warmups/CatCowStretch.mp3'),
+
      
     ('Chest Lift',
      'Lie on your back, knees bent, hands behind your head. Inhale to prepare, exhale as you curl your head, neck, and shoulders off the mat, engaging your core. Inhale to lower back down with control.',
@@ -57,7 +66,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'warmup'::exercise_type_enum,
      false,
-     'warmups/ChestLift.json'),
+     'warmups/ChestLift.json',
+     'warmups/ChestLift.mp3'),
+
      
     ('Leg Slides',
      'Lie on your back, knees bent. Inhale to prepare, then exhale as you slide one leg straight out along the mat. Inhale to bring it back in, keeping your pelvis stable.',
@@ -65,17 +76,19 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'warmup'::exercise_type_enum,
      true,
-     'warmups/LegSlides.json');
+     'warmups/LegSlides.json',
+     'warmups/LegSlides.mp3');
 
 -- Cooldown Exercises
-INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided, lottie_file_url) VALUES
+INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided, lottie_file_url, voice_description_url) VALUES
     ('Child''s Pose',
      'Start on all fours, then gently sit back onto your heels, reaching your arms forward and lowering your forehead to the mat. Inhale deeply, feeling your ribs expand. Exhale to soften your hips and stretch through your spine. Let your body relax as you breathe.',
      ARRAY['Breathing'],
      'beginner'::experience_level_enum,
      'cooldown'::exercise_type_enum,
      false,
-     'cooldowns/ChildsPose.json'),
+     'cooldowns/ChildsPose.json',
+     'cooldowns/ChildsPose.mp3'),
      
     ('Seal Pose',
      'Lie face down on your mat, legs extended long and feet hip-width apart. Place your hands under your shoulders, elbows tucked close to your sides. Inhale as you press into your hands, lifting your chest and head off the mat, keeping your elbows soft. Hold for a breath, then exhale as you gently lower back down. Repeat with control.',
@@ -83,7 +96,8 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'cooldown'::exercise_type_enum,
      false,
-     'cooldowns/SealPose.json'),
+     'cooldowns/SealPose.json',
+     'cooldowns/SealPose.mp3'),
      
     ('Cat-Cow Stretch',
      'Come onto all fours, hands under shoulders, knees under hips. Inhale as you arch your back, lifting your head and tailbone. Exhale as you round your spine, tucking your chin and pelvis. Flow gently between the two.',
@@ -91,7 +105,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'cooldown'::exercise_type_enum,
      false,
-     'cooldowns/CatCowStretch.json'),
+     'cooldowns/CatCowStretch.json',
+     'cooldowns/CatCowStretch.mp3'),
+
      
     ('Sit & Breathe',
      'Sit comfortably with legs crossed, back tall, and shoulders relaxed. Place your hands lightly on your ribcage. Inhale deeply through your nose, feeling your ribs expand outward. Exhale slowly through your mouth, drawing your belly button gently toward your spine. Focus on the rhythm of your breath, staying present and centered.',
@@ -99,7 +115,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'cooldown'::exercise_type_enum,
      false,
-     'cooldowns/SitAndBreathe.json'),
+     'cooldowns/SitAndBreathe.json',
+     'cooldowns/SitAndBreathe.mp3'),
+
      
     ('Seated Forward Hold',
      'Sit tall with your legs extended straight in front of you. Inhale to lengthen your spine, then exhale as you hinge forward, reaching for your feet or shins. Let your head relax as you stretch your hamstrings and back',
@@ -107,7 +125,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'cooldown'::exercise_type_enum,
      false,
-     'cooldowns/SeatedForwardHold.json'),
+     'cooldowns/SeatedForwardHold.json',
+     'cooldowns/SeatedForwardHold.mp3'),
+
      
     ('Spine Twist',
      'Sit tall with your legs extended and arms out to the sides. Inhale to prepare, then exhale as you twist your torso to one side, reaching your arm behind you. Inhale to return to center, and exhale to switch sides.',
@@ -115,7 +135,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'cooldown'::exercise_type_enum,
      false,
-     'cooldowns/SpineTwist.json'),
+     'cooldowns/SpineTwist.json',
+     'cooldowns/SpineTwist.mp3'),
+
      
     ('Knee-to-Chest Stretch',
      'Lie on your back, hug one knee into your chest, and extend the other leg straight on the mat. Inhale deeply, then exhale to pull the knee closer. Switch legs when ready, relaxing into the stretch.',
@@ -123,7 +145,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'cooldown'::exercise_type_enum,
      false,
-     'cooldowns/KneeToChestStretch.json'),
+     'cooldowns/KneeToChestStretch.json',
+     'cooldowns/KneeToChestStretch.mp3'),
+
      
     ('Roll Down',
      'Stand tall, feet hip-width apart. Inhale to prepare, then exhale as you roll down one vertebra at a time, reaching toward the floor. Inhale at the bottom, then exhale as you slowly roll back up, stacking your spine.',
@@ -131,7 +155,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'cooldown'::exercise_type_enum,
      false,
-     'cooldowns/RollDown.json'),
+     'cooldowns/RollDown.json',
+     'cooldowns/RollDown.mp3'),
+
      
     ('Breathe & Relax',
      'Lie on your back, arms relaxed at your sides, and legs extended or knees bent. Inhale deeply through your nose, feeling your belly rise. Exhale slowly through your mouth, letting your body completely relax. Stay present with your breath.',
@@ -139,17 +165,19 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'cooldown'::exercise_type_enum,
      false,
-     'cooldowns/BreatheAndRelax.json');
+     'cooldowns/BreatheAndRelax.json',
+     'cooldowns/BreatheAndRelax.mp3');
 
 -- Target Exercises
-INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided, lottie_file_url) VALUES
+INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided, lottie_file_url, voice_description_url) VALUES
     ('Pilates Ab Curl',
      'Lie on your back, knees bent, feet grounded, hands supporting your head with elbows wide. Inhale deeply, and as you exhale, draw your belly in and curl your head, neck, and shoulders off the mat. Pause at the top, then slowly lower down with control. Feel your core do the work!',
      ARRAY['Core'],
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      false,
-     'targets/PilatesAbCurl.json'),
+     'targets/PilatesAbCurl.json',
+     'targets/PilatesAbCurl.mp3'),
      
     ('Ab Curl With Reaches',
      'Lie on your back, knees bent, feet grounded. Place one hand lightly behind your head, and extend the other arm forward. Pulse your forward arm up and down, inhaling in through your nose and out through your mouth.',
@@ -157,7 +185,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'advanced'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/AbCurlWithReaches.json'),
+     'targets/AbCurlWithReaches.json',
+     'targets/AbCurlWithReaches.mp3'),
+
      
     ('Single Leg Lift',
      'Lie on your back, one knee bent with your foot flat and the other leg extended long. Inhale to prepare, then exhale as you lift your extended leg to about 90 degrees, keeping your core engaged and hips steady. Inhale as you lower the leg with control, staying grounded through your center.',
@@ -165,7 +195,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/SingleLegLift.json'),
+     'targets/SingleLegLift.json',
+     'targets/SingleLegLift.mp3'),
+
      
     ('Modified Dead Bugs',
      'Lie on your back, legs extended at a diagonal tabletop. Extend one arm overhead. Inhale to prepare, then exhale as you engage your core, reaching one arm and your opposite leg away from each other. Keep your back grounded and your movements slow. Inhale to return.',
@@ -173,7 +205,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'advanced'::experience_level_enum,
      'target'::exercise_type_enum,
      false,
-     'targets/ModifiedDeadBugs.json'),
+     'targets/ModifiedDeadBugs.json',
+     'targets/ModifiedDeadBugs.mp3'),
+
      
     ('Double Leg Lowers',
      'Lie on your back, legs extended straight up, and curl your head, neck, and shoulders off the mat, hands lightly behind your head. Inhale to prepare, and as you exhale, lower your legs slowly toward the mat, keeping your core tight and back stable. Inhale to lift them back up with control.',
@@ -181,7 +215,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
       'target'::exercise_type_enum,
      false,
-     'targets/DoubleLegLowers.json'),
+     'targets/DoubleLegLowers.json',
+     'targets/DoubleLegLowers.mp3'),
+
      
     ('Criss Cross',
      'Lie on your back, hands behind your head, legs in tabletop. Curl your head, neck, and shoulders up. Inhale to prepare, then exhale as you twist your torso, bringing your elbow to the opposite knee while extending the other leg. Inhale to center, exhale to switch sides.',
@@ -189,7 +225,8 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      false,
-     'targets/CrissCross.json'),
+     'targets/CrissCross.json',
+     'targets/CrissCross.mp3'),
      
     ('Glute Bridge with Leg Lift',
      'Lie on your back, knees bent, feet hip-width apart, and arms by your sides. Press into your heels and lift your hips into a bridge. Once stable, lift one leg into tabletop, keeping your hips level. Inhale to hold, exhale to lower your opposite leg or pulse your hips.',
@@ -197,23 +234,27 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'advanced'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/GluteBridgeWithLegLift.json'),
-     
+     'targets/GluteBridgeWithLegLift.json',
+     'targets/GluteBridgeWithLegLift.mp3'),
+
     ('Pulsed Glute Bridge',
      'Lie on your back, knees bent, feet hip-width apart, and arms reaching straight up. Press into your heels and lift your hips into a bridge. Hold at the top, then begin small pulses—lower an inch, lift an inch—keeping your glutes tight and core engaged.',
      ARRAY['Core'],
      'advanced'::experience_level_enum,
      'target'::exercise_type_enum,
      false,
-     'targets/PulsedGluteBridge.json'),
+     'targets/PulsedGluteBridge.json',
+     'targets/PulsedGluteBridge.mp3'),
      
+    
     ('Clams',
      'Lie on your side, knees bent and stacked, with your head resting on your arm. Keep your feet together and inhale to prepare. Exhale as you lift your top knee, keeping your hips steady and core engaged. Inhale to lower with control.',
      ARRAY['Glutes'],
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/Clams.json'),
+     'targets/Clams.json',
+     'targets/Clams.mp3'),
      
     ('Clams With Leg Extension',
      'Lie on your side, knees bent and stacked, head resting on your arm. Inhale to prepare, exhale as you lift your top knee into a clam position. Pause, then extend your top leg straight out. Inhale to bend the knee back into clam, then lower with control.',
@@ -221,7 +262,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'advanced'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/ClamsWithLegExtension.json'),
+     'targets/ClamsWithLegExtension.json',
+     'targets/ClamsWithLegExtension.mp3'),
+
      
     ('Mermaid Stretch',
      'Sit tall with your legs folded to one side, one hand resting on the mat. Inhale to reach your opposite arm up and over, lengthening through your side. Exhale as you deepen the stretch, keeping both hips grounded. Inhale to return to center.',
@@ -229,7 +272,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
       true,
-     'targets/MermaidStretch.json'),
+     'targets/MermaidStretch.json',
+     'targets/MermaidStretch.mp3'),
+
      
     ('Pilates Kneeling Pushup',
      'Start on your knees, hands under shoulders, and core engaged. Inhale to prepare, then exhale as you bend your elbows, lowering your chest toward the mat. Keep a straight line from your head to your knees. Inhale to press back up.',
@@ -237,7 +282,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/PilatesKneelingPushup.json'),
+     'targets/PilatesKneelingPushup.json',
+     'targets/PilatesKneelingPushup.mp3'),
+
      
     ('Plank to Downward Dog',
      'Start in a strong plank, hands under shoulders and core engaged. Inhale to prepare, then exhale as you lift your hips toward the ceiling, pressing back into a downward dog. Keep your spine long and heels reaching toward the mat. Inhale to return to plank with control.',
@@ -245,7 +292,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/PlankToDownwardDog.json'),
+     'targets/PlankToDownwardDog.json',
+     'targets/PlankToDownwardDog.mp3'),
+
      
     ('Plank Hold',
      'Come into a plank position with hands under shoulders, legs extended, and core engaged. Inhale to lengthen your spine, and exhale to draw your belly button toward your spine. Hold steady, keeping your body in one straight line from head to heels.',
@@ -253,7 +302,8 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/PlankHold.json'),
+     'targets/PlankHold.json',
+     'targets/PlankHold.mp3'),
      
     ('Deadbugs',
      'Lie on your back, knees bent at tabletop, arms reaching to the ceiling. Inhale to prepare, then exhale as you lower one arm and the opposite leg toward the mat, keeping your core engaged and back stable. Inhale to return to center, then switch sides.',
@@ -261,7 +311,8 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/DeadBugs.json'),
+     'targets/DeadBugs.json',
+     'targets/DeadBugs.mp3'),
      
     ('Scissors',
      'Lie on your back, legs in a tabletop position. Inhale to prepare, then exhale as you lower one leg at a time. Switch legs smoothly with each breath, keeping your core engaged and movements controlled.',
@@ -269,7 +320,8 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/Scissors.json'),
+     'targets/Scissors.json',
+     'targets/Scissors.mp3'),
      
     ('Pilates Hundreds',
      'Lie on your back, legs in tabletop, and curl your head, neck, and shoulders off the mat. Extend your arms by your sides, hovering just above the mat. Inhale for 5 counts as you pump your arms, then exhale for 5 counts.',
@@ -277,15 +329,18 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/PilatesHundreds.json'),
-     
+     'targets/PilatesHundreds.json',
+     'targets/PilatesHundreds.mp3'),
+
+    
     ('Hip Bridge',
      'Lie on your back, knees bent, feet hip-width apart, and arms by your sides. Inhale to prepare, then exhale as you press into your heels, lifting your hips toward the ceiling. Engage your glutes and core at the top.',
      ARRAY['Glutes', 'Core'],
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/HipBridge.json'),
+     'targets/HipBridge.json',
+     'targets/HipBridge.mp3'),
      
     ('Bird-Dog',
      'Start on all fours, hands under shoulders and knees under hips. Inhale to prepare, then exhale as you extend one arm forward and the opposite leg back, creating a straight line from your fingers to your toes.',
@@ -293,7 +348,8 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/BirdDog.json'),
+     'targets/BirdDog.json',
+     'targets/BirdDog.mp3'),
      
     ('Tabletop Leg Circles',
      'Start on all fours, hands under shoulders and knees under hips. Extend one leg straight back, keeping it lifted at hip height. Inhale to prepare, then exhale as you draw small circles with your lifted leg.',
@@ -301,7 +357,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/TabletopLegCircles.json'),
+     'targets/TabletopLegCircles.json',
+     'targets/TabletopLegCircles.mp3'),
+
      
     ('Tabletop Side Leg Extensions',
      'Start on all fours, hands under shoulders and knees under hips. Extend one leg straight out to the side at hip height. Inhale to prepare, then exhale as you lift the leg slightly higher, keeping your core engaged and your body stable.',
@@ -309,7 +367,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/TabletopSideLegExtensions.json'),
+     'targets/TabletopSideLegExtensions.json',
+     'targets/TabletopSideLegExtensions.mp3'),
+
      
     ('Lying Knee Pull-Ins',
      'Lie on your back with one leg extended and the other knee pulled into your chest. Curl your head, neck, and shoulders off the mat, engaging your core. Inhale to switch legs, extending one while pulling the opposite knee in.',
@@ -317,7 +377,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/LyingKneePullIns.json'),
+     'targets/LyingKneePullIns.json',
+     'targets/LyingKneePullIns.mp3'),
+
      
     ('Deadbug Leg Raises',
      'Lie on your back with one knee bent in tabletop, your other leg straight in the air, and arms by your sides. Inhale to prepare, then exhale as you lower one leg toward the mat, keeping the other leg stable.',
@@ -325,7 +387,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/DeadbugLegRaises.json'),
+     'targets/DeadbugLegRaises.json',
+     'targets/DeadbugLegRaises.mp3'),
+
      
     ('Full Pilates Roll-Up',
      'Start lying flat on your back, legs extended and arms reaching overhead. Inhale to prepare, then exhale as you sweep your arms forward, lifting your head, neck, and shoulders off the mat. Roll up one vertebra at a time, reaching toward your toes.',
@@ -333,7 +397,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/FullPilatesRollUp.json'),
+     'targets/FullPilatesRollUp.json',
+     'targets/FullPilatesRollUp.mp3'),
+
      
     ('Seated Leg Pumps',
      'Sit tall with your hands supporting you behind your back, fingers pointing outward, and legs extended straight. Inhale to prepare, then exhale as you lift one leg, pointing your toes, and pump it up and down with control.',
@@ -341,7 +407,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
       'target'::exercise_type_enum,
      true,
-     'targets/SeatedLegPumps.json'),
+     'targets/SeatedLegPumps.json',
+     'targets/SeatedLegPumps.mp3'),
+
      
     ('Flutter Kicks',
      'Lie on your back with your legs extended straight up toward the ceiling and hands under your hips for support. Inhale to prepare, then exhale as you alternate your legs in a fluttering motion.',
@@ -349,7 +417,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/FlutterKicks.json'),
+     'targets/FlutterKicks.json',
+     'targets/FlutterKicks.mp3'),
+
      
     ('Shallow Lift-Lowers',
      'Lie on your back with legs extended and hovering slightly above the mat. Curl your head, neck, and shoulders off the mat, engaging your core. Inhale as you lift your legs a few inches higher, and exhale as you lower them slightly.',
@@ -357,7 +427,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/ShallowLiftLowers.json'),
+     'targets/ShallowLiftLowers.json',
+     'targets/ShallowLiftLowers.mp3'),
+
 
     ('Boat Hold',
      'Sit tall on your mat, knees bent and feet flat. Lean back slightly, engaging your core, and lift one leg, then the other, so you''re balancing on your sit bones. Extend your arms forward, keeping your chest open and shoulders relaxed.',
@@ -365,7 +437,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/BoatHold.json'),
+     'targets/BoatHold.json',
+     'targets/BoatHold.mp3'),
+
      
     ('Single Leg Crunch',
      'Lie on your back, one leg bent with the foot flat and the other leg lifted in tabletop. Place your hands behind your head, elbows wide. Inhale to prepare, then exhale as you curl your head, neck, and shoulders up toward the lifted leg.',
@@ -373,7 +447,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/SingleLegCrunch.json'),
+     'targets/SingleLegCrunch.json',
+     'targets/SingleLegCrunch.mp3'),
+
      
     ('Side Leg Lift',
      'Lie on your side, propped up on your forearm with your legs extended straight. Inhale to prepare, then exhale as you lift your top leg to hip height or slightly higher, keeping it straight.',
@@ -381,7 +457,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
       'target'::exercise_type_enum,
      true,
-     'targets/SideLegLift.json'),
+     'targets/SideLegLift.json',
+     'targets/SideLegLift.mp3'),
+
      
     ('Plank Kick-back',
      'Start in a plank position, resting on your hands with your body in a straight line. Keep your core engaged and hips stable. Inhale to prepare, then exhale as you extend one leg back and kick it upward, keeping it straight.',
@@ -389,7 +467,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/PlankKickback.json'),
+     'targets/PlankKickback.json',
+     'targets/PlankKickback.mp3'),
+
      
     ('Tabletop Pulse',
      'Start on all fours, wrists under shoulders and knees under hips. Extend one leg straight back and the opposite arm straight forward. Inhale to prepare, then exhale as you pulse the lifted leg upward in small, controlled movements.',
@@ -397,7 +477,8 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/TabletopPulse.json'),
+     'targets/TabletopPulse.json',
+     'targets/TabletopPulse.mp3'),
      
     ('Downward Dog Walks',
      'Start in a downward dog position with your hips lifted high, hands and feet pressing firmly into the mat. Inhale to prepare, then exhale as you bend one knee while keeping the opposite leg straight.',
@@ -405,7 +486,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/DownwardDogWalks.json'),
+     'targets/DownwardDogWalks.json',
+     'targets/DownwardDogWalks.mp3'),
+
      
     ('Plank Shift',
      'Start in a high plank position, hands under shoulders and body in a straight line. Engage your core and inhale as you shift your weight slightly in front of you, keeping your hips level.',
@@ -413,7 +496,8 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/PlankShift.json'),
+     'targets/PlankShift.json',
+     'targets/PlankShift.mp3'),
      
     ('Kneeling Reach Through',
      'Start on all fours with wrists under shoulders and knees under hips. Inhale as you reach one arm up toward the ceiling, opening your chest. Exhale as you thread that arm under your body.',
@@ -421,7 +505,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/KneelingReachThrough.json'),
+     'targets/KneelingReachThrough.json',
+     'targets/KneelingReachThrough.mp3'),
+
      
     ('Tabletop to Childs Pose',
      'Start on all fours in a tabletop position, with your wrists under shoulders and knees under hips. Inhale as you hold steady, then exhale as you sit back onto your heels, stretching your arms forward into a childs pose.',
@@ -429,7 +515,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/TabletopToChildsPose.json'),
+     'targets/TabletopToChildsPose.json',
+     'targets/TabletopToChildsPose.mp3'),
+
      
     ('Boat Hold w/ Arm Pulses',
      'Sit tall with your knees bent and feet flat on the mat. Lean back slightly, engaging your core, and extend your arms forward at shoulder height. Inhale to prepare, then exhale as you make small, controlled pulsing movements with your arms up and down.',
@@ -437,7 +525,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/BoatHoldWithArmPulses.json'),
+     'targets/BoatHoldWithArmPulses.json',
+     'targets/BoatHoldWithArmPulses.mp3'),
+
      
     ('Lean Back Cross Crunch',
      'Sit tall with knees bent and feet flat on the mat. Place your hands lightly behind your head, elbows wide. Lean back slightly, engaging your core. Exhale as you twist, bringing one elbow toward the opposite knee.',
@@ -445,7 +535,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/LeanBackCrossCrunch.json'),
+     'targets/LeanBackCrossCrunch.json',
+     'targets/LeanBackCrossCrunch.mp3'),
+
      
     ('Side Arm Opener',
      'Sit tall with your knees bent, feet flat on the mat, and arms extended forward at shoulder height. Lean back slightly, engaging your core. Inhale to prepare, then exhale as you open one arm out to the side.',
@@ -453,7 +545,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/SideArmOpener.json'),
+     'targets/SideArmOpener.json',
+     'targets/SideArmOpener.mp3'),
+
      
     ('Reverse Plank Lifts',
      'Sit on your mat with legs extended and hands placed slightly behind you, fingers pointing forward. Press into your hands and heels as you lift your hips into a straight line, forming a reverse plank.',
@@ -461,7 +555,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'advanced'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/ReversePlankLifts.json'),
+     'targets/ReversePlankLifts.json',
+     'targets/ReversePlankLifts.mp3'),
+
      
     ('Side Plank With Clam',
      'Start in a side plank on your forearm, with your knees bent and feet stacked. Keep your hips lifted and your core engaged. Inhale as you hold steady, then exhale to open your top knee like a clam.',
@@ -469,7 +565,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'advanced'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/SidePlankWithClam.json'),
+     'targets/SidePlankWithClam.json',
+     'targets/SidePlankWithClam.mp3'),
+
      
     ('Side Plank Rotation With Knee Opener',
      'Start in a side plank on your forearm with your knees bent and hips lifted. Extend your top arm toward the ceiling. Inhale as you rotate your torso, threading your top arm under your body.',
@@ -477,7 +575,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'advanced'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/SidePlankRotationWithKneeOpener.json'),
+     'targets/SidePlankRotationWithKneeOpener.json',
+     'targets/SidePlankRotationWithKneeOpener.mp3'),
+
      
     ('Side Plank Crunch With Reach Out',
      'Come into a side plank position on your forearm with your bottom knee bent and your top leg extended out. Rest your top hand lightly behind your head. Exhale, crunching your top elbow toward your lifted leg.',
@@ -485,7 +585,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'advanced'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/SidePlankCrunchWithReachOut.json'),
+     'targets/SidePlankCrunchWithReachOut.json',
+     'targets/SidePlankCrunchWithReachOut.mp3'),
+
      
     ('Side Plank Leg Pulses',
      'Settle into a modified side plank on your forearm, with your bottom knee bent and your top leg extended straight. Engage your core, and lift your top leg to hip height. Begin small, controlled pulses with your top leg.',
@@ -493,7 +595,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'advanced'::experience_level_enum,
      'target'::exercise_type_enum,
       true,
-     'targets/SidePlankLegPulses.json'),
+     'targets/SidePlankLegPulses.json',
+     'targets/SidePlankLegPulses.mp3'),
+
      
     ('Side Plank Leg Hold',
      'Start in a side plank on your forearm, with your bottom knee bent and your top leg extended. Lift your top leg to hip height and hold it steady. Keep your hips stacked and your core engaged.',
@@ -501,7 +605,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'advanced'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/SidePlankLegHold.json'),
+     'targets/SidePlankLegHold.json',
+     'targets/SidePlankLegHold.mp3'),
+
      
     ('Side Plank Hold',
      'Start by lying on your side with your elbow directly under your shoulder and legs extended, stacking your feet one on top of the other. Engage your core and lift your hips off the mat.',
@@ -509,7 +615,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'advanced'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/SidePlankHold.json'),
+     'targets/SidePlankHold.json',
+     'targets/SidePlankHold.mp3'),
+
      
     ('Straight Leg Stretch',
      'Take a seat with one leg extended out and the other folded in comfortably. Inhale and lengthen your spine. As you exhale, reach your arm over towards your extended leg.',
@@ -517,7 +625,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/StraightLegStretch.json'),
+     'targets/StraightLegStretch.json',
+     'targets/StraightLegStretch.mp3'),
+
      
     ('Twist Crunch',
      'Start seated with your knees bent and feet flat on the mat. Gently recline your torso, engaging your core. Place your right hand behind your head, keeping your elbow wide.',
@@ -525,7 +635,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'beginner'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/TwistCrunch.json'),
+     'targets/TwistCrunch.json',
+     'targets/TwistCrunch.mp3'),
+
      
     ('Bear Crawl Lifts',
      'Come onto all fours, with your hands stacked under your shoulders and knees under your hips. Tuck your toes under and engage your core, creating a neutral spine.',
@@ -533,15 +645,19 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/BearCrawlLifts.json'),
-     
+     'targets/BearCrawlLifts.json',
+     'targets/BearCrawlLifts.mp3'),
+
+    
     ('Plank Walk In and Outs',
      'Start in a high plank position, with your hands directly under your shoulders and your body forming a straight line from head to heels. Engage your core and keep your hips steady.',
      ARRAY['Core'],
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/PlankWalkInsAndOuts.json'),
+     'targets/PlankWalkInsAndOuts.json',
+     'targets/PlankWalkInsAndOuts.mp3'),
+
      
     ('Reverse Tabletop',
      'Sit on your mat with your feet flat and hip-width apart, and your hands placed just behind your hips, fingers pointing forward. Press through your palms and heels as you lift your hips toward the ceiling.',
@@ -549,7 +665,8 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'advanced'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/ReverseTabletop.json'),
+     'targets/ReverseTabletop.json',
+     'targets/ReverseTabletop.mp3'),
      
     ('Scissor Crunch',
      'Lie on your back with your hands lightly supporting your head, elbows wide. Bring your legs into tabletop position, knees bent at 90 degrees. Lift your head, neck, and shoulders off the mat as you twist your torso.',
@@ -557,7 +674,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/ScissorCrunch.json'),
+     'targets/ScissorCrunch.json',
+     'targets/ScissorCrunch.mp3'),
+
      
     ('Scissor Leg Extension',
      'Begin seated with your forearms supporting your upper body, hands planted on the mat behind you. Extend both legs outward, lifting them slightly off the floor.',
@@ -565,7 +684,9 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/ScissorLegExtension.json'),
+     'targets/ScissorLegExtension.json',
+     'targets/ScissorLegExtension.mp3'),
+
      
     ('Single Leg Flutter Kick',
      'Start by lying on your back with your legs extended and arms by your sides or hands under your hips for support. Engage your core, lifting both legs off the mat.',
@@ -573,7 +694,8 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'intermediate'::experience_level_enum,
      'target'::exercise_type_enum,
      true,
-     'targets/SingleLegFlutterKick.json');
+     'targets/SingleLegFlutterKick.json',
+     'targets/SingleLegFlutterKick.mp3');
 
 SELECT COUNT(*) as total_exercises,
        COUNT(*) FILTER (WHERE lottie_file_url LIKE 'exercise_animations/warmups%') as warmup_count,

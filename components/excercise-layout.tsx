@@ -9,14 +9,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 // import { Audio } from "expo-av";
 
 interface ExerciseLayoutProps {
+  id: string;
   title: string;
   description: string;
+  focus: string;
   type: "Warmup" | "Cooldown" | "Target";
   animationSource: string;
   duration: number;
   onNext?: () => void;
   onQuit?: () => void;
-  onDifferentExercise?: () => void;
+  onDifferentExercise?: (
+    id: string,
+    type: "warmup" | "cooldown" | "target",
+    focus: string
+  ) => void;
   totalExercises?: number;
   currentExercise?: number;
   autoPlay?: boolean;
@@ -25,8 +31,10 @@ interface ExerciseLayoutProps {
 }
 
 export const ExerciseLayout = ({
+  id,
   title,
   description,
+  focus,
   type,
   animationSource,
   duration,
@@ -211,17 +219,23 @@ export const ExerciseLayout = ({
           </View>
         </TouchableOpacity> */}
 
-        {!isCompleted && (
+        {/* {!isCompleted && (
           <TouchableOpacity
             style={styles.differentExerciseButton}
-            onPress={onDifferentExercise}
+            onPress={() =>
+              onDifferentExercise?.(
+                id,
+                type.toLowerCase() as "warmup" | "cooldown" | "target",
+                focus
+              )
+            }
           >
             <Text style={styles.differentExerciseButtonText}>
               different exercise
             </Text>
             <FontAwesome name="refresh" size={16} color="#4A2318" />
           </TouchableOpacity>
-        )}
+        )} */}
       </View>
     </SafeAreaView>
   );
