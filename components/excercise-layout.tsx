@@ -87,6 +87,9 @@ export const ExerciseLayout = ({
     if (isActive && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft((time) => {
+          if (time === 4) {
+            handlePlayCountdown();
+          }
           if (time <= 1) {
             clearInterval(interval);
             setIsActive(false);
@@ -162,6 +165,22 @@ export const ExerciseLayout = ({
     } catch (error) {
       console.error("Error playing sound:", error);
       // Add user feedback here if needed
+    }
+  };
+
+  const handlePlayCountdown = async () => {
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        require("../assets/countdown.mp3")
+      );
+      await sound.playAsync();
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          sound.unloadAsync();
+        }
+      });
+    } catch (error) {
+      console.error("Error playing countdown sound:", error);
     }
   };
 

@@ -69,7 +69,14 @@ export const PaywallScreen = ({ onPurchase, onSkip }: PaywallScreenProps) => {
             style={styles.priceButton}
             onPress={async () => {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onPurchase();
+              Superwall.shared
+                .register("MonthlySubscription")
+                .then(() => {
+                  onPurchase();
+                })
+                .catch((error) => {
+                  console.error("Error registering subscription", error);
+                });
             }}
           >
             <Text style={styles.priceAmount}>$8/Week</Text>
