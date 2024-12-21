@@ -6,7 +6,7 @@ import { useFonts } from "expo-font";
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-// import { Audio } from "expo-av";
+import { Audio, AVPlaybackStatus } from "expo-av";
 
 interface ExerciseLayoutProps {
   id: string;
@@ -15,6 +15,7 @@ interface ExerciseLayoutProps {
   focus: string;
   type: "Warmup" | "Cooldown" | "Target";
   animationSource: string;
+  voiceDescriptionSource: string;
   duration: number;
   onNext?: () => void;
   onQuit?: () => void;
@@ -37,6 +38,7 @@ export const ExerciseLayout = ({
   focus,
   type,
   animationSource,
+  voiceDescriptionSource,
   duration,
   onNext,
   onQuit,
@@ -51,10 +53,13 @@ export const ExerciseLayout = ({
   const [isActive, setIsActive] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const animation = useRef<LottieView>(null);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [onRepeat, setOnRepeat] = useState(false);
   const router = useRouter();
   const [fontsLoaded] = useFonts({
     KeeponTruckin: require("../assets/fonts/KeeponTruckin.ttf"),
   });
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     setTimeLeft(duration);
@@ -114,6 +119,52 @@ export const ExerciseLayout = ({
     onNext?.();
   };
 
+  const handlePlayVoice = async () => {
+    console.log("handlePlayVoice", voiceDescriptionSource);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    try {
+      if (isPlaying) {
+        await sound?.stopAsync();
+        setIsPlaying(false);
+        return;
+      }
+
+      // Unload any existing sound first
+      if (sound) {
+        await sound.unloadAsync();
+      }
+
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: voiceDescriptionSource },
+        { shouldPlay: true, isLooping: false }
+      );
+
+      setSound(newSound);
+      setIsPlaying(true);
+
+      newSound?.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          if (onRepeat) {
+            // Add a delay before replaying
+            setTimeout(async () => {
+              try {
+                await newSound.replayAsync();
+              } catch (error) {
+                console.error("Error replaying sound:", error);
+              }
+            }, 1000); // 1 second delay
+          } else {
+            setIsPlaying(false);
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Error playing sound:", error);
+      // Add user feedback here if needed
+    }
+  };
+
   // const playCompletionSound = async () => {
   //   try {
   //     const { sound } = await Audio.Sound.createAsync(
@@ -126,14 +177,31 @@ export const ExerciseLayout = ({
   //   }
   // };
 
-  // useEffect(() => {
-  //   return sound
-  //     ? () => {
-  //         console.log("Unloading Sound");
-  //         sound.unloadAsync();
-  //       }
-  //     : undefined;
-  // }, [sound]);
+  useEffect(() => {
+    return sound
+      ? () => {
+          console.log("Unloading Sound");
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
+
+  useEffect(() => {
+    const setupAudio = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+        });
+      } catch (error) {
+        console.error("Error setting up audio:", error);
+      }
+    };
+
+    setupAudio();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -186,6 +254,36 @@ export const ExerciseLayout = ({
           <Text style={styles.beginButtonText}>stop</Text>
         </TouchableOpacity>
       )}
+
+      <View style={styles.audioControls}>
+        <TouchableOpacity
+          style={styles.playVoiceButton}
+          onPress={handlePlayVoice}
+        >
+          <FontAwesome
+            name={isPlaying ? "stop" : "play"}
+            size={20}
+            color="#4A2318"
+          />
+          <Text style={styles.playVoiceButtonText}>
+            {isPlaying ? "Stop Voice" : "Play Voice"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.repeatButton, onRepeat && styles.repeatButtonActive]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setOnRepeat(!onRepeat);
+          }}
+        >
+          <FontAwesome
+            name="repeat"
+            size={20}
+            color={onRepeat ? "#FFE9D5" : "#4A2318"}
+          />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.buttonContainer}>
         {/* <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
@@ -382,5 +480,37 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  playVoiceButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#4A2318",
+  },
+  playVoiceButtonText: {
+    fontSize: 18,
+    color: "#4A2318",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  audioControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+  repeatButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#4A2318",
+  },
+  repeatButtonActive: {
+    backgroundColor: "#4A2318",
   },
 });

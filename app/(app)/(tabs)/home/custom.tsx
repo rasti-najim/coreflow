@@ -38,6 +38,9 @@ export default function Page() {
   const [animationSources, setAnimationSources] = useState<{
     [key: string]: string;
   }>({});
+  const [voiceDescriptionSources, setVoiceDescriptionSources] = useState<{
+    [key: string]: string;
+  }>({});
   const [isWorkoutStarted, setIsWorkoutStarted] = useState(false);
   const [session_id, setSessionId] = useState<string | null>(null);
   const currentExercise = exercises[currentExerciseIndex];
@@ -112,6 +115,17 @@ export default function Page() {
           setAnimationSources((prev) => ({
             ...prev,
             [exercise.id]: animationUrl.publicUrl,
+          }));
+        }
+
+        if (exercise.voice_description_url) {
+          const { data: voiceDescriptionUrl } = supabase.storage
+            .from("exercise_sounds")
+            .getPublicUrl(exercise.voice_description_url);
+
+          setVoiceDescriptionSources((prev) => ({
+            ...prev,
+            [exercise.id]: voiceDescriptionUrl.publicUrl,
           }));
         }
       }
@@ -206,11 +220,13 @@ export default function Page() {
           <Text style={styles.progressText}>{progress}</Text>
         </View>
         <ExerciseLayout
+          id={currentExercise.id}
           title={currentExercise.name}
           description={currentExercise.description}
           duration={20}
           animationSource={animationSources[currentExercise.id]}
           type={currentExercise.type}
+          focus={currentExercise.focus}
           onNext={handleNext}
           onQuit={() => router.back()}
           totalExercises={exercises.length}
@@ -218,6 +234,7 @@ export default function Page() {
           autoPlay={autoPlay}
           onAutoPlay={() => setAutoPlay(!autoPlay)}
           isSavingProgress={isSavingProgress}
+          voiceDescriptionSource={voiceDescriptionSources[currentExercise.id]}
         />
       </View>
     );

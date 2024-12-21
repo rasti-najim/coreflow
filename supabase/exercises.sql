@@ -40,7 +40,7 @@ INSERT INTO exercises (name, description, focus, skill_level, type, is_two_sided
      'warmups/DonkeyKick.json',
      'warmups/DonkeyKick.mp3'),
 
-    ('Spine Stretch Forward',
+    
     ('Spine Stretch Forward',
      'Sit tall with your legs straight and slightly apart, arms reaching forward. Inhale to grow taller, then exhale as you round forward, reaching past your toes. Inhale to sit back up tall, stacking your spine one vertebra at a time.',
      ARRAY['Mobility & Flexibility'],

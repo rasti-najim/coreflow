@@ -22,6 +22,9 @@ export default function Modal() {
   const [animationSources, setAnimationSources] = useState<{
     [key: string]: string;
   }>({});
+  const [voiceDescriptionSources, setVoiceDescriptionSources] = useState<{
+    [key: string]: string;
+  }>({});
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -134,6 +137,17 @@ export default function Modal() {
             [exercise.id]: animationUrl.publicUrl,
           }));
         }
+
+        if (exercise.voice_description_url) {
+          const { data: voiceDescriptionUrl } = supabase.storage
+            .from("exercise_sounds")
+            .getPublicUrl(exercise.voice_description_url);
+
+          setVoiceDescriptionSources((prev) => ({
+            ...prev,
+            [exercise.id]: voiceDescriptionUrl.publicUrl,
+          }));
+        }
       }
 
       setExercises(allExercises);
@@ -232,6 +246,7 @@ export default function Modal() {
         totalExercises={exercises.length}
         currentExercise={currentExerciseIndex + 1}
         // onDifferentExercise={handleDifferentExercise}
+        voiceDescriptionSource={voiceDescriptionSources[currentExercise.id]}
       />
     </View>
   );
