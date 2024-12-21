@@ -17,20 +17,23 @@ import supabase from "@/lib/supabase";
 import { VerifyOTP } from "@/components/verify-otp";
 import { createSchedule } from "@/lib/schedule";
 import mixpanel from "@/lib/mixpanel";
-
+import { DateTime } from "luxon";
+import * as ImagePicker from "expo-image-picker";
+import { decode } from "base64-arraybuffer";
+import { Routine, Duration } from "@/components/select-routine";
 interface OnboardingData {
   pilatesLevel: "beginner" | "intermediate" | "advanced" | null;
   goals: string[];
-  routine: string | null;
-  duration: string | null;
+  routine: Routine | null;
+  duration: Duration | null;
   goalDetails: string[];
   hasPurchased?: boolean;
   hasAccount?: boolean;
   phoneNumber?: string;
   email?: string;
-  tracking: "pictures" | "mood" | "neither" | null;
+  tracking: "picture" | "mood" | "neither" | null;
   mood?: string;
-  photo?: string;
+  photo?: ImagePicker.ImagePickerAsset | null;
   otp?: string;
 }
 
@@ -47,7 +50,7 @@ export default function Onboarding() {
     email: "",
     tracking: null,
     mood: "",
-    photo: "",
+    photo: null,
     otp: "",
   });
   const router = useRouter();
@@ -76,6 +79,15 @@ export default function Onboarding() {
 
   const saveOnboardingData = async (userId: string) => {
     console.log("user id", userId);
+
+    if (
+      !onboardingData.routine ||
+      !onboardingData.duration ||
+      !onboardingData.tracking ||
+      !onboardingData.pilatesLevel
+    )
+      throw new Error("Routine, duration, or tracking is required");
+
     const { error: userError } = await supabase.from("users").insert({
       id: userId,
       phone_number: onboardingData.phoneNumber,
@@ -97,6 +109,7 @@ export default function Onboarding() {
     const { error: prefsError } = await supabase
       .from("user_preferences")
       .insert({
+        // @ts-ignore
         user_id: userId,
         weekly_sessions: onboardingData.routine,
         session_duration: onboardingData.duration,
@@ -104,6 +117,46 @@ export default function Onboarding() {
       });
 
     if (prefsError) throw prefsError;
+
+    let pictureUrl = null;
+
+    if (onboardingData.photo) {
+      const { data, error } = await supabase.storage
+        .from("progress")
+        .upload(
+          `${userId}/${DateTime.now().toISO()}.${
+            onboardingData.photo?.fileName?.split(".")[1]
+          }`,
+          decode(onboardingData.photo?.base64 || ""),
+          {
+            contentType: `${onboardingData.photo?.mimeType}`,
+          }
+        );
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      pictureUrl = data?.path?.split("/")[1];
+    }
+
+    if (
+      onboardingData.tracking !== "neither" &&
+      onboardingData.tracking !== null
+    ) {
+      const { data: progressData, error: progressError } = await supabase
+        .from("progress")
+        .insert({
+          user_id: userId,
+          entry_type: onboardingData.tracking,
+          mood_description: onboardingData.mood,
+          picture_url: pictureUrl,
+          added_on: DateTime.now().toISODate(),
+        });
+
+      if (progressError) throw progressError;
+    }
 
     console.log("onboarding data saved", onboardingData);
   };
@@ -180,18 +233,17 @@ export default function Onboarding() {
         // return onboardingData.goalDetails.length === 0;
         return false;
       case 5:
-        return !onboardingData.hasPurchased;
-      case 6:
-        return !onboardingData.phoneNumber;
-      case 7:
-        return !onboardingData.otp && !onboardingData.hasAccount;
-      case 8:
         return !onboardingData.tracking;
-      case 9:
+      case 6:
         if (onboardingData.tracking === "neither") return false;
-        if (onboardingData.tracking === "pictures")
-          return !onboardingData.photo;
+        if (onboardingData.tracking === "picture") return !onboardingData.photo;
         return !onboardingData.mood;
+      case 7:
+        return !onboardingData.hasPurchased;
+      case 8:
+        return !onboardingData.phoneNumber;
+      case 9:
+        return !onboardingData.otp && !onboardingData.hasAccount;
       default:
         return false;
     }
@@ -216,7 +268,7 @@ export default function Onboarding() {
   };
 
   const renderStep = () => {
-    if (step === 5) {
+    if (step === 7) {
       return (
         <PaywallScreen
           onPurchase={() => {
@@ -286,7 +338,40 @@ export default function Onboarding() {
         );
       case 4:
         return <GoalsDetails selectedGoals={onboardingData.goals} />;
+      case 5:
+        return (
+          <Tracking
+            // @ts-ignore
+            selectedTracking={onboardingData.tracking}
+            onSelectTracking={(tracking) => {
+              // @ts-ignore
+              setOnboardingData((prev) => ({ ...prev, tracking: tracking }));
+              mixpanel.track("Select Tracking", {
+                tracking: tracking,
+              });
+            }}
+          />
+        );
       case 6:
+        if (onboardingData.tracking === "picture") {
+          return (
+            <StartingJourneyPhoto
+              onPhotoSelect={(photo) => {
+                setOnboardingData((prev) => ({ ...prev, photo: photo }));
+                mixpanel.track("Starting Journey Photo");
+              }}
+            />
+          );
+        }
+        return (
+          <StartingJourney
+            onMoodChange={(mood) => {
+              setOnboardingData((prev) => ({ ...prev, mood: mood }));
+              mixpanel.track("Starting Journey Mood");
+            }}
+          />
+        );
+      case 8:
         return (
           <CreateAccount
             title="Create Your Account"
@@ -321,7 +406,7 @@ export default function Onboarding() {
             }}
           />
         );
-      case 7:
+      case 9:
         return (
           <VerifyOTP
             phoneNumber={onboardingData.phoneNumber || ""}
@@ -333,37 +418,7 @@ export default function Onboarding() {
             onResend={() => handlePhoneSignIn(onboardingData.phoneNumber || "")}
           />
         );
-      case 8:
-        return (
-          <Tracking
-            selectedTracking={onboardingData.tracking}
-            onSelectTracking={(tracking) => {
-              setOnboardingData((prev) => ({ ...prev, tracking: tracking }));
-              mixpanel.track("Select Tracking", {
-                tracking: tracking,
-              });
-            }}
-          />
-        );
-      case 9:
-        if (onboardingData.tracking === "pictures") {
-          return (
-            <StartingJourneyPhoto
-              onPhotoSelect={(photo) => {
-                setOnboardingData((prev) => ({ ...prev, photo: photo }));
-                mixpanel.track("Starting Journey Photo");
-              }}
-            />
-          );
-        }
-        return (
-          <StartingJourney
-            onMoodChange={(mood) => {
-              setOnboardingData((prev) => ({ ...prev, mood: mood }));
-              mixpanel.track("Starting Journey Mood");
-            }}
-          />
-        );
+
       default:
         return null;
     }
@@ -376,7 +431,7 @@ export default function Onboarding() {
       onBack={handleBack}
       onNext={handleNext}
       isNextDisabled={isNextDisabled()}
-      showLayout={step !== 5}
+      showLayout={step !== 7}
     >
       {renderStep()}
     </OnboardingLayout>

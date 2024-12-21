@@ -9,6 +9,10 @@ import {
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
+import { CustomCameraView } from "./camera-view";
+import { DateTime } from "luxon";
+import { Camera } from "expo-camera";
+import { Toast } from "./toast";
 
 interface StartingJourneyProps {
   onMoodChange?: (mood: string) => void;
@@ -41,13 +45,27 @@ export const StartingJourney = ({ onMoodChange }: StartingJourneyProps) => {
 };
 
 interface StartingJourneyPhotoProps {
-  onPhotoSelect?: (uri: string) => void;
+  onPhotoSelect?: (asset: ImagePicker.ImagePickerAsset) => void;
 }
 
 export const StartingJourneyPhoto = ({
   onPhotoSelect,
 }: StartingJourneyPhotoProps) => {
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const handleTakePhoto = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      alert("Sorry, we need camera permissions to make this work!");
+      return;
+    }
+
+    setShowCamera(true);
+  };
 
   const handleSelectPhoto = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -61,17 +79,45 @@ export const StartingJourneyPhoto = ({
 
     // Pick the image
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
+      base64: true,
     });
 
-    if (!result.canceled && result.assets[0].uri) {
-      setPhoto(result.assets[0].uri);
-      onPhotoSelect?.(result.assets[0].uri);
+    if (!result.canceled && result.assets[0]) {
+      setPhoto(result.assets[0]);
+      onPhotoSelect?.(result.assets[0]);
     }
   };
+
+  if (showCamera) {
+    return (
+      <CustomCameraView
+        onCapture={(uri, base64) => {
+          setShowCamera(false);
+          setPhoto({
+            uri,
+            base64,
+            fileName: `${DateTime.now().toISO()}.jpg`,
+            mimeType: "image/jpeg",
+            width: 0,
+            height: 0,
+          });
+          onPhotoSelect?.({
+            uri,
+            base64,
+            fileName: `${DateTime.now().toISO()}.jpg`,
+            mimeType: "image/jpeg",
+            width: 0,
+            height: 0,
+          });
+        }}
+        onClose={() => setShowCamera(false)}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -81,11 +127,22 @@ export const StartingJourneyPhoto = ({
         etc)
       </Text>
 
-      <TouchableOpacity style={styles.uploadButton} onPress={handleSelectPhoto}>
-        <Text style={styles.uploadButtonText}>take or upload a picture</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.uploadButton} onPress={handleTakePhoto}>
+          <Text style={styles.uploadButtonText}>Take Photo</Text>
+        </TouchableOpacity>
 
-      {photo && <Image source={{ uri: photo }} style={styles.previewImage} />}
+        <TouchableOpacity
+          style={styles.uploadButton}
+          onPress={handleSelectPhoto}
+        >
+          <Text style={styles.uploadButtonText}>Choose from Library</Text>
+        </TouchableOpacity>
+      </View>
+
+      {photo && (
+        <Image source={{ uri: photo.uri }} style={styles.previewImage} />
+      )}
     </View>
   );
 };
@@ -94,6 +151,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "flex-start",
+  },
+  contentContainer: {
+    flex: 1,
+    width: "100%",
+  },
+  buttonContainer: {
+    gap: 16,
+    width: "100%",
+    marginBottom: 24,
   },
   title: {
     fontSize: 40,
@@ -115,6 +181,16 @@ const styles = StyleSheet.create({
     borderBottomColor: "#4A2318",
     paddingBottom: 8,
   },
+  previewContainer: {
+    flex: 1,
+    justifyContent: "center",
+    marginBottom: 24,
+  },
+  previewImage: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: 10,
+  },
   uploadButton: {
     paddingVertical: 16,
     borderRadius: 10,
@@ -128,10 +204,30 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#000000",
   },
-  previewImage: {
-    width: "100%",
-    height: 300,
-    marginTop: 24,
+  button: {
+    paddingVertical: 16,
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#4A2318",
+    width: "100%",
+    marginBottom: 24,
+    backgroundColor: "#FFE9D5",
+  },
+  buttonDisabled: {
+    borderColor: "#999999",
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#4A2318",
+  },
+  buttonTextDisabled: {
+    color: "#999999",
   },
 });
