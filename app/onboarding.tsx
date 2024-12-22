@@ -21,6 +21,7 @@ import { DateTime } from "luxon";
 import * as ImagePicker from "expo-image-picker";
 import { decode } from "base64-arraybuffer";
 import { Routine, Duration } from "@/components/select-routine";
+import Superwall from "@superwall/react-native-superwall";
 interface OnboardingData {
   pilatesLevel: "beginner" | "intermediate" | "advanced" | null;
   goals: string[];
@@ -55,7 +56,7 @@ export default function Onboarding() {
   });
   const router = useRouter();
 
-  const totalSteps = useMemo(() => 10, []); // Increased by 1 for account creation
+  const totalSteps = useMemo(() => 9, []); // Increased by 1 for account creation
 
   const handlePhoneSignIn = async (phoneNumber: string) => {
     console.log("Phone sign in with", phoneNumber);
@@ -163,7 +164,22 @@ export default function Onboarding() {
 
   const handleNext = async () => {
     if (step < totalSteps - 1) {
+      if (step === 5 && onboardingData.tracking === "neither") {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        Superwall.shared.register("onboarding").then(async () => {
+          setStep(step + 1);
+        });
+        return;
+      }
+
       if (step === 6) {
+        // await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        // Superwall.shared.register("onboarding").then(async () => {
+        //   setStep(step + 1);
+        // });
+        // return;
+      }
+      if (step === 8) {
         if (onboardingData.phoneNumber) {
           await handlePhoneSignIn(onboardingData.phoneNumber);
         }
@@ -171,7 +187,7 @@ export default function Onboarding() {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         return;
       }
-      if (step === 7) {
+      if (step === 9) {
         if (onboardingData.phoneNumber) {
           await handleVerifyOTP();
         }
@@ -238,11 +254,11 @@ export default function Onboarding() {
         if (onboardingData.tracking === "neither") return false;
         if (onboardingData.tracking === "picture") return !onboardingData.photo;
         return !onboardingData.mood;
+      // case 7:
+      //   return !onboardingData.hasPurchased;
       case 7:
-        return !onboardingData.hasPurchased;
-      case 8:
         return !onboardingData.phoneNumber;
-      case 9:
+      case 8:
         return !onboardingData.otp && !onboardingData.hasAccount;
       default:
         return false;
@@ -268,21 +284,21 @@ export default function Onboarding() {
   };
 
   const renderStep = () => {
-    if (step === 7) {
-      return (
-        <PaywallScreen
-          onPurchase={() => {
-            setOnboardingData((prev) => ({ ...prev, hasPurchased: true }));
-            handleNext();
-          }}
-          onSkip={() => {
-            // Handle skip logic (e.g., show limited features)
-            setOnboardingData((prev) => ({ ...prev, hasPurchased: false }));
-            handleNext();
-          }}
-        />
-      );
-    }
+    // if (step === 7) {
+    //   return (
+    //     <PaywallScreen
+    //       onPurchase={() => {
+    //         setOnboardingData((prev) => ({ ...prev, hasPurchased: true }));
+    //         handleNext();
+    //       }}
+    //       onSkip={() => {
+    //         // Handle skip logic (e.g., show limited features)
+    //         setOnboardingData((prev) => ({ ...prev, hasPurchased: false }));
+    //         handleNext();
+    //       }}
+    //     />
+    //   );
+    // }
 
     switch (step) {
       case 0:
@@ -371,7 +387,7 @@ export default function Onboarding() {
             }}
           />
         );
-      case 8:
+      case 7:
         return (
           <CreateAccount
             title="Create Your Account"
@@ -406,7 +422,7 @@ export default function Onboarding() {
             }}
           />
         );
-      case 9:
+      case 8:
         return (
           <VerifyOTP
             phoneNumber={onboardingData.phoneNumber || ""}
@@ -431,7 +447,7 @@ export default function Onboarding() {
       onBack={handleBack}
       onNext={handleNext}
       isNextDisabled={isNextDisabled()}
-      showLayout={step !== 7}
+      // showLayout={step !== 7}
     >
       {renderStep()}
     </OnboardingLayout>

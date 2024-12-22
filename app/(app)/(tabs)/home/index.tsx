@@ -10,6 +10,7 @@ import { createSchedule, checkScheduleStatus } from "@/lib/schedule";
 import { DateTime } from "luxon";
 import { calculateConsistency, ConsistencyStats } from "@/lib/consistency";
 import mixpanel from "@/lib/mixpanel";
+import Superwall from "@superwall/react-native-superwall";
 
 type Session = {
   focus: string;
@@ -134,7 +135,9 @@ export default function Page() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             // Handle image progress
             setShowOptions(false);
-            router.push("/home/track-picture");
+            Superwall.shared.register("trackProgressPhoto").then(() => {
+              router.push("/home/track-picture");
+            });
           }}
         >
           <FontAwesome6 name="image" size={18} color="#FFE9D5" />
@@ -147,7 +150,9 @@ export default function Page() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             // Handle note progress
             setShowOptions(false);
-            router.push("/home/track-mood");
+            Superwall.shared.register("trackProgressMood").then(() => {
+              router.push("/home/track-mood");
+            });
           }}
         >
           <FontAwesome6 name="note-sticky" size={18} color="#FFE9D5" />
@@ -159,7 +164,9 @@ export default function Page() {
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setShowOptions(false);
-            router.push("/home/custom");
+            Superwall.shared.register("startCustomWorkoutSession").then(() => {
+              router.push("/home/custom");
+            });
           }}
         >
           <FontAwesome6 name="mattress-pillow" size={18} color="#FFE9D5" />

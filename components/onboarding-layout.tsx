@@ -12,7 +12,10 @@ import {
 import { FontAwesome6 } from "@expo/vector-icons";
 import { ArrowRight } from "lucide-react-native";
 import { Arrow } from "./arrow";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 interface OnboardingLayoutProps {
   children: React.ReactNode;
@@ -35,6 +38,8 @@ export const OnboardingLayout = ({
   nextButtonText = "Next",
   showLayout = true,
 }: OnboardingLayoutProps) => {
+  const safeAreaInsets = useSafeAreaInsets();
+
   if (!showLayout) {
     return <>{children}</>;
   }
@@ -47,16 +52,17 @@ export const OnboardingLayout = ({
     >
       <SafeAreaView style={styles.container}>
         <View style={styles.scrollContent}>
-          {/* <View style={styles.header}>
+          <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
               onPress={onBack}
-              disabled={currentStep === 0}
+              // disabled={currentStep === 0}
             >
               <FontAwesome6
                 name="arrow-left"
                 size={24}
-                color={currentStep === 0 ? "#D9D0C7" : "#513B2F"}
+                // color={currentStep === 0 ? "#D9D0C7" : "#513B2F"}
+                color="#513B2F"
               />
             </TouchableOpacity>
             <View style={styles.progressBar}>
@@ -67,7 +73,7 @@ export const OnboardingLayout = ({
                 ]}
               />
             </View>
-          </View> */}
+          </View>
 
           {children}
 
@@ -96,13 +102,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 24,
+    // padding: 24,
+    paddingHorizontal: 24,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 10,
   },
   backButton: {
     width: 40,

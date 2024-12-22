@@ -18,6 +18,8 @@ import { DateTime } from "luxon";
 import { PhotoSkeleton } from "@/components/photo-skeleton";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import Superwall from "@superwall/react-native-superwall";
+import * as Haptics from "expo-haptics";
 
 type TimelineItem = {
   id: string;
@@ -172,14 +174,34 @@ export default function Page() {
             <View style={styles.emptyStateButtonsContainer}>
               <TouchableOpacity
                 style={styles.emptyStateButton}
-                onPress={() => router.push("/home/track-picture")}
+                onPress={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  Superwall.shared
+                    .register(
+                      "trackProgressPhoto",
+                      new Map([["via", "timeline"]])
+                    )
+                    .then(() => {
+                      router.push("/home/track-picture");
+                    });
+                }}
               >
                 <FontAwesome6 name="image" size={18} color="#FFE9D5" />
                 <Text style={styles.emptyStateButtonText}>Add Photo</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.emptyStateButton}
-                onPress={() => router.push("/home/track-mood")}
+                onPress={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  Superwall.shared
+                    .register(
+                      "trackProgressMood",
+                      new Map([["via", "timeline"]])
+                    )
+                    .then(() => {
+                      router.push("/home/track-mood");
+                    });
+                }}
               >
                 <FontAwesome6 name="note-sticky" size={18} color="#FFE9D5" />
                 <Text style={styles.emptyStateButtonText}>Add Note</Text>
