@@ -34,7 +34,7 @@ export const CreateAccount = ({
   onAppleSignIn,
 }: CreateAccountProps) => {
   GoogleSignin.configure({
-    scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    scopes: ["email", "profile"],
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
   });
 

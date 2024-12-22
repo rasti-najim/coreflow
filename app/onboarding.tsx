@@ -22,6 +22,7 @@ import * as ImagePicker from "expo-image-picker";
 import { decode } from "base64-arraybuffer";
 import { Routine, Duration } from "@/components/select-routine";
 import Superwall from "@superwall/react-native-superwall";
+import { ReferralCode } from "@/components/referral-code";
 interface OnboardingData {
   pilatesLevel: "beginner" | "intermediate" | "advanced" | null;
   goals: string[];
@@ -36,6 +37,7 @@ interface OnboardingData {
   mood?: string;
   photo?: ImagePicker.ImagePickerAsset | null;
   otp?: string;
+  referralCode?: string;
 }
 
 export default function Onboarding() {
@@ -53,10 +55,11 @@ export default function Onboarding() {
     mood: "",
     photo: null,
     otp: "",
+    referralCode: "",
   });
   const router = useRouter();
 
-  const totalSteps = useMemo(() => 9, []); // Increased by 1 for account creation
+  const totalSteps = useMemo(() => 10, []); // Increased by 1 for account creation
 
   const handlePhoneSignIn = async (phoneNumber: string) => {
     console.log("Phone sign in with", phoneNumber);
@@ -164,7 +167,20 @@ export default function Onboarding() {
 
   const handleNext = async () => {
     if (step < totalSteps - 1) {
+      // if ((step === 5 && onboardingData.tracking === "neither") || step === 6) {
+      //   await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      //   Superwall.shared.register("onboarding").then(async () => {
+      //     setStep(step + 1);
+      //   });
+      //   return;
+      // }
+
       if (step === 5 && onboardingData.tracking === "neither") {
+        setStep(7);
+        return;
+      }
+
+      if (step === 7) {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         Superwall.shared.register("onboarding").then(async () => {
           setStep(step + 1);
@@ -172,13 +188,6 @@ export default function Onboarding() {
         return;
       }
 
-      if (step === 6) {
-        // await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        // Superwall.shared.register("onboarding").then(async () => {
-        //   setStep(step + 1);
-        // });
-        // return;
-      }
       if (step === 8) {
         if (onboardingData.phoneNumber) {
           await handlePhoneSignIn(onboardingData.phoneNumber);
@@ -229,6 +238,11 @@ export default function Onboarding() {
 
   const handleBack = () => {
     if (step > 0) {
+      if (step === 7 && onboardingData.tracking === "neither") {
+        setStep(5);
+        return;
+      }
+
       setStep(step - 1);
     } else {
       router.back();
@@ -257,8 +271,10 @@ export default function Onboarding() {
       // case 7:
       //   return !onboardingData.hasPurchased;
       case 7:
-        return !onboardingData.phoneNumber;
+        return false;
       case 8:
+        return !onboardingData.phoneNumber;
+      case 9:
         return !onboardingData.otp && !onboardingData.hasAccount;
       default:
         return false;
@@ -388,6 +404,8 @@ export default function Onboarding() {
           />
         );
       case 7:
+        return <ReferralCode />;
+      case 8:
         return (
           <CreateAccount
             title="Create Your Account"
@@ -422,7 +440,7 @@ export default function Onboarding() {
             }}
           />
         );
-      case 8:
+      case 9:
         return (
           <VerifyOTP
             phoneNumber={onboardingData.phoneNumber || ""}
