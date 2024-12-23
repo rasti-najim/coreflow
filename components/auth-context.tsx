@@ -79,10 +79,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const deleteAccount = async () => {
     if (!state.user?.id) throw new Error("User ID is required");
     try {
-      const { error } = await supabase
-        .from("users")
-        .delete()
-        .eq("id", state.user.id);
+      const { data, error } = await supabase.functions.invoke(
+        "delete-account",
+        {
+          body: { user_id: state.user.id },
+        }
+      );
 
       if (error) throw error;
 
