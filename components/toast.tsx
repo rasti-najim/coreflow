@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 
-interface ToastProps {
+export interface ToastProps {
   message: string;
   duration?: number;
   onHide?: () => void;

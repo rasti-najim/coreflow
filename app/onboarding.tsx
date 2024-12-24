@@ -23,7 +23,9 @@ import { decode } from "base64-arraybuffer";
 import { Routine, Duration } from "@/components/select-routine";
 import Superwall from "@superwall/react-native-superwall";
 import { ReferralCode } from "@/components/referral-code";
-interface OnboardingData {
+import { OnboardingLoading } from "@/components/onboarding-loading";
+
+export interface OnboardingData {
   pilatesLevel: "beginner" | "intermediate" | "advanced" | null;
   goals: string[];
   routine: Routine | null;
@@ -59,10 +61,7 @@ export default function Onboarding() {
   });
   const router = useRouter();
 
-  const totalSteps = useMemo(() => {
-    if (onboardingData.phoneNumber) return 10;
-    return 9;
-  }, [onboardingData.hasAccount]);
+  const totalSteps = useMemo(() => 11, []);
 
   const handlePhoneSignIn = async (phoneNumber: string) => {
     console.log("Phone sign in with", phoneNumber);
@@ -78,7 +77,8 @@ export default function Onboarding() {
       await supabase.auth.signInWithOtp({
         phone: phoneNumber,
       });
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (error) {
       console.error(error);
     }
@@ -181,8 +181,7 @@ export default function Onboarding() {
       // }
 
       if (step === 5 && onboardingData.tracking === "neither") {
-        setStep(7);
-        return;
+        setStep(step + 1);
       }
 
       // if (step === 7) {
@@ -196,48 +195,43 @@ export default function Onboarding() {
       if (step === 8) {
         if (onboardingData.phoneNumber) {
           await handlePhoneSignIn(onboardingData.phoneNumber);
-          setStep(step + 1);
         } else if (onboardingData.email) {
-          setStep(step + 2);
-        } else {
           setStep(step + 1);
         }
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        return;
       }
       if (step === 9) {
-        if (onboardingData.phoneNumber) {
-          await handleVerifyOTP();
-        }
+        await handleVerifyOTP(onboardingData.otp || "");
       }
+
       setStep(step + 1);
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } else {
-      try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-
-        if (userError) throw userError;
-        if (!user) throw new Error("No user found");
-
-        // console.log("onboarding data", onboardingData);
-
-        await saveOnboardingData(user.id);
-        await createSchedule(user.id, "create");
-
-        await Haptics.notificationAsync(
-          Haptics.NotificationFeedbackType.Success
-        );
-        mixpanel.identify(user.id);
-        mixpanel.track("Sign Up");
-        router.push("/(app)/(tabs)/home");
-      } catch (error: any) {
-        console.error("Failed to save onboarding data:", error.message);
-        // Here you might want to show an error message to the user
-      }
     }
+    // else {
+    //   try {
+    //     const {
+    //       data: { user },
+    //       error: userError,
+    //     } = await supabase.auth.getUser();
+
+    //     if (userError) throw userError;
+    //     if (!user) throw new Error("No user found");
+
+    //     // console.log("onboarding data", onboardingData);
+
+    //     await saveOnboardingData(user.id);
+    //     await createSchedule(user.id, "create");
+
+    //     await Haptics.notificationAsync(
+    //       Haptics.NotificationFeedbackType.Success
+    //     );
+    //     mixpanel.identify(user.id);
+    //     mixpanel.track("Sign Up");
+    //     router.push("/(app)/(tabs)/home");
+    //   } catch (error: any) {
+    //     console.error("Failed to save onboarding data:", error.message);
+    //     // Here you might want to show an error message to the user
+    //   }
+    // }
   };
 
   const handleBack = () => {
@@ -286,23 +280,58 @@ export default function Onboarding() {
     }
   };
 
-  const handleVerifyOTP = async () => {
+  const handleVerifyOTP = async (otp: string) => {
+    if (!otp || otp.length !== 6) {
+      console.log("Invalid OTP:", otp);
+      return;
+    }
+
+    if (!onboardingData.phoneNumber) {
+      console.log("No phone number available");
+      return;
+    }
+
     try {
+      console.log(
+        "Verifying OTP:",
+        otp,
+        "for phone:",
+        onboardingData.phoneNumber
+      );
+
       const { error } = await supabase.auth.verifyOtp({
-        phone: onboardingData.phoneNumber || "",
-        token: onboardingData.otp || "",
+        phone: onboardingData.phoneNumber,
+        token: otp,
         type: "sms",
       });
 
-      if (!error) {
-        setOnboardingData((prev) => ({ ...prev, hasAccount: true }));
-        mixpanel.track("Verify OTP");
-        await handleNext();
+      if (error) {
+        console.error("OTP verification error:", error);
+        return;
       }
+
+      console.log("OTP verified successfully");
+      setOnboardingData((prev) => ({ ...prev, hasAccount: true }));
+      mixpanel.track("Verify OTP");
+
+      // Proceed to next step
+      // await handleNext();
     } catch (error) {
-      console.error(error);
+      console.error("OTP verification failed:", error);
     }
   };
+
+  useEffect(() => {
+    if (step === 10) {
+      handleNext();
+    }
+  }, [step]);
+
+  useEffect(() => {
+    if (step === 8 && onboardingData.email) {
+      handleNext();
+    }
+  }, [onboardingData.email]);
 
   const renderStep = () => {
     // if (step === 7) {
@@ -320,12 +349,6 @@ export default function Onboarding() {
     //     />
     //   );
     // }
-
-    useEffect(() => {
-      if (step === 8 && onboardingData.email) {
-        handleNext();
-      }
-    }, [onboardingData.email]);
 
     switch (step) {
       case 0:
@@ -449,9 +472,7 @@ export default function Onboarding() {
               setOnboardingData((prev) => ({
                 ...prev,
                 phoneNumber,
-                hasAccount: true,
               }));
-              mixpanel.track("Phone Number");
             }}
           />
         );
@@ -467,6 +488,8 @@ export default function Onboarding() {
             onResend={() => handlePhoneSignIn(onboardingData.phoneNumber || "")}
           />
         );
+      case 10:
+        return <OnboardingLoading onboardingData={onboardingData} />;
 
       default:
         return null;
@@ -480,7 +503,7 @@ export default function Onboarding() {
       onBack={handleBack}
       onNext={handleNext}
       isNextDisabled={isNextDisabled()}
-      // showLayout={step !== 7}
+      showLayout={step !== 10}
     >
       {renderStep()}
     </OnboardingLayout>

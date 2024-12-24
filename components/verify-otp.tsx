@@ -1,14 +1,7 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import * as Haptics from "expo-haptics";
 import { OTPInput } from "./otp-input";
-import { OtpInput } from "react-native-otp-entry";
 
 interface VerifyOTPProps {
   phoneNumber: string;
@@ -25,17 +18,22 @@ export const VerifyOTP = ({
   onVerify,
   onResend,
 }: VerifyOTPProps) => {
-  const handleVerify = async () => {
+  const handleVerify = async (otp: string) => {
+    if (!otp || otp.length !== 6) {
+      console.log("Invalid OTP length");
+      return;
+    }
+
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await onVerify(code);
+    await onVerify(otp);
   };
 
   const handleCodeChange = async (text: string) => {
     onChangeCode(text);
-    // If the code length is 6 (complete), automatically verify
-    if (text.length === 6) {
-      await handleVerify();
-    }
+    // Automatically verify when code length is 6
+    // if (text.length === 6) {
+    //   await handleVerify(text);
+    // }
   };
 
   const styles = StyleSheet.create({
@@ -101,16 +99,6 @@ export const VerifyOTP = ({
       <Text style={styles.subtitle}>Enter the code sent to {phoneNumber}</Text>
 
       <OTPInput value={code} onChange={handleCodeChange} />
-
-      {/* <TextInput
-        style={styles.otpInput}
-        placeholder="Enter verification code"
-        placeholderTextColor="#666666"
-        keyboardType="number-pad"
-        value={code}
-        onChangeText={handleCodeChange}
-        maxLength={6}
-      /> */}
 
       <TouchableOpacity style={styles.resendButton} onPress={onResend}>
         <Text style={styles.resendButtonText}>Resend Code</Text>
