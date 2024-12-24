@@ -120,6 +120,7 @@ export const CreateAccount = ({
                 if (!error && user) {
                   // User is signed in.
                   console.log("apple user", user);
+                  console.log("apple user email", user.email);
                   onAppleSignIn(user);
                 }
               } else {

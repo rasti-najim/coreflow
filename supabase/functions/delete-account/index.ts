@@ -35,9 +35,27 @@ Deno.serve(async (req) => {
         }
       );
     }
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(user_id);
-    console.log("error", error);
 
+    const { data: files, error: filesError } = await supabase.storage
+      .from("photo-progress")
+      .list(user_id);
+    if (filesError) throw filesError;
+
+    console.log("files", files);
+
+    if (files && files.length > 0) {
+      const filesToDelete = files.map((file: any) => `${user_id}/${file.name}`);
+
+      const { error: deleteError } = await supabase.storage
+        .from("photo-progress")
+        .remove(filesToDelete);
+
+      if (deleteError) throw deleteError;
+    }
+
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(user_id);
+
+    if (error) throw error;
     return new Response(
       JSON.stringify({ success: true, message: "User deleted successfully" }),
       {

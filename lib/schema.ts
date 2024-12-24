@@ -21,6 +21,7 @@ export type Database = {
           skill_level: Database["public"]["Enums"]["experience_level_enum"]
           type: Database["public"]["Enums"]["exercise_type_enum"]
           updated_at: string | null
+          voice_description_url: string | null
         }
         Insert: {
           created_at?: string | null
@@ -33,6 +34,7 @@ export type Database = {
           skill_level: Database["public"]["Enums"]["experience_level_enum"]
           type: Database["public"]["Enums"]["exercise_type_enum"]
           updated_at?: string | null
+          voice_description_url?: string | null
         }
         Update: {
           created_at?: string | null
@@ -45,6 +47,7 @@ export type Database = {
           skill_level?: Database["public"]["Enums"]["experience_level_enum"]
           type?: Database["public"]["Enums"]["exercise_type_enum"]
           updated_at?: string | null
+          voice_description_url?: string | null
         }
         Relationships: []
       }

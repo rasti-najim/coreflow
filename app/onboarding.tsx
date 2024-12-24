@@ -4,7 +4,7 @@ import { SelectGoals } from "@/components/select-goals";
 import { SelectRoutine, SelectDuration } from "@/components/select-routine";
 import { GoalsDetails } from "@/components/goals-details";
 import { CreateAccount } from "@/components/create-account";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { PaywallScreen } from "@/components/paywall";
@@ -33,7 +33,7 @@ interface OnboardingData {
   hasAccount?: boolean;
   phoneNumber?: string;
   email?: string;
-  tracking: "picture" | "mood" | "neither" | null;
+  tracking: "pictures" | "mood" | "neither" | null;
   mood?: string;
   photo?: ImagePicker.ImagePickerAsset | null;
   otp?: string;
@@ -49,8 +49,8 @@ export default function Onboarding() {
     duration: null,
     goalDetails: [],
     hasAccount: false,
-    phoneNumber: null,
-    email: null,
+    phoneNumber: "",
+    email: "",
     tracking: null,
     mood: "",
     photo: null,
@@ -62,7 +62,7 @@ export default function Onboarding() {
   const totalSteps = useMemo(() => {
     if (onboardingData.phoneNumber) return 10;
     return 9;
-  }, [onboardingData.hasAccount]); // Increased by 1 for account creation
+  }, [onboardingData.hasAccount]);
 
   const handlePhoneSignIn = async (phoneNumber: string) => {
     console.log("Phone sign in with", phoneNumber);
@@ -95,53 +95,44 @@ export default function Onboarding() {
     )
       throw new Error("Routine, duration, or tracking is required");
 
+    console.log("onboarding email", onboardingData.email);
+
     if (!onboardingData.phoneNumber && !onboardingData.email) {
       throw new Error("Phone number or email is required");
     }
 
-    // Prepare all database operations
-    const operations = [
-      // User insertion
-      supabase.from("users").insert({
-        id: userId,
-        phone_number: onboardingData.phoneNumber,
-        email: onboardingData.email,
-        experience_level: onboardingData.pilatesLevel,
-      }),
+    const { error: userError } = await supabase.from("users").insert({
+      id: userId,
+      phone_number: onboardingData.phoneNumber
+        ? onboardingData.phoneNumber
+        : null,
+      email: onboardingData.email ? onboardingData.email : null,
+      experience_level: onboardingData.pilatesLevel,
+    });
 
-      // Goals insertion
-      supabase.from("user_goals").insert(
-        onboardingData.goals.map((goal) => ({
-          user_id: userId,
-          name: goal,
-        }))
-      ),
+    if (userError) throw userError;
 
-      // Preferences insertion
-      supabase.from("user_preferences").insert({
+    // Goals insertion
+    const { error: goalsError } = await supabase.from("user_goals").insert(
+      onboardingData.goals.map((goal) => ({
+        user_id: userId,
+        name: goal,
+      }))
+    );
+
+    if (goalsError) throw goalsError;
+
+    // Preferences insertion
+    const { error: prefsError } = await supabase
+      .from("user_preferences")
+      .insert({
         user_id: userId,
         weekly_sessions: onboardingData.routine,
         session_duration: onboardingData.duration,
         tracking_method: onboardingData.tracking,
-      }),
-    ];
+      });
 
-    // Execute base operations in parallel
-    const [userError, goalsError, prefsError] = await Promise.all(
-      operations.map((operation) =>
-        operation.then(() => null).catch((error) => error)
-      )
-    );
-
-    // Check for errors
-    const errors = { userError, goalsError, prefsError };
-    const foundError = Object.entries(errors).find(
-      ([_, error]) => error !== null
-    );
-
-    if (foundError) {
-      throw new Error(`${foundError[0]}: ${foundError[1].message}`);
-    }
+    if (prefsError) throw prefsError;
 
     // Handle photo upload and progress tracking if needed
     if (
@@ -155,7 +146,7 @@ export default function Onboarding() {
         const filePath = `${userId}/${DateTime.now().toISO()}.${fileExtension}`;
 
         const { data, error } = await supabase.storage
-          .from("progress")
+          .from("photo-progress")
           .upload(filePath, decode(onboardingData.photo?.base64 || ""), {
             contentType: onboardingData.photo?.mimeType,
           });
@@ -167,8 +158,8 @@ export default function Onboarding() {
 
       const { error: progressError } = await supabase.from("progress").insert({
         user_id: userId,
-        entry_type: onboardingData.tracking,
-        mood_description: onboardingData.mood,
+        entry_type: onboardingData.tracking === "pictures" ? "picture" : "mood",
+        mood_description: onboardingData.mood ? onboardingData.mood : null,
         picture_url: pictureUrl,
         added_on: DateTime.now().toISODate(),
       });
@@ -233,13 +224,8 @@ export default function Onboarding() {
 
         // console.log("onboarding data", onboardingData);
 
-        const [onboardingError, scheduleError] = await Promise.all([
-          saveOnboardingData(user.id),
-          createSchedule(user.id, "create"),
-        ]);
-
-        if (onboardingError !== undefined) throw onboardingError;
-        if (scheduleError !== undefined) throw scheduleError;
+        await saveOnboardingData(user.id);
+        await createSchedule(user.id, "create");
 
         await Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Success
@@ -284,7 +270,8 @@ export default function Onboarding() {
         return !onboardingData.tracking;
       case 6:
         if (onboardingData.tracking === "neither") return false;
-        if (onboardingData.tracking === "picture") return !onboardingData.photo;
+        if (onboardingData.tracking === "pictures")
+          return !onboardingData.photo;
         return !onboardingData.mood;
       // case 7:
       //   return !onboardingData.hasPurchased;
@@ -333,6 +320,12 @@ export default function Onboarding() {
     //     />
     //   );
     // }
+
+    useEffect(() => {
+      if (step === 8 && onboardingData.email) {
+        handleNext();
+      }
+    }, [onboardingData.email]);
 
     switch (step) {
       case 0:
@@ -403,7 +396,7 @@ export default function Onboarding() {
           />
         );
       case 6:
-        if (onboardingData.tracking === "picture") {
+        if (onboardingData.tracking === "pictures") {
           return (
             <StartingJourneyPhoto
               onPhotoSelect={(photo) => {
@@ -434,8 +427,10 @@ export default function Onboarding() {
                 email: user.email,
                 hasAccount: true,
               }));
+
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+
               mixpanel.track("Google Sign In");
-              await handleNext();
             }}
             onAppleSignIn={async (user) => {
               // Handle Apple sign in and skip OTP
@@ -444,8 +439,10 @@ export default function Onboarding() {
                 email: user.email,
                 hasAccount: true,
               }));
+
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+
               mixpanel.track("Apple Sign In");
-              await handleNext();
             }}
             phoneNumber={onboardingData.phoneNumber || ""}
             onChangePhoneNumber={(phoneNumber) => {

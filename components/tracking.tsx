@@ -3,13 +3,13 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 
 interface TrackingProps {
-  selectedTracking: "picture" | "mood" | "neither" | null;
-  onSelectTracking: (tracking: "picture" | "mood" | "neither") => void;
+  selectedTracking: "pictures" | "mood" | "neither" | null;
+  onSelectTracking: (tracking: "pictures" | "mood" | "neither") => void;
 }
 
 const TRACKING_OPTIONS = [
   {
-    value: "picture" as const,
+    value: "pictures" as const,
     label: "pictures",
   },
   {
@@ -27,7 +27,7 @@ export const Tracking = ({
   onSelectTracking,
 }: TrackingProps) => {
   const handleSelectTracking = async (
-    tracking: "picture" | "mood" | "neither"
+    tracking: "pictures" | "mood" | "neither"
   ) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSelectTracking(tracking);
