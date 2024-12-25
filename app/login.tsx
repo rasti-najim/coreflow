@@ -18,6 +18,15 @@ export default function Login() {
     if (!phoneNumber) return;
 
     try {
+      const { data: user, error: userError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("phone_number", phoneNumber);
+
+      if (!user) {
+        throw new Error("User does not exist");
+      }
+
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       const { error } = await supabase.auth.signInWithOtp({
@@ -60,6 +69,7 @@ export default function Login() {
       case 0:
         return (
           <CreateAccount
+            type="login"
             title="Welcome Back"
             phoneNumber={phoneNumber}
             onChangePhoneNumber={setPhoneNumber}

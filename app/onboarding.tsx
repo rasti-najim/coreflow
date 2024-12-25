@@ -68,6 +68,19 @@ export default function Onboarding() {
     if (!phoneNumber) return;
 
     try {
+      const { data: user, error: userError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("phone_number", phoneNumber)
+        .limit(1)
+        .single();
+
+      if (user) {
+        // User exists, show error and return failure
+        console.error("User already exists");
+        return Promise.resolve({ success: false });
+      }
+
       // Update the onboarding data with the phone number
       setOnboardingData((prev) => ({
         ...prev,
@@ -77,10 +90,11 @@ export default function Onboarding() {
       await supabase.auth.signInWithOtp({
         phone: phoneNumber,
       });
-      // await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      return Promise.resolve({ success: true });
     } catch (error) {
       console.error(error);
+      return Promise.resolve({ success: false });
     }
   };
 
@@ -171,67 +185,77 @@ export default function Onboarding() {
   };
 
   const handleNext = async () => {
-    if (step < totalSteps - 1) {
-      // if ((step === 5 && onboardingData.tracking === "neither") || step === 6) {
-      //   await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      //   Superwall.shared.register("onboarding").then(async () => {
-      //     setStep(step + 1);
-      //   });
-      //   return;
-      // }
+    try {
+      if (step < totalSteps - 1) {
+        // if ((step === 5 && onboardingData.tracking === "neither") || step === 6) {
+        //   await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        //   Superwall.shared.register("onboarding").then(async () => {
+        //     setStep(step + 1);
+        //   });
+        //   return;
+        // }
 
-      if (step === 5 && onboardingData.tracking === "neither") {
-        setStep(step + 1);
-      }
-
-      // if (step === 7) {
-      //   await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      //   Superwall.shared.register("onboarding").then(async () => {
-      //     setStep(step + 1);
-      //   });
-      //   return;
-      // }
-
-      if (step === 8) {
-        if (onboardingData.phoneNumber) {
-          await handlePhoneSignIn(onboardingData.phoneNumber);
-        } else if (onboardingData.email) {
-          setStep(step + 1);
+        if (step === 5 && onboardingData.tracking === "neither") {
+          setStep(step + 2);
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          return;
         }
-      }
-      if (step === 9) {
-        await handleVerifyOTP(onboardingData.otp || "");
-      }
 
-      setStep(step + 1);
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        // if (step === 7) {
+        //   await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        //   Superwall.shared.register("onboarding").then(async () => {
+        //     setStep(step + 1);
+        //   });
+        //   return;
+        // }
+        else if (step === 8) {
+          if (onboardingData.phoneNumber) {
+            const result = await handlePhoneSignIn(onboardingData.phoneNumber);
+            if (!result?.success) {
+              return;
+            }
+          }
+          if (onboardingData.email) {
+            setStep(step + 2);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            return;
+          }
+        } else if (step === 9) {
+          await handleVerifyOTP(onboardingData.otp || "");
+        }
+
+        setStep(step + 1);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      // else {
+      //   try {
+      //     const {
+      //       data: { user },
+      //       error: userError,
+      //     } = await supabase.auth.getUser();
+
+      //     if (userError) throw userError;
+      //     if (!user) throw new Error("No user found");
+
+      //     // console.log("onboarding data", onboardingData);
+
+      //     await saveOnboardingData(user.id);
+      //     await createSchedule(user.id, "create");
+
+      //     await Haptics.notificationAsync(
+      //       Haptics.NotificationFeedbackType.Success
+      //     );
+      //     mixpanel.identify(user.id);
+      //     mixpanel.track("Sign Up");
+      //     router.push("/(app)/(tabs)/home");
+      //   } catch (error: any) {
+      //     console.error("Failed to save onboarding data:", error.message);
+      //     // Here you might want to show an error message to the user
+      //   }
+      // }
+    } catch (error) {
+      console.error("Failed to save onboarding data:", error);
     }
-    // else {
-    //   try {
-    //     const {
-    //       data: { user },
-    //       error: userError,
-    //     } = await supabase.auth.getUser();
-
-    //     if (userError) throw userError;
-    //     if (!user) throw new Error("No user found");
-
-    //     // console.log("onboarding data", onboardingData);
-
-    //     await saveOnboardingData(user.id);
-    //     await createSchedule(user.id, "create");
-
-    //     await Haptics.notificationAsync(
-    //       Haptics.NotificationFeedbackType.Success
-    //     );
-    //     mixpanel.identify(user.id);
-    //     mixpanel.track("Sign Up");
-    //     router.push("/(app)/(tabs)/home");
-    //   } catch (error: any) {
-    //     console.error("Failed to save onboarding data:", error.message);
-    //     // Here you might want to show an error message to the user
-    //   }
-    // }
   };
 
   const handleBack = () => {
@@ -442,6 +466,7 @@ export default function Onboarding() {
       case 8:
         return (
           <CreateAccount
+            type="signup"
             title="Create Your Account"
             onGoogleSignIn={async (user) => {
               // Handle Google sign in and skip OTP
