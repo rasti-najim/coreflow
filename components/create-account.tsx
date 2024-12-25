@@ -243,11 +243,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFE9D5",
   },
   title: {
-    fontSize: 40,
+    fontSize: 32,
     fontWeight: "bold",
     marginBottom: 40,
-    color: "#000000",
-    fontFamily: "Margin-DEMO",
   },
   googleButton: {
     paddingVertical: 12,

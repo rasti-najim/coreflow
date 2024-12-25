@@ -74,12 +74,13 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "bold",
     marginBottom: 12,
-    color: "#000000",
+    textAlign: "left",
   },
   subtitle: {
-    fontSize: 24,
-    marginBottom: 40,
-    color: "#000000",
+    fontSize: 18,
+    // fontWeight: "bold",
+    marginBottom: 32,
+    textAlign: "left",
   },
   optionsContainer: {
     gap: 12,

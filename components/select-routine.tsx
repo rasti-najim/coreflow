@@ -149,8 +149,8 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   subtitle: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 18,
+    // fontWeight: "bold",
     marginBottom: 32,
     textAlign: "left",
   },

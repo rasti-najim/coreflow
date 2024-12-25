@@ -37,7 +37,6 @@ export const ReferralCode = ({
         placeholderTextColor="#666666"
         autoCapitalize="characters"
         maxLength={6}
-        autoFocus
       />
     </View>
   );
@@ -51,11 +50,12 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "bold",
     marginBottom: 12,
+    textAlign: "left",
   },
   subtitle: {
     fontSize: 18,
-    fontWeight: "bold",
     marginBottom: 32,
+    textAlign: "left",
   },
   input: {
     width: "100%",

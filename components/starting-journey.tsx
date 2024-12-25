@@ -164,14 +164,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    marginBottom: 24,
-    color: "#000000",
+    marginBottom: 12,
+    textAlign: "left",
   },
   subtitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 18,
+    // fontWeight: "bold",
     marginBottom: 32,
-    color: "#000000",
+    textAlign: "left",
   },
   input: {
     width: "100%",

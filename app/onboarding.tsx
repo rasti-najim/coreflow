@@ -199,16 +199,13 @@ export default function Onboarding() {
           setStep(step + 2);
           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           return;
-        }
-
-        // if (step === 7) {
-        //   await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        //   Superwall.shared.register("onboarding").then(async () => {
-        //     setStep(step + 1);
-        //   });
-        //   return;
-        // }
-        else if (step === 8) {
+          // } else if (step === 7) {
+          //   await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          //   Superwall.shared.register("onboarding").then(async () => {
+          //     setStep(step + 1);
+          //   });
+          //   return;
+        } else if (step === 8) {
           if (onboardingData.phoneNumber) {
             const result = await handlePhoneSignIn(onboardingData.phoneNumber);
             if (!result?.success) {

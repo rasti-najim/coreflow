@@ -209,7 +209,7 @@ export default function Page() {
   if (isWorkoutStarted && exercises.length > 0) {
     const currentExercise = exercises[currentExerciseIndex];
     return (
-      <View style={[styles.container, { paddingTop: safeArea.top }]}>
+      <View style={styles.container}>
         <View style={styles.progressHeader}>
           <TouchableOpacity
             style={styles.dismissButton}
@@ -327,9 +327,11 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "flex-start",
     paddingHorizontal: 8,
     paddingBottom: 4,
+    marginBottom: 16,
   },
   progressHeader: {
     flexDirection: "row",
@@ -387,7 +389,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginTop: "auto",
-    marginBottom: 24,
+    marginBottom: 40,
   },
   createButtonDisabled: {
     opacity: 0.5,

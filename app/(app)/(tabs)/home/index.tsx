@@ -283,6 +283,23 @@ export default function Page() {
         </Text> */}
       </View>
 
+      <View style={styles.consistencyContainer}>
+        <View style={styles.consistencyHeader}>
+          <Text style={styles.consistencyTitle}>Custom Session</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.customSessionButton}
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push("/home/custom");
+          }}
+        >
+          <Text style={styles.customSessionButtonText}>
+            Choose duration + focus
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Navigation Bar */}
       {/* <View style={styles.navbar}>
         <TouchableOpacity>
@@ -466,6 +483,19 @@ const styles = StyleSheet.create({
   },
   workoutDuration: {
     color: "#4A2318",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  customSessionButton: {
+    backgroundColor: "#4A2318",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginBottom: 8,
+    alignSelf: "flex-start",
+  },
+  customSessionButtonText: {
+    color: "#FFE9D5",
     fontWeight: "bold",
     fontSize: 14,
   },
