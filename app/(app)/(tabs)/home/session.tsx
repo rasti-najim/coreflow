@@ -10,6 +10,7 @@ import { DateTime } from "luxon";
 import mixpanel from "@/lib/mixpanel";
 import { Loading } from "@/components/loading";
 import { FOCUS_MAP } from "@/lib/schedule";
+import { requestReview } from "@/lib/store-review";
 
 export default function Modal() {
   const { user } = useAuth();
@@ -64,6 +65,9 @@ export default function Modal() {
           duration: duration,
           session_id: session_id,
         });
+
+        await requestReview(user.id);
+
         console.log("session updated", sessionData);
         console.log("progress inserted", progressData);
         router.dismiss();

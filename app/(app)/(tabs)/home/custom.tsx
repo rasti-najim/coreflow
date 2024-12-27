@@ -10,6 +10,7 @@ import { createSession } from "@/lib/schedule";
 import { ExerciseLayout } from "@/components/excercise-layout";
 import { DateTime } from "luxon";
 import mixpanel from "@/lib/mixpanel";
+import { requestReview } from "@/lib/store-review";
 
 const DURATION_OPTIONS = [
   { value: "5", label: "5 minutes" },
@@ -196,6 +197,8 @@ export default function Page() {
           duration: selectedDuration,
           session_id: session_id,
         });
+
+        await requestReview(user.id);
 
         router.dismiss();
       } catch (error) {
