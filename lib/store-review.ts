@@ -4,6 +4,10 @@ import { DateTime } from "luxon";
 import supabase from "./supabase";
 
 const canRequestReview = async () => {
+  const storedStatus = await AsyncStorage.getItem("hasReviewed");
+
+  if (storedStatus === "true") return false;
+
   const lastReviewRequest = await AsyncStorage.getItem("lastReviewRequest");
   if (!lastReviewRequest) return true;
 
@@ -28,6 +32,7 @@ export async function requestReview(userId: string) {
       if (count && count % 5 === 0) {
         await StoreReview.requestReview();
         await AsyncStorage.setItem("lastReviewRequest", DateTime.now().toISO());
+        await AsyncStorage.setItem("hasReviewed", "true");
       }
     }
   } catch (error) {
