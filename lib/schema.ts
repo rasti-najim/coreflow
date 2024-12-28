@@ -248,6 +248,7 @@ export type Database = {
           experience_level: Database["public"]["Enums"]["experience_level_enum"]
           id: string
           phone_number: string | null
+          push_token: string | null
         }
         Insert: {
           created_at?: string | null
@@ -255,6 +256,7 @@ export type Database = {
           experience_level: Database["public"]["Enums"]["experience_level_enum"]
           id?: string
           phone_number?: string | null
+          push_token?: string | null
         }
         Update: {
           created_at?: string | null
@@ -262,6 +264,7 @@ export type Database = {
           experience_level?: Database["public"]["Enums"]["experience_level_enum"]
           id?: string
           phone_number?: string | null
+          push_token?: string | null
         }
         Relationships: []
       }
