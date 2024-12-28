@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,6 +11,9 @@ import { DateTime } from "luxon";
 import { calculateConsistency, ConsistencyStats } from "@/lib/consistency";
 import mixpanel from "@/lib/mixpanel";
 import Superwall from "@superwall/react-native-superwall";
+import { requestReview } from "@/lib/store-review";
+import { registerForPushNotificationsAsync } from "@/lib/notifications";
+import * as Notifications from "expo-notifications";
 
 type Session = {
   focus: string;
@@ -33,10 +36,54 @@ export default function Page() {
     weeklyStreak: 0,
     dailyStreak: 0,
   });
+  const [expoPushToken, setExpoPushToken] = useState("");
+  const [notification, setNotification] = useState<
+    Notifications.Notification | undefined
+  >(undefined);
+  const notificationListener = useRef<Notifications.EventSubscription>();
+  const responseListener = useRef<Notifications.EventSubscription>();
 
   if (!user) {
     return <Redirect href="/welcome" />;
   }
+
+  useEffect(() => {
+    const setupNotifications = async () => {
+      const token = await registerForPushNotificationsAsync();
+      if (token) {
+        setExpoPushToken(token);
+        const { error } = await supabase
+          .from("users")
+          .update({ push_token: token })
+          .eq("id", user.id);
+
+        if (error) {
+          console.error("Error saving push token:", error);
+        }
+      }
+      requestReview(user.id);
+    };
+
+    setupNotifications();
+    notificationListener.current =
+      Notifications.addNotificationReceivedListener((notification) => {
+        setNotification(notification);
+      });
+
+    responseListener.current =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        console.log(response);
+      });
+
+    return () => {
+      notificationListener.current &&
+        Notifications.removeNotificationSubscription(
+          notificationListener.current
+        );
+      responseListener.current &&
+        Notifications.removeNotificationSubscription(responseListener.current);
+    };
+  }, []);
 
   useEffect(() => {
     console.log("user", user);
