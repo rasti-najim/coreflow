@@ -11,6 +11,7 @@ import { ExerciseLayout } from "@/components/excercise-layout";
 import { DateTime } from "luxon";
 import mixpanel from "@/lib/mixpanel";
 import { requestReview } from "@/lib/store-review";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const DURATION_OPTIONS = [
   { value: "5", label: "5 minutes" },
@@ -212,7 +213,7 @@ export default function Page() {
   if (isWorkoutStarted && exercises.length > 0) {
     const currentExercise = exercises[currentExerciseIndex];
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: safeArea.top }]}>
         <View style={styles.progressHeader}>
           <TouchableOpacity
             style={styles.dismissButton}
@@ -226,7 +227,7 @@ export default function Page() {
           id={currentExercise.id}
           title={currentExercise.name}
           description={currentExercise.description}
-          duration={20}
+          duration={60}
           animationSource={animationSources[currentExercise.id]}
           type={currentExercise.type}
           focus={currentExercise.focus}
@@ -244,12 +245,7 @@ export default function Page() {
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        { paddingTop: safeArea.top + 8, paddingHorizontal: 16 },
-      ]}
-    >
+    <SafeAreaView style={[styles.container, { paddingHorizontal: 16 }]}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.dismissButton}
@@ -257,7 +253,14 @@ export default function Page() {
         >
           <FontAwesome name="times" size={20} color="#4A2318" />
         </TouchableOpacity>
-        <Text style={styles.title}>Custom Workout</Text>
+        <Text
+          style={[
+            styles.title,
+            { flex: 1, textAlign: "center", marginLeft: -40 },
+          ]}
+        >
+          Custom Workout
+        </Text>
       </View>
 
       <Text style={styles.sectionTitle}>Duration</Text>
@@ -319,7 +322,7 @@ export default function Page() {
           {isLoading ? "Creating..." : "Create Workout"}
         </Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -331,9 +334,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start",
+    justifyContent: "space-between",
     paddingHorizontal: 8,
-    paddingBottom: 4,
     marginBottom: 16,
   },
   progressHeader: {
@@ -355,7 +357,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#4A2318",
-    marginLeft: 12,
   },
   sectionTitle: {
     fontSize: 16,

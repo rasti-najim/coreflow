@@ -242,7 +242,7 @@ export default function Modal() {
         title={currentExercise.name}
         description={currentExercise.description}
         focus={currentExercise.focus}
-        duration={2}
+        duration={60}
         animationSource={animationSources[currentExercise.id]}
         type={currentExercise.type}
         onNext={handleNext}

@@ -30,7 +30,10 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#FFE9D5"
       },
-      "permissions": ["android.permission.RECORD_AUDIO"],
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
+      ],
       "package": "com.coreflow.app"
     },
     "web": {
@@ -59,7 +62,9 @@
       [
         "expo-font",
         {
-          "fonts": ["./assets/fonts/matolha-regular.otf"]
+          "fonts": [
+            "./assets/fonts/matolha-regular.otf"
+          ]
         }
       ],
       "expo-secure-store",
@@ -88,6 +93,7 @@
       "eas": {
         "projectId": "a5d6e3ed-1ccf-4a77-be68-caacffe20c04"
       }
-    }
+    },
+    "owner": "rasti_najim"
   }
 }

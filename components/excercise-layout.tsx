@@ -56,9 +56,6 @@ export const ExerciseLayout = ({
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [onRepeat, setOnRepeat] = useState(false);
   const router = useRouter();
-  const [fontsLoaded] = useFonts({
-    KeeponTruckin: require("../assets/fonts/KeeponTruckin.ttf"),
-  });
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
@@ -289,7 +286,7 @@ export const ExerciseLayout = ({
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[styles.repeatButton, onRepeat && styles.repeatButtonActive]}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -301,7 +298,7 @@ export const ExerciseLayout = ({
             size={20}
             color={onRepeat ? "#FFE9D5" : "#4A2318"}
           />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <View style={styles.buttonContainer}>
@@ -398,13 +395,13 @@ const styles = StyleSheet.create({
   },
   timerText: {
     fontSize: 48,
-    fontFamily: "KeeponTruckin",
+    fontFamily: "matolha-regular",
     color: "#4A2318",
     textAlign: "center",
   },
   completedText: {
     fontSize: 48,
-    fontFamily: "KeeponTruckin",
+    fontFamily: "matolha-regular",
     color: "#2E8B57",
     textAlign: "center",
   },
