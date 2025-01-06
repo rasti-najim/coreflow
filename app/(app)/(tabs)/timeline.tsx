@@ -297,6 +297,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "bold",
+    fontFamily: "matolha-regular",
     color: "#4A2B29",
     marginBottom: 40,
   },

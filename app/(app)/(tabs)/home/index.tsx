@@ -380,6 +380,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "bold",
     color: "#4A2318",
+    fontFamily: "matolha-regular",
   },
   addButton: {
     flexDirection: "row",

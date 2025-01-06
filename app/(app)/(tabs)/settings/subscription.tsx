@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#4A2318",
     marginBottom: 48,
-    fontFamily: "Margin-DEMO",
+    fontFamily: "matolha-regular",
   },
   menuContainer: {
     gap: 24,

@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 64,
     // marginBottom: 64,
-    fontFamily: "Margin-DEMO",
+    fontFamily: "matolha-regular",
   },
   textContainer: {
     alignItems: "flex-start",

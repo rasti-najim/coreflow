@@ -1,4 +1,3 @@
-import { schedulePilatesReminder } from "./notifications";
 import supabase from "./supabase";
 import { DateTime } from "luxon";
 
@@ -288,21 +287,13 @@ export async function createSchedule(
           status: "scheduled",
           is_custom: false,
         })
-        .select()
-        .limit(1)
-        .single();
+        .select();
 
       if (sessionError) {
         throw sessionError;
       }
 
       console.log(sessionData);
-
-      const sessionDate = DateTime.fromISO(sessionData.scheduled_date!)
-        .set({ hour: 9 })
-        .toJSDate();
-
-      await schedulePilatesReminder(sessionDate);
     }
 
     return schedule;

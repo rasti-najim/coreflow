@@ -59,11 +59,7 @@
       [
         "expo-font",
         {
-          "fonts": [
-            "./assets/fonts/Apple-LiGothic-Medium.ttf",
-            "./assets/fonts/Margin-DEMO.otf",
-            "./assets/fonts/KeeponTruckin.ttf"
-          ]
+          "fonts": ["./assets/fonts/matolha-regular.otf"]
         }
       ],
       "expo-secure-store",
