@@ -26,6 +26,7 @@ interface OnboardingLayoutProps {
   isNextDisabled?: boolean;
   nextButtonText?: string;
   showLayout?: boolean;
+  hideArrow?: boolean;
 }
 
 export const OnboardingLayout = ({
@@ -37,6 +38,7 @@ export const OnboardingLayout = ({
   isNextDisabled = false,
   nextButtonText = "Next",
   showLayout = true,
+  hideArrow = false,
 }: OnboardingLayoutProps) => {
   const safeAreaInsets = useSafeAreaInsets();
 
@@ -77,18 +79,20 @@ export const OnboardingLayout = ({
 
           {children}
 
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={[
-                styles.nextButton,
-                isNextDisabled && styles.nextButtonDisabled,
-              ]}
-              onPress={onNext}
-              disabled={isNextDisabled}
-            >
-              <Arrow color="#4A2318" />
-            </TouchableOpacity>
-          </View>
+          {!hideArrow && (
+            <View style={styles.footer}>
+              <TouchableOpacity
+                style={[
+                  styles.nextButton,
+                  isNextDisabled && styles.nextButtonDisabled,
+                ]}
+                onPress={onNext}
+                disabled={isNextDisabled}
+              >
+                <Arrow color="#4A2318" />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </SafeAreaView>
     </KeyboardAvoidingView>

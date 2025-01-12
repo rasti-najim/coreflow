@@ -47,43 +47,43 @@ export default function Page() {
     return <Redirect href="/welcome" />;
   }
 
-  useEffect(() => {
-    const setupNotifications = async () => {
-      const token = await registerForPushNotificationsAsync();
-      if (token) {
-        setExpoPushToken(token);
-        const { error } = await supabase
-          .from("users")
-          .update({ push_token: token })
-          .eq("id", user.id);
+  // useEffect(() => {
+  //   const setupNotifications = async () => {
+  //     const token = await registerForPushNotificationsAsync();
+  //     if (token) {
+  //       setExpoPushToken(token);
+  //       const { error } = await supabase
+  //         .from("users")
+  //         .update({ push_token: token })
+  //         .eq("id", user.id);
 
-        if (error) {
-          console.error("Error saving push token:", error);
-        }
-      }
-      requestReview(user.id);
-    };
+  //       if (error) {
+  //         console.error("Error saving push token:", error);
+  //       }
+  //     }
+  //     requestReview(user.id);
+  //   };
 
-    setupNotifications();
-    notificationListener.current =
-      Notifications.addNotificationReceivedListener((notification) => {
-        setNotification(notification);
-      });
+  //   setupNotifications();
+  //   notificationListener.current =
+  //     Notifications.addNotificationReceivedListener((notification) => {
+  //       setNotification(notification);
+  //     });
 
-    responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log(response);
-      });
+  //   responseListener.current =
+  //     Notifications.addNotificationResponseReceivedListener((response) => {
+  //       console.log(response);
+  //     });
 
-    return () => {
-      notificationListener.current &&
-        Notifications.removeNotificationSubscription(
-          notificationListener.current
-        );
-      responseListener.current &&
-        Notifications.removeNotificationSubscription(responseListener.current);
-    };
-  }, []);
+  //   return () => {
+  //     notificationListener.current &&
+  //       Notifications.removeNotificationSubscription(
+  //         notificationListener.current
+  //       );
+  //     responseListener.current &&
+  //       Notifications.removeNotificationSubscription(responseListener.current);
+  //   };
+  // }, []);
 
   useEffect(() => {
     console.log("user", user);
@@ -232,19 +232,9 @@ export default function Page() {
     <View style={[styles.container, { paddingTop: safeArea.top }]}>
       <View style={styles.header}>
         <Text style={styles.logo}>coreflow</Text>
-        <View style={styles.addButtonContainer}>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setShowOptions(!showOptions);
-            }}
-          >
-            <FontAwesome6 name="plus" size={18} color="#FFE9D5" />
-            {/* <Text style={styles.addButtonText}>Add Progress</Text> */}
-          </TouchableOpacity>
-          <ProgressOptions />
-        </View>
+        <TouchableOpacity style={styles.streakButton}>
+          <Text style={styles.streakText}>{consistency.dailyStreak} 🔥</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Today's Workout */}
@@ -359,6 +349,19 @@ export default function Page() {
           <FontAwesome name="cog" size={24} color="#4A2318" />
         </TouchableOpacity>
       </View> */}
+
+      <View style={styles.addButtonContainer}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setShowOptions(!showOptions);
+          }}
+        >
+          <FontAwesome6 name="plus" size={18} color="#FFE9D5" />
+        </TouchableOpacity>
+        <ProgressOptions />
+      </View>
     </View>
   );
 }
@@ -377,7 +380,7 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
   logo: {
-    fontSize: 32,
+    fontSize: 48,
     fontWeight: "bold",
     color: "#4A2318",
     fontFamily: "matolha-regular",
@@ -492,18 +495,36 @@ const styles = StyleSheet.create({
     right: 24,
   },
   addButtonContainer: {
-    position: "relative",
+    position: "absolute",
+    bottom: 32,
+    right: 32,
+    zIndex: 1000,
+  },
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#4A2318",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   optionsContainer: {
     position: "absolute",
-    top: "100%",
+    bottom: "100%",
     right: 0,
     backgroundColor: "#4A2318",
     borderRadius: 10,
-    // padding: 8,
     paddingHorizontal: 16,
-    // paddingVertical: 8,
-    marginTop: 8,
+    marginBottom: 8,
     width: 200,
     zIndex: 1000,
     shadowColor: "#000",
@@ -546,5 +567,17 @@ const styles = StyleSheet.create({
     color: "#FFE9D5",
     fontWeight: "bold",
     fontSize: 14,
+  },
+  streakButton: {
+    backgroundColor: "#4A2318",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  streakText: {
+    color: "#FFE9D5",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });

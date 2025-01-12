@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 32,
+    fontSize: 48,
     fontWeight: "bold",
     fontFamily: "matolha-regular",
     color: "#4A2B29",
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   },
   photo: {
     width: "100%",
-    height: 200,
+    aspectRatio: 1,
     borderRadius: 8,
     marginTop: 8,
     marginBottom: 8,

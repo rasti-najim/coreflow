@@ -66,15 +66,7 @@ export async function calculateConsistency(
       }
     }
 
-    let dailyStreak = 0;
-
-    for (const weekSession of weeklySessions) {
-      if (weekSession.completed_sessions != weekSession.total_sessions) {
-        break;
-      } else {
-        dailyStreak++;
-      }
-    }
+    const dailyStreak = await calculateDailyStreak(userId);
 
     return {
       currentWeekCount,
@@ -89,4 +81,57 @@ export async function calculateConsistency(
       dailyStreak: 0,
     };
   }
+}
+
+async function calculateDailyStreak(userId: string) {
+  const { data: allScheduledSessions, error } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("type", "scheduled")
+    .eq("status", "completed")
+    .order("completed_date", { ascending: true });
+
+  if (error || !allScheduledSessions) {
+    console.error(error);
+    return 0;
+  }
+
+  let dailyStreak = 0;
+  let longestStreak = 0;
+  let previousDate: DateTime | null = null;
+
+  allScheduledSessions.forEach((session) => {
+    const currentDate = DateTime.fromISO(session.scheduled_date!).startOf(
+      "day"
+    );
+
+    if (!previousDate) {
+      // First session in the list
+      dailyStreak = 1;
+    } else {
+      // Compare currentDate with previousDate
+      const diff = currentDate.diff(previousDate, "days").toObject().days;
+
+      if (!diff) throw new Error("No difference between dates");
+
+      if (diff === 1) {
+        // Exactly 1 day apart -> increment streak
+        dailyStreak += 1;
+      } else if (diff > 1) {
+        // More than 1 day gap -> reset streak
+        dailyStreak = 1;
+      }
+      // If diff === 0, it means multiple sessions completed the same day
+      // Typically, we don't increment the streak again because it's still the same day.
+      // So do nothing in that case.
+    }
+
+    // Track the maximum streak if you want
+    longestStreak = Math.max(longestStreak, dailyStreak);
+
+    previousDate = currentDate;
+  });
+
+  return dailyStreak;
 }

@@ -24,6 +24,8 @@ import { Routine, Duration } from "@/components/select-routine";
 import Superwall from "@superwall/react-native-superwall";
 import { ReferralCode } from "@/components/referral-code";
 import { OnboardingLoading } from "@/components/onboarding-loading";
+import { Reminders } from "@/components/reminders";
+import { Notifications } from "@/components/notifications";
 
 export interface OnboardingData {
   pilatesLevel: "beginner" | "intermediate" | "advanced" | null;
@@ -40,6 +42,9 @@ export interface OnboardingData {
   photo?: ImagePicker.ImagePickerAsset | null;
   otp?: string;
   referralCode?: string;
+  pushToken?: string;
+  notificationsEnabled?: boolean;
+  notificationsTime?: string;
 }
 
 export default function Onboarding() {
@@ -58,10 +63,11 @@ export default function Onboarding() {
     photo: null,
     otp: "",
     referralCode: "",
+    pushToken: "",
   });
   const router = useRouter();
 
-  const totalSteps = useMemo(() => 11, []);
+  const totalSteps = useMemo(() => 12, []);
 
   const handlePhoneSignIn = async (phoneNumber: string) => {
     console.log("Phone sign in with", phoneNumber);
@@ -282,19 +288,23 @@ export default function Onboarding() {
         // return onboardingData.goalDetails.length === 0;
         return false;
       case 5:
-        return !onboardingData.tracking;
+        return !onboardingData.notificationsTime;
       case 6:
+        return false;
+      case 7:
+        return !onboardingData.tracking;
+      case 8:
         if (onboardingData.tracking === "neither") return false;
         if (onboardingData.tracking === "pictures")
           return !onboardingData.photo;
         return !onboardingData.mood;
       // case 7:
       //   return !onboardingData.hasPurchased;
-      case 7:
-        return false;
-      case 8:
-        return !onboardingData.phoneNumber && !onboardingData.email;
       case 9:
+        return false;
+      case 10:
+        return !onboardingData.phoneNumber && !onboardingData.email;
+      case 11:
         return !onboardingData.otp && !onboardingData.hasAccount;
       default:
         return false;
@@ -424,8 +434,31 @@ export default function Onboarding() {
           />
         );
       case 4:
-        return <GoalsDetails selectedGoals={onboardingData.goals} />;
+        return (
+          <Reminders
+            onAllow={(pushToken) => {
+              setOnboardingData((prev) => ({ ...prev, pushToken: pushToken }));
+              handleNext();
+            }}
+            onDeny={() => {
+              setStep(step + 2);
+            }}
+          />
+        );
       case 5:
+        return (
+          <Notifications
+            onTimeSelected={(time) => {
+              setOnboardingData((prev) => ({
+                ...prev,
+                notificationsTime: time.toISOString(),
+              }));
+            }}
+          />
+        );
+      case 6:
+        return <GoalsDetails selectedGoals={onboardingData.goals} />;
+      case 7:
         return (
           <Tracking
             // @ts-ignore
@@ -439,7 +472,7 @@ export default function Onboarding() {
             }}
           />
         );
-      case 6:
+      case 8:
         if (onboardingData.tracking === "pictures") {
           return (
             <StartingJourneyPhoto
@@ -458,9 +491,9 @@ export default function Onboarding() {
             }}
           />
         );
-      case 7:
+      case 9:
         return <ReferralCode />;
-      case 8:
+      case 10:
         return (
           <CreateAccount
             type="signup"
@@ -498,7 +531,7 @@ export default function Onboarding() {
             }}
           />
         );
-      case 9:
+      case 11:
         return (
           <VerifyOTP
             phoneNumber={onboardingData.phoneNumber || ""}
@@ -510,7 +543,7 @@ export default function Onboarding() {
             onResend={() => handlePhoneSignIn(onboardingData.phoneNumber || "")}
           />
         );
-      case 10:
+      case 12:
         return <OnboardingLoading onboardingData={onboardingData} />;
 
       default:
@@ -526,6 +559,7 @@ export default function Onboarding() {
       onNext={handleNext}
       isNextDisabled={isNextDisabled()}
       showLayout={step !== 10}
+      hideArrow={step == 4}
     >
       {renderStep()}
     </OnboardingLayout>

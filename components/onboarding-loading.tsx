@@ -42,6 +42,7 @@ export const OnboardingLoading = ({
         : null,
       email: onboardingData.email ? onboardingData.email : null,
       experience_level: onboardingData.pilatesLevel,
+      push_token: onboardingData.pushToken,
     });
 
     if (userError) throw userError;
