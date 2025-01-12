@@ -182,9 +182,9 @@ export default function Page() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             // Handle image progress
             setShowOptions(false);
-            Superwall.shared.register("trackProgressPhoto").then(() => {
-              router.push("/home/track-picture");
-            });
+            // Superwall.shared.register("trackProgressPhoto").then(() => {
+            router.push("/home/track-picture");
+            // });
           }}
         >
           <FontAwesome6 name="image" size={18} color="#FFE9D5" />

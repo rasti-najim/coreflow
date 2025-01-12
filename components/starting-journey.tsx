@@ -13,7 +13,7 @@ import { CustomCameraView } from "./camera-view";
 import { DateTime } from "luxon";
 import { Camera } from "expo-camera";
 import { Toast } from "./toast";
-
+import { ImagePreviewModal } from "./image-preview";
 interface StartingJourneyProps {
   onMoodChange?: (mood: string) => void;
 }
@@ -54,6 +54,7 @@ export const StartingJourneyPhoto = ({
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
 
   const handleTakePhoto = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -80,8 +81,6 @@ export const StartingJourneyPhoto = ({
     // Pick the image
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
       quality: 1,
       base64: true,
     });
@@ -141,8 +140,16 @@ export const StartingJourneyPhoto = ({
       </View>
 
       {photo && (
-        <Image source={{ uri: photo.uri }} style={styles.previewImage} />
+        <TouchableOpacity onPress={() => setIsPreviewVisible(true)}>
+          <Image source={{ uri: photo.uri }} style={styles.previewImage} />
+        </TouchableOpacity>
       )}
+
+      <ImagePreviewModal
+        uri={photo?.uri || ""}
+        isVisible={isPreviewVisible}
+        onClose={() => setIsPreviewVisible(false)}
+      />
     </View>
   );
 };

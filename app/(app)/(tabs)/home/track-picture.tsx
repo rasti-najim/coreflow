@@ -14,6 +14,10 @@ import { CustomCameraView } from "@/components/camera-view";
 import { Camera, CameraView } from "expo-camera";
 import { FontAwesome, FontAwesome6 } from "@expo/vector-icons";
 import { Toast } from "@/components/toast";
+import { Dimensions } from "react-native";
+import React from "react";
+import { ImagePreviewModal } from "@/components/image-preview";
+
 export default function Page() {
   const { user } = useAuth();
   const router = useRouter();
@@ -22,6 +26,7 @@ export default function Page() {
   const [showCamera, setShowCamera] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -52,8 +57,6 @@ export default function Page() {
     // Pick the image
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
       quality: 1,
       base64: true,
     });
@@ -169,7 +172,9 @@ export default function Page() {
 
         {photo && (
           <View style={styles.previewContainer}>
-            <Image source={{ uri: photo.uri }} style={styles.previewImage} />
+            <TouchableOpacity onPress={() => setIsPreviewVisible(true)}>
+              <Image source={{ uri: photo.uri }} style={styles.previewImage} />
+            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -198,6 +203,12 @@ export default function Page() {
           type={toast.includes("Error") ? "error" : "success"}
         />
       )}
+
+      <ImagePreviewModal
+        uri={photo?.uri || ""}
+        isVisible={isPreviewVisible}
+        onClose={() => setIsPreviewVisible(false)}
+      />
     </View>
   );
 }
@@ -260,6 +271,7 @@ const styles = StyleSheet.create({
   },
   previewImage: {
     width: "100%",
+    height: undefined,
     aspectRatio: 1,
     borderRadius: 10,
   },

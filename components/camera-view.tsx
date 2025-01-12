@@ -34,7 +34,6 @@ export const CustomCameraView = ({ onCapture, onClose }: CameraViewProps) => {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const photo = await (cameraRef.current as any).takePictureAsync({
         quality: 1,
-        skipProcessing: true,
         base64: true,
       });
       onCapture(photo.uri, photo.base64);
