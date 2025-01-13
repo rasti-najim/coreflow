@@ -35,18 +35,24 @@ Deno.serve(async (req) => {
         const pref = session.user.user_preferences;
         const [hours, minutes] = pref.reminder_time.split(":").map(Number);
 
+        // Step 1: Get "local now" in user's timezone
+        const localNow = DateTime.now().setZone(pref.timezone);
+
+        // Step 2: Compare localNow H:M to user’s reminder H:M
+        return localNow.hour === hours && localNow.minute === minutes;
+
         // Create DateTime object in user's timezone
-        const userLocalTime = DateTime.now()
-          .setZone(pref.timezone)
-          .set({ hour: hours, minute: minutes });
+        // const userLocalTime = DateTime.now()
+        //   .setZone(pref.timezone)
+        //   .set({ hour: hours, minute: minutes });
 
-        // Get current time in UTC
-        const now = DateTime.now().setZone("UTC");
+        // // Get current time in UTC
+        // const now = DateTime.now().setZone("UTC");
 
-        // Compare times
-        return (
-          now.hour === userLocalTime.hour && now.minute === userLocalTime.minute
-        );
+        // // Compare times
+        // return (
+        //   now.hour === userLocalTime.hour && now.minute === userLocalTime.minute
+        // );
       })
       .map((session) => ({
         to: session.user.push_token,
