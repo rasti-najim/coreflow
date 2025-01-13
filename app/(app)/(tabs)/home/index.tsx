@@ -14,6 +14,7 @@ import Superwall from "@superwall/react-native-superwall";
 import { requestReview } from "@/lib/store-review";
 import { registerForPushNotificationsAsync } from "@/lib/notifications";
 import * as Notifications from "expo-notifications";
+import { checkAndUpdateTimezone } from "@/lib/timezone";
 
 type Session = {
   focus: string;
@@ -86,27 +87,6 @@ export default function Page() {
   // }, []);
 
   useEffect(() => {
-    const updateTimezoneReminder = async () => {
-      const currentOffset = DateTime.now().offset;
-      const { data } = await supabase
-        .from("user_preferences")
-        .select("reminder_offset")
-        .eq("user_id", user.id)
-        .limit(1)
-        .single();
-
-      if (data && data.reminder_offset !== currentOffset) {
-        await supabase
-          .from("user_preferences")
-          .update({ reminder_offset: currentOffset })
-          .eq("user_id", user.id);
-      }
-    };
-
-    updateTimezoneReminder();
-  }, []);
-
-  useEffect(() => {
     console.log("user", user);
     const getDuration = async () => {
       const { data: duration } = await supabase
@@ -175,6 +155,15 @@ export default function Page() {
     };
     getConsistency();
   }, [schedule]);
+
+  useEffect(() => {
+    const updateTimezone = async () => {
+      if (!user?.id) return;
+      await checkAndUpdateTimezone(user.id);
+    };
+
+    updateTimezone();
+  }, []);
 
   const onBegin = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

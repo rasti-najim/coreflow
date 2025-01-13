@@ -4,7 +4,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Arrow } from "./arrow";
 import * as Haptics from "expo-haptics";
 import { DateTime } from "luxon";
-import { getLocales, getCalendars } from "expo-localization";
+import { getCalendars } from "expo-localization";
 
 interface NotificationsProps {
   onTimeSelected: (time: { reminder_time: string; timezone: string }) => void;

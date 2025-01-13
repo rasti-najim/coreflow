@@ -130,6 +130,7 @@ export type Database = {
           focus: Database["public"]["Enums"]["session_focus_enum"]
           id: string
           is_custom: boolean
+          notification_sent: boolean
           scheduled_date: string | null
           status: Database["public"]["Enums"]["session_status_enum"]
           target_exercises: string[] | null
@@ -142,6 +143,7 @@ export type Database = {
           focus: Database["public"]["Enums"]["session_focus_enum"]
           id?: string
           is_custom?: boolean
+          notification_sent?: boolean
           scheduled_date?: string | null
           status: Database["public"]["Enums"]["session_status_enum"]
           target_exercises?: string[] | null
@@ -154,6 +156,7 @@ export type Database = {
           focus?: Database["public"]["Enums"]["session_focus_enum"]
           id?: string
           is_custom?: boolean
+          notification_sent?: boolean
           scheduled_date?: string | null
           status?: Database["public"]["Enums"]["session_status_enum"]
           target_exercises?: string[] | null
@@ -231,9 +234,9 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          reminder_offset: number
           reminder_time: string
           session_duration: Database["public"]["Enums"]["session_duration_enum"]
+          timezone: string
           tracking_method: Database["public"]["Enums"]["tracking_method_enum"]
           updated_at: string | null
           user_id: string
@@ -242,9 +245,9 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
-          reminder_offset?: number
           reminder_time?: string
           session_duration: Database["public"]["Enums"]["session_duration_enum"]
+          timezone?: string
           tracking_method: Database["public"]["Enums"]["tracking_method_enum"]
           updated_at?: string | null
           user_id: string
@@ -253,9 +256,9 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
-          reminder_offset?: number
           reminder_time?: string
           session_duration?: Database["public"]["Enums"]["session_duration_enum"]
+          timezone?: string
           tracking_method?: Database["public"]["Enums"]["tracking_method_enum"]
           updated_at?: string | null
           user_id?: string
@@ -383,7 +386,13 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      validate_referral_code: {
+        Args: {
+          p_code: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       entry_type_enum: "session" | "picture" | "mood"
@@ -401,7 +410,7 @@ export type Database = {
       session_focus_enum: "full body" | "upper body" | "lower body" | "core"
       session_status_enum: "scheduled" | "completed" | "skipped"
       tracking_method_enum: "pictures" | "mood" | "neither"
-      weekly_sessions_enum: "1-2" | "3" | "5"
+      weekly_sessions_enum: "3" | "5" | "everyday"
     }
     CompositeTypes: {
       [_ in never]: never

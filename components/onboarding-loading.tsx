@@ -10,6 +10,7 @@ import * as Haptics from "expo-haptics";
 import { DateTime } from "luxon";
 import { Toast, ToastProps } from "./toast";
 import { decode } from "base64-arraybuffer";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const OnboardingLoading = ({
   onboardingData,
@@ -70,6 +71,11 @@ export const OnboardingLoading = ({
       });
 
     if (prefsError) throw prefsError;
+
+    // Store timezone in AsyncStorage
+    if (onboardingData.timezone) {
+      await AsyncStorage.setItem(`timezone_${userId}`, onboardingData.timezone);
+    }
 
     // Handle photo upload and progress tracking if needed
     if (
