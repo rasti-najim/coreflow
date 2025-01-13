@@ -2,21 +2,21 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 
-export type Routine = "1-2" | "3" | "5";
+export type Routine = "3" | "5" | "everyday";
 export type Duration = "5" | "10" | "15" | "20" | "30";
 
 const ROUTINE_OPTIONS: { value: Routine; label: string }[] = [
   {
-    value: "1-2",
-    label: "1-2",
-  },
-  {
     value: "3",
-    label: "3",
+    label: "3x per week",
   },
   {
     value: "5",
-    label: "5",
+    label: "5x per week",
+  },
+  {
+    value: "everyday",
+    label: "Every day",
   },
 ];
 

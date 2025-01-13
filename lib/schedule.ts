@@ -1,7 +1,7 @@
 import supabase from "./supabase";
 import { DateTime } from "luxon";
 
-type WeeklySession = "1-2" | "3" | "5";
+type WeeklySession = "3" | "5" | "everyday";
 type Focus = "full body" | "upper body" | "lower body" | "core";
 type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri";
 type ScheduleAction = "create" | "update" | "extend";
@@ -81,25 +81,6 @@ export function createWeeklyRoutine(
   const schedule: ScheduledWorkout[] = [];
 
   switch (weekly_preference) {
-    case "1-2": {
-      // Randomly choose 1 or 2 sessions
-      const sessionCount = Math.random() < 0.5 ? 1 : 2;
-      const shuffledDays = shuffle(availableDays);
-      const selectedDays = shuffledDays.slice(0, sessionCount);
-
-      selectedDays.sort(
-        (a, b) => availableDays.indexOf(a) - availableDays.indexOf(b)
-      );
-
-      selectedDays.forEach((day) => {
-        schedule.push({
-          date: getNextDate(day, weekOffset, startDate),
-          focus: "full body",
-        });
-      });
-      break;
-    }
-
     case "3": {
       const workoutDays: Day[] = ["Mon", "Wed", "Fri"];
       const focuses: Focus[] = shuffle<Focus>([
@@ -136,6 +117,26 @@ export function createWeeklyRoutine(
         schedule.push({
           date: getNextDate(day, weekOffset, startDate),
           focus,
+        });
+      });
+      break;
+    }
+
+    case "everyday": {
+      const focuses: Focus[] = [
+        "full body",
+        "upper body",
+        "lower body",
+        "core",
+        "full body",
+        "upper body",
+        "lower body",
+      ];
+
+      availableDays.forEach((day, index) => {
+        schedule.push({
+          date: getNextDate(day, weekOffset, startDate),
+          focus: focuses[index],
         });
       });
       break;
