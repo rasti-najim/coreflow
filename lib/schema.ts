@@ -99,6 +99,30 @@ export type Database = {
           },
         ]
       }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sessions: {
         Row: {
           cooldown_exercise: string | null
@@ -207,6 +231,8 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          reminder_offset: number
+          reminder_time: string
           session_duration: Database["public"]["Enums"]["session_duration_enum"]
           tracking_method: Database["public"]["Enums"]["tracking_method_enum"]
           updated_at: string | null
@@ -216,6 +242,8 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          reminder_offset?: number
+          reminder_time?: string
           session_duration: Database["public"]["Enums"]["session_duration_enum"]
           tracking_method: Database["public"]["Enums"]["tracking_method_enum"]
           updated_at?: string | null
@@ -225,6 +253,8 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          reminder_offset?: number
+          reminder_time?: string
           session_duration?: Database["public"]["Enums"]["session_duration_enum"]
           tracking_method?: Database["public"]["Enums"]["tracking_method_enum"]
           updated_at?: string | null
@@ -249,6 +279,7 @@ export type Database = {
           id: string
           phone_number: string | null
           push_token: string | null
+          referral_code_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -257,6 +288,7 @@ export type Database = {
           id?: string
           phone_number?: string | null
           push_token?: string | null
+          referral_code_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -265,8 +297,17 @@ export type Database = {
           id?: string
           phone_number?: string | null
           push_token?: string | null
+          referral_code_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_referral_code_id_fkey"
+            columns: ["referral_code_id"]
+            isOneToOne: true
+            referencedRelation: "referral_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
