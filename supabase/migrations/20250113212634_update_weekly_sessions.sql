@@ -9,7 +9,7 @@ ALTER TABLE user_preferences
   ALTER COLUMN weekly_sessions TYPE weekly_sessions_enum 
   USING (
     CASE 
-      WHEN weekly_sessions = '1-2' THEN '3'::weekly_sessions_enum
-      ELSE weekly_sessions::weekly_sessions_enum
+      WHEN weekly_sessions::text = '1-2' THEN '3'::weekly_sessions_enum
+      ELSE weekly_sessions::text::weekly_sessions_enum
     END
   );
