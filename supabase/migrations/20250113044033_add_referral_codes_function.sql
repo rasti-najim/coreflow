@@ -1,5 +1,7 @@
 CREATE OR REPLACE FUNCTION validate_referral_code(p_code TEXT, p_user_id UUID)
 RETURNS BOOLEAN AS $$
+DECLARE
+  p_referral_id UUID;
 BEGIN
   -- Check if user already has a referral code
   IF EXISTS (
