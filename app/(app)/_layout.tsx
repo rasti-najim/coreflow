@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { Session } from "@supabase/supabase-js";
 import supabase from "@/lib/supabase";
 import Superwall from "@superwall/react-native-superwall";
+
 export default function AppLayout() {
   const { session, user, loading } = useAuth();
 

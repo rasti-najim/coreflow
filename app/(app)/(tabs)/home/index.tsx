@@ -24,7 +24,7 @@ type Session = {
 };
 
 export default function Page() {
-  const { user } = useAuth();
+  const { user, hasReferralCode } = useAuth();
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
   const [schedule, setSchedule] = useState<Session[]>([]);
@@ -178,18 +178,35 @@ export default function Page() {
 
   const onBegin = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    mixpanel.track("Begin Workout Session", {
-      duration: duration,
-      session_id: todaySession?.session_id,
-    });
-    router.push({
-      pathname: "/home/session",
-      params: {
-        session_id: todaySession?.session_id,
+    if (!hasReferralCode) {
+      Superwall.shared.register("beginWorkoutSession").then(() => {
+        mixpanel.track("Begin Workout Session", {
+          duration: duration,
+          session_id: todaySession?.session_id,
+        });
+        router.push({
+          pathname: "/home/session",
+          params: {
+            session_id: todaySession?.session_id,
+            duration: duration,
+            focus: todaySession?.focus,
+          },
+        });
+      });
+    } else {
+      mixpanel.track("Begin Workout Session", {
         duration: duration,
-        focus: todaySession?.focus,
-      },
-    });
+        session_id: todaySession?.session_id,
+      });
+      router.push({
+        pathname: "/home/session",
+        params: {
+          session_id: todaySession?.session_id,
+          duration: duration,
+          focus: todaySession?.focus,
+        },
+      });
+    }
   };
 
   const ProgressOptions = () => {
@@ -203,9 +220,13 @@ export default function Page() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             // Handle image progress
             setShowOptions(false);
-            // Superwall.shared.register("trackProgressPhoto").then(() => {
-            router.push("/home/track-picture");
-            // });
+            if (!hasReferralCode) {
+              Superwall.shared.register("trackProgressPhoto").then(() => {
+                router.push("/home/track-picture");
+              });
+            } else {
+              router.push("/home/track-picture");
+            }
           }}
         >
           <FontAwesome6 name="image" size={18} color="#FFE9D5" />
@@ -218,9 +239,13 @@ export default function Page() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             // Handle note progress
             setShowOptions(false);
-            Superwall.shared.register("trackProgressMood").then(() => {
+            if (!hasReferralCode) {
+              Superwall.shared.register("trackProgressMood").then(() => {
+                router.push("/home/track-mood");
+              });
+            } else {
               router.push("/home/track-mood");
-            });
+            }
           }}
         >
           <FontAwesome6 name="note-sticky" size={18} color="#FFE9D5" />
@@ -232,9 +257,15 @@ export default function Page() {
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setShowOptions(false);
-            Superwall.shared.register("startCustomWorkoutSession").then(() => {
+            if (!hasReferralCode) {
+              Superwall.shared
+                .register("startCustomWorkoutSession")
+                .then(() => {
+                  router.push("/home/custom");
+                });
+            } else {
               router.push("/home/custom");
-            });
+            }
           }}
         >
           <FontAwesome6 name="mattress-pillow" size={18} color="#FFE9D5" />

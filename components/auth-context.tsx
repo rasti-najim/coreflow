@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import supabase from "@/lib/supabase";
 import { Session, User } from "@supabase/supabase-js";
+import { checkPremiumAccess } from "@/lib/referral-codes";
 
 interface AuthState {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  hasReferralCode: boolean;
 }
 
 interface AuthContextType extends AuthState {
@@ -22,7 +24,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session: null,
     user: null,
     loading: true,
+    hasReferralCode: false,
   });
+
+  useEffect(() => {
+    if (state.user) {
+      checkPremiumAccess(state.user.id).then((status) => {
+        setState((prev) => ({
+          ...prev,
+          hasReferralCode: status,
+        }));
+      });
+    }
+  }, [state.user]);
 
   useEffect(() => {
     // Check for existing session
