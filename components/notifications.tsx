@@ -19,10 +19,10 @@ export const Notifications = ({ onTimeSelected }: NotificationsProps) => {
     if (selectedDate) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      // Convert to DateTime object with local timezone
+      // Convert to DateTime object
       const dt = DateTime.fromJSDate(selectedDate);
 
-      // Get the time in HH:mm format
+      // Format time as HH:mm (24-hour format)
       const timeString = dt.toFormat("HH:mm");
 
       // Get the timezone offset in minutes
@@ -30,8 +30,8 @@ export const Notifications = ({ onTimeSelected }: NotificationsProps) => {
 
       setDate(selectedDate);
       onTimeSelected({
-        reminder_time: timeString,
-        reminder_offset: offset,
+        reminder_time: timeString, // Stored as "HH:mm"
+        reminder_offset: offset, // Stored as minutes from UTC
       });
     }
   };

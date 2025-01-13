@@ -24,7 +24,8 @@ Deno.serve(async (req) => {
         "*, user:user_id(push_token, user_preferences:user_preferences_id(reminder_time, reminder_offset))"
       )
       .eq("scheduled_date", formattedDate)
-      .eq("status", "scheduled");
+      .eq("status", "scheduled")
+      .eq("notification_sent", false);
 
     console.log("sessions", sessions);
 
@@ -36,21 +37,22 @@ Deno.serve(async (req) => {
         const pref = session.user.user_preferences;
         const [hours, minutes] = pref.reminder_time.split(":").map(Number);
 
-        // Convert user's local time to UTC
-        const offsetHours = Math.floor(pref.reminder_offset / 60);
-        const offsetMinutes = pref.reminder_offset % 60;
+        // Convert reminder time to UTC
+        const userLocalTime = DateTime.now()
+          .setZone("UTC")
+          .set({ hour: hours, minute: minutes });
 
-        const utcHour = (hours + offsetHours + 24) % 24;
-        const utcMinute = (minutes + offsetMinutes + 60) % 60;
+        const utcTime = userLocalTime.plus({ minutes: pref.reminder_offset });
 
-        // Check if current UTC time matches user's reminder time
-        return currentHour === utcHour && currentMinute === utcMinute;
+        // Check if current UTC time matches the converted reminder time
+        return currentHour === utcTime.hour && currentMinute === utcTime.minute;
       })
       .map((session) => ({
         to: session.user.push_token,
         title: "Time for your Pilates session! 🧘‍♀️",
         body: "Your scheduled workout is ready to begin.",
         sound: "default",
+        sessionId: session.id, // Add session ID for updating notification_sent
       }));
 
     if (notificationsToSend.length === 0) {
@@ -60,14 +62,26 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Send notifications
     const response = await fetch(`https://exp.host/--/api/v2/push/send`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${Deno.env.get("EXPO_ACCESS_TOKEN")}`,
       },
-      body: JSON.stringify(notifications),
+      body: JSON.stringify(notificationsToSend),
     });
+
+    if (response.ok) {
+      // Update notification_sent status for all sent notifications
+      await supabaseAdmin
+        .from("sessions")
+        .update({ notification_sent: true })
+        .in(
+          "id",
+          notificationsToSend.map((n) => n.sessionId)
+        );
+    }
 
     const data = await response.json();
 
