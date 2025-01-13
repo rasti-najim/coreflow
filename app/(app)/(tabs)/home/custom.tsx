@@ -227,7 +227,7 @@ export default function Page() {
           id={currentExercise.id}
           title={currentExercise.name}
           description={currentExercise.description}
-          duration={60}
+          duration={45}
           animationSource={animationSources[currentExercise.id]}
           type={currentExercise.type}
           focus={currentExercise.focus}

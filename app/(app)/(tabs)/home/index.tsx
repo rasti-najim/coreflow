@@ -1,5 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+} from "react-native";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, useRouter } from "expo-router";
@@ -100,14 +106,14 @@ export default function Page() {
     getDuration();
   }, []);
 
-  useEffect(() => {
-    const checkSchedule = async () => {
-      const futureSessions = await checkScheduleStatus(user.id);
-      console.log("futureSessions", futureSessions);
-    };
+  // useEffect(() => {
+  //   const checkSchedule = async () => {
+  //     const futureSessions = await checkScheduleStatus(user.id);
+  //     console.log("futureSessions", futureSessions);
+  //   };
 
-    checkSchedule();
-  }, []);
+  //   checkSchedule();
+  // }, []);
 
   useEffect(() => {
     const loadSchedule = async () => {
@@ -270,126 +276,134 @@ export default function Page() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: safeArea.top }]}>
-      <View style={styles.header}>
-        <Text style={styles.logo}>coreflow</Text>
-        <TouchableOpacity style={styles.streakButton}>
-          <Text style={styles.streakText}>{consistency.dailyStreak} 🔥</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Today's Workout */}
-      <View style={styles.todayContainer}>
-        <Text style={styles.day}>{DateTime.now().toFormat("EEEE")}</Text>
-        <View style={styles.workoutRow}>
-          <Text style={styles.workout}>
-            {todaySession?.status === "completed"
-              ? "🎉 You completed your workout!"
-              : todaySession?.focus ?? "No workout scheduled. Enjoy your day!"}
-          </Text>
-
-          {todaySession?.status !== "completed" &&
-            (todaySession?.focus ? (
-              <TouchableOpacity style={styles.beginButton} onPress={onBegin}>
-                <Text style={styles.beginButtonText}>begin</Text>
-              </TouchableOpacity>
-            ) : null)}
+    <View style={{ flex: 1, backgroundColor: "#FFE9D5" }}>
+      <ScrollView
+        style={[styles.container, { paddingTop: safeArea.top }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Text style={styles.logo}>coreflow</Text>
+          <TouchableOpacity style={styles.streakButton}>
+            <Text style={styles.streakText}>{consistency.dailyStreak} 🔥</Text>
+          </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Weekly Schedule */}
-      <View style={styles.scheduleContainer}>
-        <Text style={styles.scheduleTitle}>This Week 🗓️</Text>
-        {schedule.map(({ scheduled_date, focus, status }) => (
-          <View key={scheduled_date} style={styles.scheduleRow}>
-            <Text style={styles.scheduleDay}>
-              {formatDate(scheduled_date)} {">"}
+        {/* Today's Workout */}
+        <View style={styles.todayContainer}>
+          <Text style={styles.day}>{DateTime.now().toFormat("EEEE")} ✨</Text>
+          <View style={styles.workoutRow}>
+            <Text style={styles.workout}>
+              {todaySession?.status === "completed"
+                ? "🎉 You completed your workout!"
+                : duration + "m " + todaySession?.focus ??
+                  "No workout scheduled. Enjoy your day!"}
             </Text>
-            <Text
-              style={[
-                styles.scheduleWorkout,
-                // status === "completed" && styles.completedWorkout,
-                // status === "skipped" && styles.skippedWorkout,
-              ]}
-            >
-              {focus}
-            </Text>
-            {status === "completed" && (
-              <FontAwesome6
-                name="check"
-                size={16}
-                color="#40874C"
-                style={styles.statusIcon}
-              />
-            )}
-            {status === "skipped" && (
-              <FontAwesome6
-                name="xmark"
-                size={16}
-                color="#FF6B6B"
-                style={styles.statusIcon}
-              />
-            )}
+
+            {todaySession?.status !== "completed" &&
+              (todaySession?.focus ? (
+                <TouchableOpacity style={styles.beginButton} onPress={onBegin}>
+                  <Text style={styles.beginButtonText}>begin</Text>
+                </TouchableOpacity>
+              ) : null)}
           </View>
-        ))}
-      </View>
-
-      {/* Consistency Tracking */}
-      <View style={styles.consistencyContainer}>
-        <View style={styles.consistencyHeader}>
-          <Text style={styles.consistencyTitle}>Patience & Persistence 🔑</Text>
         </View>
-        <Text style={styles.consistencyText}>
-          <Text style={{ textDecorationLine: "underline" }}>
-            {consistency.weeklyStreak} weeks
-          </Text>{" "}
-          consistent
-        </Text>
-        <Text style={styles.consistencyText}>
-          <Text style={{ textDecorationLine: "underline" }}>
-            {consistency.currentWeekCount}{" "}
-            {consistency.currentWeekCount === 1 ? "day" : "days"}
-          </Text>{" "}
-          consistent this week
-        </Text>
-        {/* <Text style={styles.consistencyText}>
-          <Text style={{ textDecorationLine: "underline" }}>
-            {consistency.dailyStreak}{" "}
-            {consistency.dailyStreak === 1 ? "day" : "days"}
-          </Text>{" "}
-          daily streak
-        </Text> */}
-      </View>
 
-      <View style={styles.consistencyContainer}>
-        <View style={styles.consistencyHeader}>
-          <Text style={styles.consistencyTitle}>Custom Session</Text>
+        {/* Weekly Schedule */}
+        <View style={styles.scheduleContainer}>
+          <Text style={styles.scheduleTitle}>This Week 🗓️</Text>
+          {schedule.map(({ scheduled_date, focus, status }) => (
+            <View key={scheduled_date} style={styles.scheduleRow}>
+              <Text style={styles.scheduleDay}>
+                {formatDate(scheduled_date)} {">"}
+              </Text>
+              <Text
+                style={[
+                  styles.scheduleWorkout,
+                  // status === "completed" && styles.completedWorkout,
+                  // status === "skipped" && styles.skippedWorkout,
+                ]}
+              >
+                {focus}
+              </Text>
+              {status === "completed" && (
+                <FontAwesome6
+                  name="check"
+                  size={16}
+                  color="#40874C"
+                  style={styles.statusIcon}
+                />
+              )}
+              {status === "skipped" && (
+                <FontAwesome6
+                  name="xmark"
+                  size={16}
+                  color="#FF6B6B"
+                  style={styles.statusIcon}
+                />
+              )}
+            </View>
+          ))}
         </View>
-        <TouchableOpacity
-          style={styles.customSessionButton}
-          onPress={async () => {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.push("/home/custom");
-          }}
-        >
-          <Text style={styles.customSessionButtonText}>
-            Choose duration + focus
+
+        {/* Consistency Tracking */}
+        <View style={styles.consistencyContainer}>
+          <View style={styles.consistencyHeader}>
+            <Text style={styles.consistencyTitle}>
+              Patience & Persistence 🔑
+            </Text>
+          </View>
+          <Text style={styles.consistencyText}>
+            <Text style={{ textDecorationLine: "underline" }}>
+              {consistency.weeklyStreak} weeks
+            </Text>{" "}
+            consistent
           </Text>
-        </TouchableOpacity>
-      </View>
+          <Text style={styles.consistencyText}>
+            <Text style={{ textDecorationLine: "underline" }}>
+              {consistency.currentWeekCount}{" "}
+              {consistency.currentWeekCount === 1 ? "day" : "days"}
+            </Text>{" "}
+            consistent this week
+          </Text>
+          {/* <Text style={styles.consistencyText}>
+            <Text style={{ textDecorationLine: "underline" }}>
+              {consistency.dailyStreak}{" "}
+              {consistency.dailyStreak === 1 ? "day" : "days"}
+            </Text>{" "}
+            daily streak
+          </Text> */}
+        </View>
 
-      {/* Navigation Bar */}
-      {/* <View style={styles.navbar}>
-        <TouchableOpacity>
-          <FontAwesome name="plus" size={24} color="#4A2318" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <FontAwesome name="calendar" size={24} color="#4A2318" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <FontAwesome name="cog" size={24} color="#4A2318" />
-        </TouchableOpacity>
-      </View> */}
+        <View style={styles.consistencyContainer}>
+          <View style={styles.consistencyHeader}>
+            <Text style={styles.consistencyTitle}>Custom Session</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.customSessionButton}
+            onPress={async () => {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push("/home/custom");
+            }}
+          >
+            <Text style={styles.customSessionButtonText}>
+              Choose duration + focus
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Navigation Bar */}
+        {/* <View style={styles.navbar}>
+          <TouchableOpacity>
+            <FontAwesome name="plus" size={24} color="#4A2318" />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <FontAwesome name="calendar" size={24} color="#4A2318" />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <FontAwesome name="cog" size={24} color="#4A2318" />
+          </TouchableOpacity>
+        </View> */}
+      </ScrollView>
 
       <View style={styles.addButtonContainer}>
         <TouchableOpacity
@@ -409,7 +423,6 @@ export default function Page() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: "#FFE9D5",
     paddingHorizontal: 32,
   },
