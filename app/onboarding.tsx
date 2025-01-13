@@ -26,6 +26,7 @@ import { ReferralCode } from "@/components/referral-code";
 import { OnboardingLoading } from "@/components/onboarding-loading";
 import { Reminders } from "@/components/reminders";
 import { Notifications } from "@/components/notifications";
+import { validateReferralCode } from "@/lib/referral-codes";
 
 export interface OnboardingData {
   pilatesLevel: "beginner" | "intermediate" | "advanced" | null;
@@ -67,6 +68,7 @@ export default function Onboarding() {
     pushToken: "",
   });
   const router = useRouter();
+  const [isValidating, setIsValidating] = useState(false);
 
   const totalSteps = useMemo(() => 12, []);
 
@@ -193,70 +195,40 @@ export default function Onboarding() {
 
   const handleNext = async () => {
     try {
-      if (step < totalSteps - 1) {
-        // if ((step === 5 && onboardingData.tracking === "neither") || step === 6) {
-        //   await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        //   Superwall.shared.register("onboarding").then(async () => {
-        //     setStep(step + 1);
-        //   });
-        //   return;
-        // }
+      if (step >= totalSteps - 1) return;
 
-        if (step === 5 && onboardingData.tracking === "neither") {
-          setStep(step + 2);
-          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          return;
-          // } else if (step === 7) {
-          //   await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          //   Superwall.shared.register("onboarding").then(async () => {
-          //     setStep(step + 1);
-          //   });
-          //   return;
-        } else if (step === 8) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      switch (step) {
+        case 7:
+          if (onboardingData.tracking === "neither") {
+            setStep(step + 2);
+            return;
+          }
+          break;
+
+        case 8:
           if (onboardingData.phoneNumber) {
             const result = await handlePhoneSignIn(onboardingData.phoneNumber);
-            if (!result?.success) {
-              return;
-            }
+            if (!result?.success) return;
           }
           if (onboardingData.email) {
             setStep(step + 2);
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             return;
           }
-        } else if (step === 9) {
-          await handleVerifyOTP(onboardingData.otp || "");
-        }
+          break;
 
-        setStep(step + 1);
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        case 9:
+          if (!onboardingData.referralCode) {
+            Superwall.shared.register("onboarding").then(async () => {
+              setStep(step + 1);
+            });
+            return;
+          }
+          break;
       }
-      // else {
-      //   try {
-      //     const {
-      //       data: { user },
-      //       error: userError,
-      //     } = await supabase.auth.getUser();
 
-      //     if (userError) throw userError;
-      //     if (!user) throw new Error("No user found");
-
-      //     // console.log("onboarding data", onboardingData);
-
-      //     await saveOnboardingData(user.id);
-      //     await createSchedule(user.id, "create");
-
-      //     await Haptics.notificationAsync(
-      //       Haptics.NotificationFeedbackType.Success
-      //     );
-      //     mixpanel.identify(user.id);
-      //     mixpanel.track("Sign Up");
-      //     router.push("/(app)/(tabs)/home");
-      //   } catch (error: any) {
-      //     console.error("Failed to save onboarding data:", error.message);
-      //     // Here you might want to show an error message to the user
-      //   }
-      // }
+      setStep(step + 1);
     } catch (error) {
       console.error("Failed to save onboarding data:", error);
     }
@@ -494,7 +466,29 @@ export default function Onboarding() {
           />
         );
       case 9:
-        return <ReferralCode />;
+        return (
+          <ReferralCode
+            onCodeChange={async (code) => {
+              setIsValidating(true);
+              try {
+                const { data, error } = await supabase.rpc(
+                  "validate_referral_code",
+                  {
+                    p_code: code,
+                  }
+                );
+
+                if (error) throw error;
+
+                setOnboardingData((prev) => ({ ...prev, referralCode: code }));
+                setStep(step + 2); // Skip paywall
+              } catch (error) {
+                console.error("Error validating referral code:", error);
+                // Error will be shown by the ReferralCode component
+              }
+            }}
+          />
+        );
       case 10:
         return (
           <CreateAccount

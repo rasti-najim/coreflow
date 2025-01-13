@@ -34,9 +34,7 @@ Deno.serve(async (req) => {
           return false;
 
         const pref = session.user.user_preferences;
-        const [hours, minutes] = pref.reminder_local_time
-          .split(":")
-          .map(Number);
+        const [hours, minutes] = pref.reminder_time.split(":").map(Number);
 
         // Convert user's local time to UTC
         const offsetHours = Math.floor(pref.reminder_offset / 60);
