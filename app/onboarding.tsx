@@ -44,7 +44,8 @@ export interface OnboardingData {
   referralCode?: string;
   pushToken?: string;
   notificationsEnabled?: boolean;
-  notificationsTime?: string;
+  reminderTime?: string;
+  reminderOffset?: number;
 }
 
 export default function Onboarding() {
@@ -288,7 +289,7 @@ export default function Onboarding() {
         // return onboardingData.goalDetails.length === 0;
         return false;
       case 5:
-        return !onboardingData.notificationsTime;
+        return !onboardingData.reminderTime;
       case 6:
         return false;
       case 7:
@@ -451,7 +452,8 @@ export default function Onboarding() {
             onTimeSelected={(time) => {
               setOnboardingData((prev) => ({
                 ...prev,
-                notificationsTime: time.toISOString(),
+                reminderTime: time.reminder_time,
+                reminderOffset: time.reminder_offset,
               }));
             }}
           />

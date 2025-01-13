@@ -86,6 +86,27 @@ export default function Page() {
   // }, []);
 
   useEffect(() => {
+    const updateTimezoneReminder = async () => {
+      const currentOffset = DateTime.now().offset;
+      const { data } = await supabase
+        .from("user_preferences")
+        .select("reminder_offset")
+        .eq("user_id", user.id)
+        .limit(1)
+        .single();
+
+      if (data && data.reminder_offset !== currentOffset) {
+        await supabase
+          .from("user_preferences")
+          .update({ reminder_offset: currentOffset })
+          .eq("user_id", user.id);
+      }
+    };
+
+    updateTimezoneReminder();
+  }, []);
+
+  useEffect(() => {
     console.log("user", user);
     const getDuration = async () => {
       const { data: duration } = await supabase
