@@ -13,15 +13,13 @@ Deno.serve(async (req) => {
 
   try {
     const now = DateTime.now().setZone("UTC");
-    const currentHour = now.hour;
-    const currentMinute = now.minute;
     const formattedDate = now.toISODate();
     console.log("today", formattedDate);
 
     const { data: sessions } = await supabaseAdmin
       .from("sessions")
       .select(
-        "id, user:user_id (id, push_token, user_preferences!user_preferences_user_id_fkey (reminder_time, reminder_offset))"
+        "id, user:user_id (id, push_token, user_preferences!user_preferences_user_id_fkey (reminder_time, timezone))"
       )
       .eq("scheduled_date", formattedDate)
       .eq("status", "scheduled")
