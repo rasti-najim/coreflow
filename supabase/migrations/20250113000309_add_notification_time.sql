@@ -1,3 +1,3 @@
 ALTER TABLE user_preferences 
-ADD COLUMN reminder_time TIME NOT NULL DEFAULT '9:00:00';
+ADD COLUMN reminder_time TIME NOT NULL DEFAULT '9:00:00',
 ADD COLUMN reminder_offset INTEGER NOT NULL DEFAULT 0;
