@@ -65,8 +65,8 @@ export const OnboardingLoading = ({
         weekly_sessions: onboardingData.routine,
         session_duration: onboardingData.duration,
         tracking_method: onboardingData.tracking,
-        reminder_time: onboardingData.notificationsTime.reminder_time,
-        reminder_offset: onboardingData.notificationsTime.reminder_offset,
+        reminder_time: onboardingData.reminderTime,
+        timezone: onboardingData.timezone,
       });
 
     if (prefsError) throw prefsError;

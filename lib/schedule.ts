@@ -36,11 +36,17 @@ const EXERCISE_TIMING = {
 function getNextDate(
   day: Day,
   weekOffset: number = 0,
-  startDate: DateTime = DateTime.now()
+  startDate: DateTime = DateTime.now(),
+  includeToday: boolean = false
 ): DateTime {
   const dayIndex = ["Mon", "Tue", "Wed", "Thu", "Fri"].indexOf(day);
   const currentDay = startDate.weekday; // 1 = Monday, 7 = Sunday
   const targetDay = dayIndex + 1; // Add 1 because our days start from Monday=1
+
+  // If we want to include today and it matches the target day
+  if (includeToday && currentDay === targetDay && weekOffset === 0) {
+    return startDate;
+  }
 
   let daysToAdd = targetDay - currentDay;
   if (daysToAdd <= 0) {
@@ -53,20 +59,19 @@ function getNextDate(
 export function createMonthlyRoutine(
   weekly_preference: WeeklySession,
   startDate: DateTime = DateTime.now(),
-  weeksToSchedule: number = 4
+  weeksToSchedule: number = 4,
+  includeToday: boolean = false
 ): ScheduledWorkout[] {
   const schedule: ScheduledWorkout[] = [];
 
-  // Create 4 weeks of workouts
   for (let week = 0; week < weeksToSchedule; week++) {
     const weeklySchedule = createWeeklyRoutine(
       weekly_preference,
       week,
-      startDate
+      startDate,
+      includeToday && week === 0 // Only include today for the first week
     );
     schedule.push(...weeklySchedule);
-
-    console.log("weeklySchedule", weeklySchedule);
   }
 
   return schedule;
@@ -75,7 +80,8 @@ export function createMonthlyRoutine(
 export function createWeeklyRoutine(
   weekly_preference: WeeklySession,
   weekOffset: number = 0,
-  startDate: DateTime = DateTime.now()
+  startDate: DateTime = DateTime.now(),
+  includeToday: boolean = false
 ): ScheduledWorkout[] {
   const availableDays: Day[] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
   const schedule: ScheduledWorkout[] = [];
@@ -92,7 +98,7 @@ export function createWeeklyRoutine(
 
       workoutDays.forEach((day, index) => {
         schedule.push({
-          date: getNextDate(day, weekOffset, startDate),
+          date: getNextDate(day, weekOffset, startDate, includeToday),
           focus: focuses[index],
         });
       });
@@ -115,7 +121,7 @@ export function createWeeklyRoutine(
         }
 
         schedule.push({
-          date: getNextDate(day, weekOffset, startDate),
+          date: getNextDate(day, weekOffset, startDate, includeToday),
           focus,
         });
       });
@@ -135,7 +141,7 @@ export function createWeeklyRoutine(
 
       availableDays.forEach((day, index) => {
         schedule.push({
-          date: getNextDate(day, weekOffset, startDate),
+          date: getNextDate(day, weekOffset, startDate, includeToday),
           focus: focuses[index],
         });
       });
@@ -252,7 +258,8 @@ export async function createSchedule(
     const schedule = createMonthlyRoutine(
       data.weekly_sessions,
       startDate,
-      weeksToSchedule
+      weeksToSchedule,
+      action === "create"
     );
 
     console.log("schedule", schedule);

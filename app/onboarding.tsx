@@ -46,7 +46,7 @@ export interface OnboardingData {
   pushToken?: string;
   notificationsEnabled?: boolean;
   reminderTime?: string;
-  reminderOffset?: number;
+  timezone?: string;
 }
 
 export default function Onboarding() {
@@ -66,6 +66,8 @@ export default function Onboarding() {
     otp: "",
     referralCode: "",
     pushToken: "",
+    reminderTime: "",
+    timezone: "",
   });
   const router = useRouter();
   const [isValidating, setIsValidating] = useState(false);
@@ -207,7 +209,7 @@ export default function Onboarding() {
           }
           break;
 
-        case 8:
+        case 10:
           if (onboardingData.phoneNumber) {
             const result = await handlePhoneSignIn(onboardingData.phoneNumber);
             if (!result?.success) return;
@@ -218,14 +220,14 @@ export default function Onboarding() {
           }
           break;
 
-        case 9:
-          if (!onboardingData.referralCode) {
-            Superwall.shared.register("onboarding").then(async () => {
-              setStep(step + 1);
-            });
-            return;
-          }
-          break;
+        // case 9:
+        //   if (!onboardingData.referralCode) {
+        //     Superwall.shared.register("onboarding").then(async () => {
+        //       setStep(step + 1);
+        //     });
+        //     return;
+        //   }
+        //   break;
       }
 
       setStep(step + 1);
@@ -326,13 +328,7 @@ export default function Onboarding() {
   };
 
   useEffect(() => {
-    if (step === 10) {
-      handleNext();
-    }
-  }, [step]);
-
-  useEffect(() => {
-    if (step === 8 && onboardingData.email) {
+    if (step === 10 && onboardingData.email) {
       handleNext();
     }
   }, [onboardingData.email]);
@@ -425,7 +421,7 @@ export default function Onboarding() {
               setOnboardingData((prev) => ({
                 ...prev,
                 reminderTime: time.reminder_time,
-                reminderOffset: time.reminder_offset,
+                timezone: time.timezone,
               }));
             }}
           />
@@ -481,7 +477,6 @@ export default function Onboarding() {
                 if (error) throw error;
 
                 setOnboardingData((prev) => ({ ...prev, referralCode: code }));
-                setStep(step + 2); // Skip paywall
               } catch (error) {
                 console.error("Error validating referral code:", error);
                 // Error will be shown by the ReferralCode component
@@ -554,7 +549,7 @@ export default function Onboarding() {
       onBack={handleBack}
       onNext={handleNext}
       isNextDisabled={isNextDisabled()}
-      showLayout={step !== 10}
+      showLayout={step !== 12}
       hideArrow={step == 4}
     >
       {renderStep()}

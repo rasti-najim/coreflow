@@ -62,7 +62,9 @@
       [
         "expo-font",
         {
-          "fonts": ["./assets/fonts/matolha-regular.otf"]
+          "fonts": [
+            "./assets/fonts/matolha-regular.otf"
+          ]
         }
       ],
       "expo-secure-store",
@@ -79,7 +81,8 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
           "recordAudioAndroid": true
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true

@@ -37,22 +37,25 @@ Deno.serve(async (req) => {
         const pref = session.user.user_preferences;
         const [hours, minutes] = pref.reminder_time.split(":").map(Number);
 
-        // Convert reminder time to UTC
+        // Create DateTime object in user's timezone
         const userLocalTime = DateTime.now()
-          .setZone("UTC")
+          .setZone(pref.timezone)
           .set({ hour: hours, minute: minutes });
 
-        const utcTime = userLocalTime.plus({ minutes: pref.reminder_offset });
+        // Get current time in UTC
+        const now = DateTime.now().setZone("UTC");
 
-        // Check if current UTC time matches the converted reminder time
-        return currentHour === utcTime.hour && currentMinute === utcTime.minute;
+        // Compare times
+        return (
+          now.hour === userLocalTime.hour && now.minute === userLocalTime.minute
+        );
       })
       .map((session) => ({
         to: session.user.push_token,
         title: "Time for your Pilates session! 🧘‍♀️",
         body: "Your scheduled workout is ready to begin.",
         sound: "default",
-        sessionId: session.id, // Add session ID for updating notification_sent
+        sessionId: session.id,
       }));
 
     if (notificationsToSend.length === 0) {

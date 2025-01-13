@@ -4,12 +4,10 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Arrow } from "./arrow";
 import * as Haptics from "expo-haptics";
 import { DateTime } from "luxon";
+import { getLocales, getCalendars } from "expo-localization";
 
 interface NotificationsProps {
-  onTimeSelected: (time: {
-    reminder_time: string;
-    reminder_offset: number;
-  }) => void;
+  onTimeSelected: (time: { reminder_time: string; timezone: string }) => void;
 }
 
 export const Notifications = ({ onTimeSelected }: NotificationsProps) => {
@@ -25,13 +23,18 @@ export const Notifications = ({ onTimeSelected }: NotificationsProps) => {
       // Format time as HH:mm (24-hour format)
       const timeString = dt.toFormat("HH:mm");
 
-      // Get the timezone offset in minutes
-      const offset = dt.offset;
+      // Get timezone from device using expo-localization
+      const timezone = getCalendars()[0].timeZone;
+
+      if (!timezone) {
+        console.error("Could not determine timezone");
+        return;
+      }
 
       setDate(selectedDate);
       onTimeSelected({
         reminder_time: timeString, // Stored as "HH:mm"
-        reminder_offset: offset, // Stored as minutes from UTC
+        timezone: timezone, // Store timezone identifier (e.g., "America/New_York")
       });
     }
   };
