@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     const { data: sessions } = await supabaseAdmin
       .from("sessions")
       .select(
-        "*, user:user_id(push_token, user_preferences:user_preferences_id(reminder_time, reminder_offset))"
+        "id, user:user_id (id, push_token, user_preferences!user_preferences_user_id_fkey (reminder_time, reminder_offset))"
       )
       .eq("scheduled_date", formattedDate)
       .eq("status", "scheduled")
@@ -62,6 +62,8 @@ Deno.serve(async (req) => {
       );
     }
 
+    console.log("notificationsToSend", notificationsToSend);
+
     // Send notifications
     const response = await fetch(`https://exp.host/--/api/v2/push/send`, {
       method: "POST",
@@ -71,6 +73,8 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify(notificationsToSend),
     });
+
+    console.log("response", response);
 
     if (response.ok) {
       // Update notification_sent status for all sent notifications
