@@ -257,7 +257,7 @@ export default function Page() {
           <Text style={styles.optionText}>Track Progress Note</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.optionButton}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -270,7 +270,7 @@ export default function Page() {
         >
           <FontAwesome6 name="mattress-pillow" size={18} color="#FFE9D5" />
           <Text style={styles.optionText}>Create Custom Workout</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     );
   };

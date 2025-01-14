@@ -1,13 +1,15 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import * as Linking from "expo-linking";
 
 export default function Page() {
   const safeArea = useSafeAreaInsets();
 
-  const handleCancelSubscription = async () => {
+  const handleManageSubscription = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // Add subscription cancellation logic here
+    Linking.openURL("itms-apps://apps.apple.com/account/subscriptions");
   };
 
   return (
@@ -17,9 +19,9 @@ export default function Page() {
       <View style={styles.menuContainer}>
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={handleCancelSubscription}
+          onPress={handleManageSubscription}
         >
-          <Text style={styles.menuText}>Cancel Subscription</Text>
+          <Text style={styles.menuText}>Manage Subscription</Text>
         </TouchableOpacity>
       </View>
     </View>
