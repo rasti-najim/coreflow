@@ -75,6 +75,12 @@ export default function Settings() {
           </TouchableOpacity>
         </Link>
 
+        <Link href="/settings/reminders" asChild>
+          <TouchableOpacity style={styles.menuItem}>
+            <Text style={styles.menuText}>Reminders</Text>
+          </TouchableOpacity>
+        </Link>
+
         <TouchableOpacity style={[styles.menuItem]} onPress={handleLogout}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <FontAwesome6 name="right-from-bracket" size={24} color="#4A2318" />

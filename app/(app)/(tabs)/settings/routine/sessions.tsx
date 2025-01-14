@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: "bold",
     color: "#4A2318",
-    fontFamily: "Margin-DEMO",
+    fontFamily: "matolha-regular",
   },
   sectionTitle: {
     fontSize: 32,

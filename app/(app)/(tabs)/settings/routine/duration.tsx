@@ -101,7 +101,7 @@ export default function Page() {
   return (
     <View style={[styles.container, { paddingTop: safeArea.top + 24 }]}>
       <View style={styles.header}>
-        <Text style={styles.sectionTitle}>Session Duration</Text>
+        <Text style={styles.title}>routine</Text>
         <TouchableOpacity
           style={[
             styles.saveButton,
@@ -116,6 +116,7 @@ export default function Page() {
           </Text>
         </TouchableOpacity>
       </View>
+      <Text style={styles.sectionTitle}>Session Duration</Text>
 
       <View style={styles.optionsContainer}>
         {DURATION_OPTIONS.map(({ value, label }) => (
@@ -173,7 +174,7 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: "bold",
     color: "#4A2318",
-    fontFamily: "Margin-DEMO",
+    fontFamily: "matolha-regular",
   },
   sectionTitle: {
     fontSize: 32,
