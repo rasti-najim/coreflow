@@ -106,6 +106,7 @@ export type Database = {
           id: string
           status: string
           updated_at: string
+          used_by_user_id: string | null
         }
         Insert: {
           code: string
@@ -113,6 +114,7 @@ export type Database = {
           id?: string
           status?: string
           updated_at?: string
+          used_by_user_id?: string | null
         }
         Update: {
           code?: string
@@ -120,8 +122,17 @@ export type Database = {
           id?: string
           status?: string
           updated_at?: string
+          used_by_user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "referral_codes_used_by_user_id_fkey"
+            columns: ["used_by_user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sessions: {
         Row: {
@@ -329,15 +340,7 @@ export type Database = {
           push_token?: string | null
           referral_code_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "users_referral_code_id_fkey"
-            columns: ["referral_code_id"]
-            isOneToOne: true
-            referencedRelation: "referral_codes"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {

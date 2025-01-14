@@ -1,76 +1,46 @@
 import supabase from "@/lib/supabase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export const validateReferralCode = async (code: string, userId: string) => {
+export const checkReferralCode = async (userId: string): Promise<boolean> => {
   try {
-    const { data, error } = await supabase.rpc("validate_referral_code", {
-      p_code: code,
-      p_user_id: userId,
-    });
-
-    if (error) {
-      throw error;
-    }
-
-    // Store the premium status locally
-    await AsyncStorage.setItem(`premium_status_${userId}`, "true");
-    return true;
-  } catch (error) {
-    console.error("Error validating referral code:", error);
-    throw error;
-  }
-};
-
-export const checkPremiumAccess = async (userId: string): Promise<boolean> => {
-  try {
-    // First check local storage
+    // First check local storage for quick response
     const localStatus = await AsyncStorage.getItem(
       `has_referral_code_${userId}`
     );
+
+    // If we have a cached false result, return it immediately
+    if (localStatus === "false") {
+      return false;
+    }
+
+    // If we have a cached true result, verify in background
     if (localStatus === "true") {
-      // Verify the status in database even if we have local storage
-      const { data, error } = await supabase
+      // Verify in database in background
+      supabase
         .from("referral_codes")
         .select("status")
         .eq("used_by_user_id", userId)
         .eq("status", "active")
         .limit(1)
-        .single();
-
-      if (error || !data) {
-        // If there's an error or no active referral found, clear local storage
-        await AsyncStorage.removeItem(`has_referral_code_${userId}`);
-        return false;
-      }
+        .single()
+        .then(({ data, error }) => {
+          if (error || !data) {
+            // Clear local storage if verification fails
+            AsyncStorage.removeItem(`has_referral_code_${userId}`);
+          }
+        });
 
       return true;
     }
 
-    // If not in local storage, check database
-    const { data, error } = await supabase
-      .from("referral_codes")
-      .select("status")
-      .eq("used_by_user_id", userId)
-      .eq("status", "active")
-      .limit(1)
-      .single();
-
-    if (error) throw error;
-
-    // Store result locally for future checks
-    const hasPremium = !!data;
-    await AsyncStorage.setItem(
-      `has_referral_code_${userId}`,
-      hasPremium ? "true" : "false"
-    );
-
-    return hasPremium;
+    // If no cache entry exists, user doesn't have a referral code
+    return false;
   } catch (error) {
-    console.error("Error checking premium access:", error);
+    console.error("Error checking referral code:", error);
     return false;
   }
 };
 
-export const clearPremiumStatus = async (userId: string) => {
+export const clearReferralCode = async (userId: string) => {
   await AsyncStorage.removeItem(`has_referral_code_${userId}`);
 };

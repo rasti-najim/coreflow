@@ -26,7 +26,6 @@ import { ReferralCode } from "@/components/referral-code";
 import { OnboardingLoading } from "@/components/onboarding-loading";
 import { Reminders } from "@/components/reminders";
 import { Notifications } from "@/components/notifications";
-import { validateReferralCode } from "@/lib/referral-codes";
 
 export interface OnboardingData {
   pilatesLevel: "beginner" | "intermediate" | "advanced" | null;
@@ -197,7 +196,7 @@ export default function Onboarding() {
 
   const handleNext = async () => {
     try {
-      if (step >= totalSteps - 1) return;
+      if (step >= totalSteps) return;
 
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
@@ -205,6 +204,15 @@ export default function Onboarding() {
         case 7:
           if (onboardingData.tracking === "neither") {
             setStep(step + 2);
+            return;
+          }
+          break;
+
+        case 9:
+          if (!onboardingData.referralCode) {
+            Superwall.shared.register("onboarding").then(async () => {
+              setStep(step + 1);
+            });
             return;
           }
           break;
@@ -220,14 +228,15 @@ export default function Onboarding() {
           }
           break;
 
-        // case 9:
-        //   if (!onboardingData.referralCode) {
-        //     Superwall.shared.register("onboarding").then(async () => {
-        //       setStep(step + 1);
-        //     });
-        //     return;
-        //   }
-        //   break;
+        case 11:
+          if (onboardingData.otp) {
+            const success = await handleVerifyOTP(onboardingData.otp);
+            if (success) {
+              setStep(step + 1);
+            }
+            return;
+          }
+          break;
       }
 
       setStep(step + 1);
@@ -289,12 +298,12 @@ export default function Onboarding() {
   const handleVerifyOTP = async (otp: string) => {
     if (!otp || otp.length !== 6) {
       console.log("Invalid OTP:", otp);
-      return;
+      return false;
     }
 
     if (!onboardingData.phoneNumber) {
       console.log("No phone number available");
-      return;
+      return false;
     }
 
     try {
@@ -313,17 +322,16 @@ export default function Onboarding() {
 
       if (error) {
         console.error("OTP verification error:", error);
-        return;
+        return false;
       }
 
       console.log("OTP verified successfully");
       setOnboardingData((prev) => ({ ...prev, hasAccount: true }));
       mixpanel.track("Verify OTP");
-
-      // Proceed to next step
-      // await handleNext();
+      return true;
     } catch (error) {
       console.error("OTP verification failed:", error);
+      return false;
     }
   };
 

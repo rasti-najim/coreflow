@@ -11,6 +11,7 @@ import { DateTime } from "luxon";
 import { Toast, ToastProps } from "./toast";
 import { decode } from "base64-arraybuffer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Superwall from "@superwall/react-native-superwall";
 
 export const OnboardingLoading = ({
   onboardingData,
@@ -119,6 +120,23 @@ export const OnboardingLoading = ({
           p_user_id: userId,
         }
       );
+
+      if (referralError) throw referralError;
+
+      await Superwall.shared.setUserAttributes({
+        isReferred: true,
+        referralCode: onboardingData.referralCode,
+      });
+
+      await AsyncStorage.setItem(`has_referral_code_${userId}`, "true");
+      await AsyncStorage.setItem(
+        `referral_code_${userId}`,
+        onboardingData.referralCode
+      );
+    } else {
+      await Superwall.shared.setUserAttributes({
+        isReferred: false,
+      });
     }
 
     console.log("onboarding data saved", onboardingData);
