@@ -1,26 +1,16 @@
--- Drop the old function if it exists
-DROP FUNCTION IF EXISTS validate_referral_code(p_code TEXT, p_user_id UUID);
-
--- Then add your new functions
-CREATE OR REPLACE FUNCTION check_referral_code(p_code TEXT)
-RETURNS BOOLEAN AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 
-    FROM referral_codes 
-    WHERE code = p_code 
-    AND status = 'active'
-    AND used_by_user_id IS NULL
-  );
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to claim the code for a user
-CREATE OR REPLACE FUNCTION claim_referral_code(p_code TEXT, p_user_id UUID)
+CREATE OR REPLACE FUNCTION validate_referral_code(p_code TEXT, p_user_id UUID)
 RETURNS BOOLEAN AS $$
 DECLARE
   p_referral_id UUID;
 BEGIN
+  -- Check if user already has a referral code
+  IF EXISTS (
+    SELECT 1 FROM referral_codes 
+    WHERE used_by_user_id = p_user_id
+  ) THEN
+    RAISE EXCEPTION 'User has already used a referral code';
+  END IF;
+
   -- Get and lock the referral code
   WITH referral AS (
     SELECT id 
@@ -44,5 +34,10 @@ BEGIN
   WHERE id = p_user_id;
 
   RETURN TRUE;
+EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+    RAISE EXCEPTION 'Invalid or expired referral code';
+  WHEN OTHERS THEN
+    RAISE;
 END;
 $$ LANGUAGE plpgsql;
