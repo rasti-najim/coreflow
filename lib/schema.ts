@@ -422,7 +422,13 @@ export type Database = {
       }
     }
     Functions: {
-      validate_referral_code: {
+      check_referral_code: {
+        Args: {
+          p_code: string
+        }
+        Returns: boolean
+      }
+      claim_referral_code: {
         Args: {
           p_code: string
           p_user_id: string
