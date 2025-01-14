@@ -110,6 +110,7 @@ export default function Login() {
       onNext={step === 0 ? handlePhoneSignIn : handleVerifyOTP}
       isNextDisabled={step === 0 ? !phoneNumber : !otp}
       nextButtonText="Continue"
+      hideProgressBar={true}
     >
       {renderStep()}
     </OnboardingLayout>

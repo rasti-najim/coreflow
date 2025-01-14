@@ -27,6 +27,7 @@ interface OnboardingLayoutProps {
   nextButtonText?: string;
   showLayout?: boolean;
   hideArrow?: boolean;
+  hideProgressBar?: boolean;
 }
 
 export const OnboardingLayout = ({
@@ -39,6 +40,7 @@ export const OnboardingLayout = ({
   nextButtonText = "Next",
   showLayout = true,
   hideArrow = false,
+  hideProgressBar = false,
 }: OnboardingLayoutProps) => {
   const safeAreaInsets = useSafeAreaInsets();
 
@@ -67,14 +69,16 @@ export const OnboardingLayout = ({
                 color="#513B2F"
               />
             </TouchableOpacity>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  { width: `${((currentStep + 1) / totalSteps) * 100}%` },
-                ]}
-              />
-            </View>
+            {!hideProgressBar && (
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${((currentStep + 1) / totalSteps) * 100}%` },
+                  ]}
+                />
+              </View>
+            )}
           </View>
 
           {children}
