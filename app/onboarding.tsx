@@ -247,9 +247,25 @@ export default function Onboarding() {
 
   const handleBack = () => {
     if (step > 0) {
-      if (step === 7 && onboardingData.tracking === "neither") {
-        setStep(5);
-        return;
+      switch (step) {
+        case 6:
+          if (!onboardingData.pushToken) {
+            setStep(4);
+            return;
+          }
+          break;
+        case 9:
+          if (onboardingData.tracking === "neither") {
+            setStep(7);
+            return;
+          }
+          break;
+        case 12:
+          if (onboardingData.email) {
+            setStep(10);
+            return;
+          }
+          break;
       }
 
       setStep(step - 1);
