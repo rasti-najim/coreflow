@@ -30,6 +30,12 @@ type Session = {
   status: string;
 };
 
+type Streak = {
+  count: number;
+  level: string;
+  emoji: string;
+};
+
 export default function Page() {
   const { user, hasReferralCode } = useAuth();
   const safeArea = useSafeAreaInsets();
@@ -49,6 +55,7 @@ export default function Page() {
   >(undefined);
   const notificationListener = useRef<Notifications.EventSubscription>();
   const responseListener = useRef<Notifications.EventSubscription>();
+  const [streak, setStreak] = useState<Streak | undefined>();
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -171,6 +178,29 @@ export default function Page() {
     updateTimezone();
   }, []);
 
+  useEffect(() => {
+    const getStreak = async () => {
+      try {
+        const { data: streak } = await supabase
+          .from("user_streak_levels")
+          .select("*")
+          .eq("user_id", user.id)
+          .limit(1)
+          .single();
+        if (streak) {
+          setStreak({
+            count: streak.daily_streak || 0,
+            level: streak.streak_level_name || "",
+            emoji: streak.streak_level_emoji || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error getting streak:", error);
+      }
+    };
+    getStreak();
+  }, []);
+
   const onBegin = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!hasReferralCode) {
@@ -283,8 +313,22 @@ export default function Page() {
       >
         <View style={styles.header}>
           <Text style={styles.logo}>coreflow</Text>
-          <TouchableOpacity style={styles.streakButton}>
-            <Text style={styles.streakText}>{consistency.dailyStreak} 🔥</Text>
+          <TouchableOpacity
+            style={styles.streakButton}
+            onPress={async () => {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push({
+                pathname: "/home/streak-level",
+                params: {
+                  streak: streak?.count || 0,
+                  level: streak?.level || "Beginner Pose",
+                  emoji: streak?.emoji || "🔥 ",
+                  nextLevel: 0,
+                },
+              });
+            }}
+          >
+            <Text style={styles.streakText}>{streak?.count} 🔥</Text>
           </TouchableOpacity>
         </View>
 

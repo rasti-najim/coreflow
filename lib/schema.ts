@@ -201,6 +201,33 @@ export type Database = {
           },
         ]
       }
+      streak_levels: {
+        Row: {
+          created_at: string | null
+          emoji: string
+          id: number
+          name: string
+          streak_count: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          emoji: string
+          id?: number
+          name: string
+          streak_count: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          emoji?: string
+          id?: number
+          name?: string
+          streak_count?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_goals: {
         Row: {
           created_at: string | null
@@ -362,6 +389,15 @@ export type Database = {
             | null
           type?: Database["public"]["Enums"]["exercise_type_enum"] | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_streak_levels: {
+        Row: {
+          daily_streak: number | null
+          streak_level_emoji: string | null
+          streak_level_name: string | null
+          user_id: string | null
         }
         Relationships: []
       }

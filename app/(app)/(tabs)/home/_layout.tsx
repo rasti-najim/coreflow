@@ -20,6 +20,7 @@ export default function HomeLayout() {
         name="custom"
         options={{ presentation: "fullScreenModal" }}
       />
+      <Stack.Screen name="streak-level" options={{ presentation: "modal" }} />
     </Stack>
   );
 }
