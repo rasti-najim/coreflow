@@ -1,4 +1,11 @@
-import { Text, View, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import {
+  Text,
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/components/auth-context";
@@ -53,7 +60,10 @@ export default function Settings() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: safeArea.top + 24 }]}>
+    <ScrollView
+      style={[styles.container, { paddingTop: safeArea.top + 24 }]}
+      showsHorizontalScrollIndicator={false}
+    >
       <Text style={styles.title}>settings</Text>
 
       <View style={styles.menuContainer}>
@@ -81,24 +91,51 @@ export default function Settings() {
           </TouchableOpacity>
         </Link>
 
-        <TouchableOpacity style={[styles.menuItem]} onPress={handleLogout}>
+        <Link
+          href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+          asChild
+        >
+          <TouchableOpacity style={styles.legalItem}>
+            <Text style={styles.legalText}>Terms of Service</Text>
+            <FontAwesome6
+              name="arrow-up-right-from-square"
+              size={16}
+              color="#4A2318"
+            />
+          </TouchableOpacity>
+        </Link>
+
+        <Link href="https://barnburnerllc.github.io/CoreFlow/" asChild>
+          <TouchableOpacity style={styles.legalItem}>
+            <Text style={styles.legalText}>Privacy Policy</Text>
+            <FontAwesome6
+              name="arrow-up-right-from-square"
+              size={16}
+              color="#4A2318"
+            />
+          </TouchableOpacity>
+        </Link>
+
+        <TouchableOpacity style={[styles.legalItem]} onPress={handleLogout}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <FontAwesome6 name="right-from-bracket" size={24} color="#4A2318" />
-            <Text style={styles.logoutText}>Log Out</Text>
+            <FontAwesome6 name="right-from-bracket" size={16} color="#4A2318" />
+            <Text style={styles.legalText}>Log Out</Text>
           </View>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.menuItem, styles.deleteAccountItem]}
+          style={[styles.legalItem]}
           onPress={handleDeleteAccount}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <FontAwesome6 name="trash-can" size={24} color="#FF0000" />
-            <Text style={styles.deleteAccountText}>Delete Account</Text>
+            <FontAwesome6 name="trash-can" size={16} color="#FF0000" />
+            <Text style={[styles.legalText, { color: "#FF0000" }]}>
+              Delete Account
+            </Text>
           </View>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -112,7 +149,7 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: "bold",
     color: "#4A2318",
-    marginBottom: 48,
+    // marginBottom: 48,
     fontFamily: "matolha-regular",
   },
   menuContainer: {
@@ -124,15 +161,14 @@ const styles = StyleSheet.create({
   menuText: {
     fontSize: 32,
   },
-  logoutText: {
+  legalItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+  },
+  legalText: {
+    fontSize: 16,
     color: "#4A2318",
-    fontSize: 24,
-  },
-  deleteAccountItem: {
-    // marginTop: 24,
-  },
-  deleteAccountText: {
-    color: "#FF0000",
-    fontSize: 24,
   },
 });

@@ -19,6 +19,7 @@ import {
   statusCodes,
 } from "@react-native-google-signin/google-signin";
 import { Toast, ToastProps } from "./toast";
+import * as Linking from "expo-linking";
 
 interface CreateAccountProps {
   title: string;
@@ -223,6 +224,29 @@ export const CreateAccount = ({
           onChangePhoneNumber={onChangePhoneNumber}
         />
 
+        <Text style={styles.termsText}>
+          By continuing, you agree to our{" "}
+          <Text
+            style={styles.termsLink}
+            onPress={() =>
+              Linking.openURL(
+                "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+              )
+            }
+          >
+            Terms of Service
+          </Text>{" "}
+          and{" "}
+          <Text
+            style={styles.termsLink}
+            onPress={() =>
+              Linking.openURL("https://barnburnerllc.github.io/CoreFlow/")
+            }
+          >
+            Privacy Policy
+          </Text>
+        </Text>
+
         {toast && (
           <Toast
             message={toast.message}
@@ -286,5 +310,16 @@ const styles = StyleSheet.create({
     // width: 200,
     height: 50,
     marginBottom: 24,
+  },
+  termsText: {
+    fontSize: 12,
+    color: "#666666",
+    textAlign: "center",
+    marginTop: 24,
+    paddingHorizontal: 20,
+  },
+  termsLink: {
+    color: "#4A2318",
+    textDecorationLine: "underline",
   },
 });
