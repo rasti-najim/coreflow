@@ -11,6 +11,7 @@ import {
   Pressable,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -153,6 +154,71 @@ export default function Page() {
     console.log(`View ${type} progress`);
   };
 
+  const handleDelete = async (item: TimelineItem) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    Alert.alert(
+      "Delete Entry",
+      "Are you sure you want to delete this entry? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // If it's a photo entry, delete the photo from storage first
+              if (item.type.includes("picture")) {
+                // Get the original photo URL from the progress table
+                const { data: progressData, error: progressError } =
+                  await supabase
+                    .from("progress")
+                    .select("picture_url")
+                    .eq("id", item.id)
+                    .single();
+
+                if (progressError) {
+                  console.error("Error getting photo URL:", progressError);
+                  return;
+                }
+
+                if (progressData?.picture_url) {
+                  const { error: storageError } = await supabase.storage
+                    .from("photo-progress")
+                    .remove([`${user.id}/${progressData.picture_url}`]);
+
+                  if (storageError) {
+                    console.error("Error deleting photo:", storageError);
+                    return;
+                  }
+                }
+              }
+
+              // Delete the progress entry
+              const { error: deleteError } = await supabase
+                .from("progress")
+                .delete()
+                .eq("id", item.id);
+
+              if (deleteError) {
+                console.error("Error deleting entry:", deleteError);
+                return;
+              }
+
+              // Update local state to remove the deleted item
+              setTimelineData((prev) => prev.filter((i) => i.id !== item.id));
+            } catch (error) {
+              console.error("Error deleting entry:", error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={[styles.container, { paddingTop: safeArea.top + 40 }]}>
       <Text style={[styles.title]}>timeline</Text>
@@ -217,18 +283,30 @@ export default function Page() {
                 <View style={styles.content}>
                   <Text style={styles.date}>{date}</Text>
                   {items.map((item, index) => (
-                    <View key={item.id + index}>
-                      <Text style={styles.description}>
-                        {item.type
-                          .map((type) =>
-                            type === "picture"
-                              ? "Photo"
-                              : type === "session"
-                              ? item.duration
-                              : "Note"
-                          )
-                          .join(" & ")}
-                      </Text>
+                    <View key={item.id + index} style={styles.itemContainer}>
+                      <View style={styles.itemHeader}>
+                        <Text style={styles.description}>
+                          {item.type
+                            .map((type) =>
+                              type === "picture"
+                                ? "Photo"
+                                : type === "session"
+                                ? item.duration
+                                : "Note"
+                            )
+                            .join(" & ")}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => handleDelete(item)}
+                          style={styles.deleteButton}
+                        >
+                          <FontAwesome6
+                            name="trash-can"
+                            size={16}
+                            color="#FF0000"
+                          />
+                        </TouchableOpacity>
+                      </View>
                       {item.type.includes("picture") && (
                         <>
                           {!item.photoUrl ? (
@@ -423,5 +501,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     marginLeft: 10,
+  },
+  itemContainer: {
+    marginBottom: 16,
+  },
+  itemHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  deleteButton: {
+    padding: 8,
   },
 });
