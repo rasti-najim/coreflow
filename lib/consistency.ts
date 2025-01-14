@@ -88,7 +88,7 @@ async function calculateDailyStreak(userId: string) {
     .from("sessions")
     .select("*")
     .eq("user_id", userId)
-    .eq("type", "scheduled")
+    .eq("is_custom", false)
     .eq("status", "completed")
     .order("completed_date", { ascending: true });
 
