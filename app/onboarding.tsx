@@ -465,21 +465,21 @@ export default function Onboarding() {
         return (
           <ReferralCode
             onCodeChange={async (code) => {
-              setIsValidating(true);
               try {
                 const { data, error } = await supabase.rpc(
-                  "validate_referral_code",
+                  "check_referral_code",
                   {
                     p_code: code,
                   }
                 );
 
                 if (error) throw error;
+                if (!data) throw new Error("Invalid or expired referral code");
 
                 setOnboardingData((prev) => ({ ...prev, referralCode: code }));
               } catch (error) {
-                console.error("Error validating referral code:", error);
-                // Error will be shown by the ReferralCode component
+                console.error("Error checking referral code:", error);
+                throw error;
               }
             }}
           />

@@ -1,8 +1,9 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, StyleSheet, Button } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { LoadingAnimation } from "./loading-animation";
 import { Toast, ToastProps } from "./toast";
+import { FontAwesome } from "@expo/vector-icons";
 
 interface ReferralCodeProps {
   title?: string;
@@ -17,7 +18,25 @@ export const ReferralCode = ({
 }: ReferralCodeProps) => {
   const [code, setCode] = useState("");
   const [isValidating, setIsValidating] = useState(false);
+  const [isValid, setIsValid] = useState<boolean | null>(null);
   const [toast, setToast] = useState<ToastProps | null>(null);
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    if (code.length === 6) {
+      setIsValidating(true);
+      timeoutId = setTimeout(() => {
+        validateCode();
+      }, 500);
+    } else {
+      setIsValid(null);
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [code]);
 
   const handleCodeChange = (text: string) => {
     const upperText = text.toUpperCase();
@@ -30,24 +49,50 @@ export const ReferralCode = ({
   const validateCode = async () => {
     if (code.length !== 6) return;
 
-    setIsValidating(true);
     try {
-      // Simulate validation delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       // Call the parent's onCodeChange handler
-      onCodeChange?.(code);
+      await onCodeChange?.(code);
+      setIsValid(true);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error("Error validating code:", error);
+      setIsValid(false);
       setToast({
-        message: "Error validating code",
+        message: "Invalid referral code",
         type: "error",
       });
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsValidating(false);
     }
+  };
+
+  const renderStatus = () => {
+    if (isValidating) {
+      return (
+        <View style={styles.statusContainer}>
+          <LoadingAnimation />
+        </View>
+      );
+    }
+
+    if (isValid === true) {
+      return (
+        <View style={styles.statusContainer}>
+          <FontAwesome name="check-circle" size={24} color="#4CAF50" />
+        </View>
+      );
+    }
+
+    if (isValid === false) {
+      return (
+        <View style={styles.statusContainer}>
+          <FontAwesome name="times-circle" size={24} color="#F44336" />
+        </View>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -57,7 +102,11 @@ export const ReferralCode = ({
 
       <View style={styles.inputContainer}>
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            isValid === true && styles.inputValid,
+            isValid === false && styles.inputInvalid,
+          ]}
           value={code}
           onChangeText={handleCodeChange}
           placeholder="Enter code"
@@ -66,12 +115,7 @@ export const ReferralCode = ({
           maxLength={6}
           editable={!isValidating}
         />
-
-        {isValidating && (
-          <View style={styles.loadingContainer}>
-            <LoadingAnimation />
-          </View>
-        )}
+        {renderStatus()}
       </View>
 
       {toast && (
@@ -100,21 +144,29 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     textAlign: "left",
   },
+  inputContainer: {
+    position: "relative",
+    flexDirection: "row",
+    alignItems: "center",
+  },
   input: {
-    width: "100%",
+    flex: 1,
     fontSize: 24,
     borderBottomWidth: 1,
     borderBottomColor: "#4A2318",
     paddingBottom: 8,
     letterSpacing: 2,
   },
-  inputContainer: {
-    position: "relative",
+  inputValid: {
+    borderBottomColor: "#4CAF50",
   },
-  loadingContainer: {
+  inputInvalid: {
+    borderBottomColor: "#F44336",
+  },
+  statusContainer: {
     position: "absolute",
     right: 16,
-    top: "50%",
-    transform: [{ translateY: -12 }],
+    height: "100%",
+    justifyContent: "center",
   },
 });

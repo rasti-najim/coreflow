@@ -110,6 +110,17 @@ export const OnboardingLoading = ({
       if (progressError) throw progressError;
     }
 
+    // Claim referral code if one was provided
+    if (onboardingData.referralCode) {
+      const { error: referralError } = await supabase.rpc(
+        "claim_referral_code",
+        {
+          p_code: onboardingData.referralCode,
+          p_user_id: userId,
+        }
+      );
+    }
+
     console.log("onboarding data saved", onboardingData);
   };
 
