@@ -3,12 +3,12 @@ WITH user_streaks AS (
   WITH RECURSIVE dates AS (
     SELECT 
       user_id,
-      completed_date::date as streak_date,
+      scheduled_date::date as streak_date,
       1 as streak_count
     FROM sessions
     WHERE status = 'completed'
       AND type = 'scheduled'
-      AND completed_date IS NOT NULL
+      AND scheduled_date IS NOT NULL
     
     UNION ALL
     
@@ -19,7 +19,7 @@ WITH user_streaks AS (
     FROM dates d
     INNER JOIN sessions s ON 
       s.user_id = d.user_id AND 
-      s.completed_date::date = d.streak_date + 1 AND
+      s.scheduled_date::date = d.streak_date + 1 AND
       s.status = 'completed' AND
       s.type = 'scheduled'
   )
