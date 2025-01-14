@@ -7,7 +7,7 @@ WITH user_streaks AS (
       1 as streak_count
     FROM sessions
     WHERE status = 'completed'
-      AND type = 'scheduled'
+      AND is_custom = false
       AND scheduled_date IS NOT NULL
     
     UNION ALL
@@ -21,7 +21,7 @@ WITH user_streaks AS (
       s.user_id = d.user_id AND 
       s.scheduled_date::date = d.streak_date + 1 AND
       s.status = 'completed' AND
-      s.type = 'scheduled'
+      s.is_custom = false
   )
   SELECT 
     user_id,
