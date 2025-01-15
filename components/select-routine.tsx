@@ -2,50 +2,57 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 
-const ROUTINE_OPTIONS = [
-  {
-    value: "1-2",
-    label: "1-2",
-  },
+export type Routine = "3" | "5" | "everyday";
+export type Duration = "5" | "10" | "15" | "20" | "30";
+
+const ROUTINE_OPTIONS: { value: Routine; label: string }[] = [
   {
     value: "3",
-    label: "3",
+    label: "3x per week",
   },
   {
     value: "5",
-    label: "5",
+    label: "5x per week",
+  },
+  {
+    value: "everyday",
+    label: "Every day",
   },
 ];
 
-const DURATION_OPTIONS = [
+const DURATION_OPTIONS: { value: Duration; label: string }[] = [
   {
-    value: "5-10",
-    label: "5-10 minutes",
+    value: "5",
+    label: "5 minutes",
   },
   {
-    value: "10-20",
-    label: "10-20 minutes",
+    value: "10",
+    label: "10 minutes",
   },
   {
-    value: "30-45",
-    label: "30-45 minutes",
+    value: "15",
+    label: "15 minutes",
   },
   {
-    value: "60-75",
-    label: "60-75 minutes",
+    value: "20",
+    label: "20 minutes",
+  },
+  {
+    value: "30",
+    label: "30 minutes",
   },
 ];
 
 interface SelectRoutineProps {
-  selectedRoutine: string | null;
-  onSelectRoutine: (routine: string) => void;
+  selectedRoutine: Routine | null;
+  onSelectRoutine: (routine: Routine) => void;
   title?: string;
   subtitle?: string;
 }
 
 interface SelectDurationProps {
-  selectedDuration: string | null;
-  onSelectDuration: (duration: string) => void;
+  selectedDuration: Duration | null;
+  onSelectDuration: (duration: Duration) => void;
   title?: string;
   subtitle?: string;
 }
@@ -56,7 +63,7 @@ export const SelectRoutine = ({
   title = "Routine",
   subtitle = "How many times a week do you want to do Pilates?",
 }: SelectRoutineProps) => {
-  const handleSelectRoutine = async (routine: string) => {
+  const handleSelectRoutine = async (routine: Routine) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSelectRoutine(routine);
   };
@@ -96,7 +103,7 @@ export const SelectDuration = ({
   title = "Routine",
   subtitle = "How much time do you want to spend in a session?",
 }: SelectDurationProps) => {
-  const handleSelectDuration = async (duration: string) => {
+  const handleSelectDuration = async (duration: Duration) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSelectDuration(duration);
   };
@@ -142,8 +149,8 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   subtitle: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 18,
+    // fontWeight: "bold",
     marginBottom: 32,
     textAlign: "left",
   },

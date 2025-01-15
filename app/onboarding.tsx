@@ -3,18 +3,49 @@ import { PilatesExperience } from "@/components/pilates-experience";
 import { SelectGoals } from "@/components/select-goals";
 import { SelectRoutine, SelectDuration } from "@/components/select-routine";
 import { GoalsDetails } from "@/components/goals-details";
-import { useState, useMemo } from "react";
+import { CreateAccount } from "@/components/create-account";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { PaywallScreen } from "@/components/paywall";
+import { Tracking } from "@/components/tracking";
+import {
+  StartingJourney,
+  StartingJourneyPhoto,
+} from "@/components/starting-journey";
+import supabase from "@/lib/supabase";
+import { VerifyOTP } from "@/components/verify-otp";
+import { createSchedule } from "@/lib/schedule";
+import mixpanel from "@/lib/mixpanel";
+import { DateTime } from "luxon";
+import * as ImagePicker from "expo-image-picker";
+import { decode } from "base64-arraybuffer";
+import { Routine, Duration } from "@/components/select-routine";
+import Superwall from "@superwall/react-native-superwall";
+import { ReferralCode } from "@/components/referral-code";
+import { OnboardingLoading } from "@/components/onboarding-loading";
+import { Reminders } from "@/components/reminders";
+import { Notifications } from "@/components/notifications";
 
-interface OnboardingData {
-  pilatesLevel: string | null;
+export interface OnboardingData {
+  pilatesLevel: "beginner" | "intermediate" | "advanced" | null;
   goals: string[];
-  routine: string | null;
-  duration: string | null;
+  routine: Routine | null;
+  duration: Duration | null;
   goalDetails: string[];
   hasPurchased?: boolean;
+  hasAccount?: boolean;
+  phoneNumber?: string;
+  email?: string;
+  tracking: "pictures" | "mood" | "neither" | null;
+  mood?: string;
+  photo?: ImagePicker.ImagePickerAsset | null;
+  otp?: string;
+  referralCode?: string;
+  pushToken?: string;
+  notificationsEnabled?: boolean;
+  reminderTime?: string;
+  timezone?: string;
 }
 
 export default function Onboarding() {
@@ -25,26 +56,218 @@ export default function Onboarding() {
     routine: null,
     duration: null,
     goalDetails: [],
+    hasAccount: false,
+    phoneNumber: "",
+    email: "",
+    tracking: null,
+    mood: "",
+    photo: null,
+    otp: "",
+    referralCode: "",
+    pushToken: "",
+    reminderTime: "",
+    timezone: "",
   });
   const router = useRouter();
+  const [isValidating, setIsValidating] = useState(false);
 
-  const totalSteps = useMemo(() => 6, []); // Fixed number of steps for now
+  const totalSteps = useMemo(() => 12, []);
+
+  const handlePhoneSignIn = async (phoneNumber: string) => {
+    console.log("Phone sign in with", phoneNumber);
+    if (!phoneNumber) return;
+
+    try {
+      const { data: user, error: userError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("phone_number", phoneNumber)
+        .limit(1)
+        .single();
+
+      if (user) {
+        // User exists, show error and return failure
+        console.error("User already exists");
+        return Promise.resolve({ success: false });
+      }
+
+      // Update the onboarding data with the phone number
+      setOnboardingData((prev) => ({
+        ...prev,
+        phoneNumber: phoneNumber,
+      }));
+
+      await supabase.auth.signInWithOtp({
+        phone: phoneNumber,
+      });
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      return Promise.resolve({ success: true });
+    } catch (error) {
+      console.error(error);
+      return Promise.resolve({ success: false });
+    }
+  };
+
+  const saveOnboardingData = async (userId: string) => {
+    console.log("user id", userId);
+
+    if (
+      !onboardingData.routine ||
+      !onboardingData.duration ||
+      !onboardingData.tracking ||
+      !onboardingData.pilatesLevel
+    )
+      throw new Error("Routine, duration, or tracking is required");
+
+    console.log("onboarding email", onboardingData.email);
+
+    if (!onboardingData.phoneNumber && !onboardingData.email) {
+      throw new Error("Phone number or email is required");
+    }
+
+    const { error: userError } = await supabase.from("users").insert({
+      id: userId,
+      phone_number: onboardingData.phoneNumber
+        ? onboardingData.phoneNumber
+        : null,
+      email: onboardingData.email ? onboardingData.email : null,
+      experience_level: onboardingData.pilatesLevel,
+    });
+
+    if (userError) throw userError;
+
+    // Goals insertion
+    const { error: goalsError } = await supabase.from("user_goals").insert(
+      onboardingData.goals.map((goal) => ({
+        user_id: userId,
+        name: goal,
+      }))
+    );
+
+    if (goalsError) throw goalsError;
+
+    // Preferences insertion
+    const { error: prefsError } = await supabase
+      .from("user_preferences")
+      .insert({
+        user_id: userId,
+        weekly_sessions: onboardingData.routine,
+        session_duration: onboardingData.duration,
+        tracking_method: onboardingData.tracking,
+      });
+
+    if (prefsError) throw prefsError;
+
+    // Handle photo upload and progress tracking if needed
+    if (
+      onboardingData.tracking !== "neither" &&
+      onboardingData.tracking !== null
+    ) {
+      let pictureUrl = null;
+
+      if (onboardingData.photo) {
+        const fileExtension = onboardingData.photo?.fileName?.split(".")[1];
+        const filePath = `${userId}/${DateTime.now().toISO()}.${fileExtension}`;
+
+        const { data, error } = await supabase.storage
+          .from("photo-progress")
+          .upload(filePath, decode(onboardingData.photo?.base64 || ""), {
+            contentType: onboardingData.photo?.mimeType,
+          });
+
+        if (!error) {
+          pictureUrl = data?.path?.split("/")[1];
+        }
+      }
+
+      const { error: progressError } = await supabase.from("progress").insert({
+        user_id: userId,
+        entry_type: onboardingData.tracking === "pictures" ? "picture" : "mood",
+        mood_description: onboardingData.mood ? onboardingData.mood : null,
+        picture_url: pictureUrl,
+        added_on: DateTime.now().toISODate(),
+      });
+
+      if (progressError) throw progressError;
+    }
+
+    console.log("onboarding data saved", onboardingData);
+  };
 
   const handleNext = async () => {
-    if (step < totalSteps - 1) {
+    try {
+      if (step >= totalSteps) return;
+
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      switch (step) {
+        case 7:
+          if (onboardingData.tracking === "neither") {
+            setStep(step + 2);
+            return;
+          }
+          break;
+
+        case 9:
+          if (!onboardingData.referralCode) {
+            Superwall.shared.register("onboarding").then(async () => {
+              setStep(step + 1);
+            });
+            return;
+          }
+          break;
+
+        case 10:
+          if (onboardingData.phoneNumber) {
+            const result = await handlePhoneSignIn(onboardingData.phoneNumber);
+            if (!result?.success) return;
+          }
+          if (onboardingData.email) {
+            setStep(step + 2);
+            return;
+          }
+          break;
+
+        case 11:
+          if (onboardingData.otp) {
+            const success = await handleVerifyOTP(onboardingData.otp);
+            if (success) {
+              setStep(step + 1);
+            }
+            return;
+          }
+          break;
+      }
+
       setStep(step + 1);
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } else {
-      // Handle completion of onboarding
-      console.log("Completed onboarding:", onboardingData);
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      // Navigate to next screen
-      //   router.push("/home"); // Update this to your desired route
+    } catch (error) {
+      console.error("Failed to save onboarding data:", error);
     }
   };
 
   const handleBack = () => {
     if (step > 0) {
+      switch (step) {
+        case 6:
+          if (!onboardingData.pushToken) {
+            setStep(4);
+            return;
+          }
+          break;
+        case 9:
+          if (onboardingData.tracking === "neither") {
+            setStep(7);
+            return;
+          }
+          break;
+        case 12:
+          if (onboardingData.email) {
+            setStep(10);
+            return;
+          }
+          break;
+      }
+
       setStep(step - 1);
     } else {
       router.back();
@@ -65,68 +288,279 @@ export default function Onboarding() {
         // return onboardingData.goalDetails.length === 0;
         return false;
       case 5:
-        return !onboardingData.hasPurchased;
+        return !onboardingData.reminderTime;
+      case 6:
+        return false;
+      case 7:
+        return !onboardingData.tracking;
+      case 8:
+        if (onboardingData.tracking === "neither") return false;
+        if (onboardingData.tracking === "pictures")
+          return !onboardingData.photo;
+        return !onboardingData.mood;
+      // case 7:
+      //   return !onboardingData.hasPurchased;
+      case 9:
+        return false;
+      case 10:
+        return !onboardingData.phoneNumber && !onboardingData.email;
+      case 11:
+        return !onboardingData.otp && !onboardingData.hasAccount;
       default:
         return false;
     }
   };
 
-  const renderStep = () => {
-    if (step === 5) {
-      return (
-        <PaywallScreen
-          onPurchase={() => {
-            setOnboardingData((prev) => ({ ...prev, hasPurchased: true }));
-            handleNext();
-          }}
-          onSkip={() => {
-            // Handle skip logic (e.g., show limited features)
-            setOnboardingData((prev) => ({ ...prev, hasPurchased: false }));
-            handleNext();
-          }}
-        />
-      );
+  const handleVerifyOTP = async (otp: string) => {
+    if (!otp || otp.length !== 6) {
+      console.log("Invalid OTP:", otp);
+      return false;
     }
+
+    if (!onboardingData.phoneNumber) {
+      console.log("No phone number available");
+      return false;
+    }
+
+    try {
+      console.log(
+        "Verifying OTP:",
+        otp,
+        "for phone:",
+        onboardingData.phoneNumber
+      );
+
+      const { error } = await supabase.auth.verifyOtp({
+        phone: onboardingData.phoneNumber,
+        token: otp,
+        type: "sms",
+      });
+
+      if (error) {
+        console.error("OTP verification error:", error);
+        return false;
+      }
+
+      console.log("OTP verified successfully");
+      setOnboardingData((prev) => ({ ...prev, hasAccount: true }));
+      mixpanel.track("Verify OTP");
+      return true;
+    } catch (error) {
+      console.error("OTP verification failed:", error);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    if (step === 10 && onboardingData.email) {
+      handleNext();
+    }
+  }, [onboardingData.email]);
+
+  const renderStep = () => {
+    // if (step === 7) {
+    //   return (
+    //     <PaywallScreen
+    //       onPurchase={() => {
+    //         setOnboardingData((prev) => ({ ...prev, hasPurchased: true }));
+    //         handleNext();
+    //       }}
+    //       onSkip={() => {
+    //         // Handle skip logic (e.g., show limited features)
+    //         setOnboardingData((prev) => ({ ...prev, hasPurchased: false }));
+    //         handleNext();
+    //       }}
+    //     />
+    //   );
+    // }
 
     switch (step) {
       case 0:
         return (
           <SelectGoals
             selectedGoals={onboardingData.goals}
-            onSelectGoal={(goals) =>
-              setOnboardingData((prev) => ({ ...prev, goals: goals }))
-            }
+            onSelectGoal={(goals) => {
+              setOnboardingData((prev) => ({ ...prev, goals: goals }));
+              mixpanel.track("Select Goals", {
+                goals: goals,
+              });
+            }}
           />
         );
       case 1:
         return (
           <PilatesExperience
             selectedLevel={onboardingData.pilatesLevel}
-            onSelectLevel={(level) =>
-              setOnboardingData((prev) => ({ ...prev, pilatesLevel: level }))
-            }
+            onSelectLevel={(level) => {
+              setOnboardingData((prev) => ({
+                ...prev,
+                pilatesLevel: level as "beginner" | "intermediate" | "advanced",
+              }));
+              mixpanel.track("Select Pilates Level", {
+                level: level,
+              });
+            }}
           />
         );
       case 2:
         return (
           <SelectRoutine
             selectedRoutine={onboardingData.routine}
-            onSelectRoutine={(routine) =>
-              setOnboardingData((prev) => ({ ...prev, routine: routine }))
-            }
+            onSelectRoutine={(routine) => {
+              setOnboardingData((prev) => ({ ...prev, routine: routine }));
+              mixpanel.track("Select Routine", {
+                routine: routine,
+              });
+            }}
           />
         );
       case 3:
         return (
           <SelectDuration
             selectedDuration={onboardingData.duration}
-            onSelectDuration={(duration) =>
-              setOnboardingData((prev) => ({ ...prev, duration: duration }))
-            }
+            onSelectDuration={(duration) => {
+              setOnboardingData((prev) => ({ ...prev, duration: duration }));
+              mixpanel.track("Select Duration", {
+                duration: duration,
+              });
+            }}
           />
         );
       case 4:
+        return (
+          <Reminders
+            onAllow={(pushToken) => {
+              setOnboardingData((prev) => ({ ...prev, pushToken: pushToken }));
+              handleNext();
+            }}
+            onDeny={() => {
+              setStep(step + 2);
+            }}
+          />
+        );
+      case 5:
+        return (
+          <Notifications
+            onTimeSelected={(time) => {
+              setOnboardingData((prev) => ({
+                ...prev,
+                reminderTime: time.reminder_time,
+                timezone: time.timezone,
+              }));
+            }}
+          />
+        );
+      case 6:
         return <GoalsDetails selectedGoals={onboardingData.goals} />;
+      case 7:
+        return (
+          <Tracking
+            // @ts-ignore
+            selectedTracking={onboardingData.tracking}
+            onSelectTracking={(tracking) => {
+              // @ts-ignore
+              setOnboardingData((prev) => ({ ...prev, tracking: tracking }));
+              mixpanel.track("Select Tracking", {
+                tracking: tracking,
+              });
+            }}
+          />
+        );
+      case 8:
+        if (onboardingData.tracking === "pictures") {
+          return (
+            <StartingJourneyPhoto
+              onPhotoSelect={(photo) => {
+                setOnboardingData((prev) => ({ ...prev, photo: photo }));
+                mixpanel.track("Starting Journey Photo");
+              }}
+            />
+          );
+        }
+        return (
+          <StartingJourney
+            onMoodChange={(mood) => {
+              setOnboardingData((prev) => ({ ...prev, mood: mood }));
+              mixpanel.track("Starting Journey Mood");
+            }}
+          />
+        );
+      case 9:
+        return (
+          <ReferralCode
+            onCodeChange={async (code) => {
+              try {
+                const { data, error } = await supabase.rpc(
+                  "check_referral_code",
+                  {
+                    p_code: code,
+                  }
+                );
+
+                if (error) throw error;
+                if (!data) throw new Error("Invalid or expired referral code");
+
+                setOnboardingData((prev) => ({ ...prev, referralCode: code }));
+              } catch (error) {
+                console.error("Error checking referral code:", error);
+                throw error;
+              }
+            }}
+          />
+        );
+      case 10:
+        return (
+          <CreateAccount
+            type="signup"
+            title="Create Your Account"
+            onGoogleSignIn={async (user) => {
+              // Handle Google sign in and skip OTP
+              setOnboardingData((prev) => ({
+                ...prev,
+                email: user.email,
+                hasAccount: true,
+              }));
+
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+
+              mixpanel.track("Google Sign In");
+            }}
+            onAppleSignIn={async (user) => {
+              // Handle Apple sign in and skip OTP
+              setOnboardingData((prev) => ({
+                ...prev,
+                email: user.email,
+                hasAccount: true,
+              }));
+
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+
+              mixpanel.track("Apple Sign In");
+            }}
+            phoneNumber={onboardingData.phoneNumber || ""}
+            onChangePhoneNumber={(phoneNumber) => {
+              setOnboardingData((prev) => ({
+                ...prev,
+                phoneNumber,
+              }));
+            }}
+          />
+        );
+      case 11:
+        return (
+          <VerifyOTP
+            phoneNumber={onboardingData.phoneNumber || ""}
+            code={onboardingData.otp || ""}
+            onChangeCode={(code) =>
+              setOnboardingData((prev) => ({ ...prev, otp: code }))
+            }
+            onVerify={handleVerifyOTP}
+            onResend={() => handlePhoneSignIn(onboardingData.phoneNumber || "")}
+          />
+        );
+      case 12:
+        return <OnboardingLoading onboardingData={onboardingData} />;
+
       default:
         return null;
     }
@@ -139,7 +573,8 @@ export default function Onboarding() {
       onBack={handleBack}
       onNext={handleNext}
       isNextDisabled={isNextDisabled()}
-      showLayout={step !== 5}
+      showLayout={step !== 12}
+      hideArrow={step == 4}
     >
       {renderStep()}
     </OnboardingLayout>

@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   Text,
@@ -13,6 +12,10 @@ import {
 import { FontAwesome6 } from "@expo/vector-icons";
 import { ArrowRight } from "lucide-react-native";
 import { Arrow } from "./arrow";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 interface OnboardingLayoutProps {
   children: React.ReactNode;
@@ -23,6 +26,8 @@ interface OnboardingLayoutProps {
   isNextDisabled?: boolean;
   nextButtonText?: string;
   showLayout?: boolean;
+  hideArrow?: boolean;
+  hideProgressBar?: boolean;
 }
 
 export const OnboardingLayout = ({
@@ -34,7 +39,11 @@ export const OnboardingLayout = ({
   isNextDisabled = false,
   nextButtonText = "Next",
   showLayout = true,
+  hideArrow = false,
+  hideProgressBar = false,
 }: OnboardingLayoutProps) => {
+  const safeAreaInsets = useSafeAreaInsets();
+
   if (!showLayout) {
     return <>{children}</>;
   }
@@ -46,44 +55,48 @@ export const OnboardingLayout = ({
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" />
         <View style={styles.scrollContent}>
-          {/* <View style={styles.header}>
+          <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
               onPress={onBack}
-              disabled={currentStep === 0}
+              // disabled={currentStep === 0}
             >
               <FontAwesome6
                 name="arrow-left"
                 size={24}
-                color={currentStep === 0 ? "#D9D0C7" : "#513B2F"}
+                // color={currentStep === 0 ? "#D9D0C7" : "#513B2F"}
+                color="#513B2F"
               />
             </TouchableOpacity>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  { width: `${((currentStep + 1) / totalSteps) * 100}%` },
-                ]}
-              />
-            </View>
-          </View> */}
+            {!hideProgressBar && (
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${((currentStep + 1) / totalSteps) * 100}%` },
+                  ]}
+                />
+              </View>
+            )}
+          </View>
 
           {children}
 
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={[
-                styles.nextButton,
-                isNextDisabled && styles.nextButtonDisabled,
-              ]}
-              onPress={onNext}
-              disabled={isNextDisabled}
-            >
-              <Arrow color="#4A2318" />
-            </TouchableOpacity>
-          </View>
+          {!hideArrow && (
+            <View style={styles.footer}>
+              <TouchableOpacity
+                style={[
+                  styles.nextButton,
+                  isNextDisabled && styles.nextButtonDisabled,
+                ]}
+                onPress={onNext}
+                disabled={isNextDisabled}
+              >
+                <Arrow color="#4A2318" />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </SafeAreaView>
     </KeyboardAvoidingView>
@@ -97,13 +110,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 24,
+    // padding: 24,
+    paddingHorizontal: 24,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 10,
   },
   backButton: {
     width: 40,

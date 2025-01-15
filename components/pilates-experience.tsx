@@ -18,8 +18,8 @@ const EXPERIENCE_LEVELS = [
 ];
 
 interface PilatesExperienceProps {
-  selectedLevel: string | null;
-  onSelectLevel: (level: string) => void;
+  selectedLevel: "beginner" | "intermediate" | "advanced" | null;
+  onSelectLevel: (level: "beginner" | "intermediate" | "advanced") => void;
   title?: string;
 }
 
@@ -28,7 +28,9 @@ export const PilatesExperience = ({
   onSelectLevel,
   title = "Pilates Experience:",
 }: PilatesExperienceProps) => {
-  const handleSelectLevel = async (level: string) => {
+  const handleSelectLevel = async (
+    level: "beginner" | "intermediate" | "advanced"
+  ) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSelectLevel(level);
   };
@@ -43,14 +45,19 @@ export const PilatesExperience = ({
             key={level}
             style={[
               styles.levelButton,
-              selectedLevel === level && styles.selectedLevel,
+              selectedLevel === level.toLowerCase() && styles.selectedLevel,
             ]}
-            onPress={() => handleSelectLevel(level)}
+            onPress={() =>
+              handleSelectLevel(
+                level.toLowerCase() as "beginner" | "intermediate" | "advanced"
+              )
+            }
           >
             <Text
               style={[
                 styles.levelText,
-                selectedLevel === level && styles.selectedLevelText,
+                selectedLevel === level.toLowerCase() &&
+                  styles.selectedLevelText,
               ]}
             >
               {level}
@@ -58,7 +65,8 @@ export const PilatesExperience = ({
             <Text
               style={[
                 styles.descriptionText,
-                selectedLevel === level && styles.selectedLevelText,
+                selectedLevel === level.toLowerCase() &&
+                  styles.selectedLevelText,
               ]}
             >
               {description}

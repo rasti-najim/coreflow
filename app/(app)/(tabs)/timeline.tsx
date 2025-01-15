@@ -1,0 +1,517 @@
+import { useAuth } from "@/components/auth-context";
+import supabase from "@/lib/supabase";
+import { LinearGradient } from "expo-linear-gradient";
+import { Redirect } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Pressable,
+  RefreshControl,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Image } from "expo-image";
+import { DateTime } from "luxon";
+import { PhotoSkeleton } from "@/components/photo-skeleton";
+import { FontAwesome6 } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import Superwall from "@superwall/react-native-superwall";
+import * as Haptics from "expo-haptics";
+
+type TimelineItem = {
+  id: string;
+  date: string;
+  type: ("picture" | "session" | "mood")[];
+  session_added_on?: string;
+  duration?: string;
+  note?: string;
+  photoUrl?: string;
+};
+
+const groupByDate = (items: TimelineItem[]): Record<string, TimelineItem[]> => {
+  return items.reduce((groups, item) => {
+    const date = item.date;
+    if (!groups[date]) {
+      groups[date] = [];
+    }
+    groups[date].push(item);
+    return groups;
+  }, {} as Record<string, TimelineItem[]>);
+};
+
+export default function Page() {
+  const { user } = useAuth();
+  const safeArea = useSafeAreaInsets();
+  const [timelineData, setTimelineData] = useState<TimelineItem[]>([]);
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
+
+  if (!user) {
+    return <Redirect href="/welcome" />;
+  }
+
+  const fetchBasicData = async () => {
+    const { data, error } = await supabase
+      .from("progress")
+      .select(
+        `
+        *,
+        sessions:session_id (
+          focus,
+          scheduled_date,
+          status
+        )
+      `
+      )
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    console.log("timeline data", data);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    const mappedData = data?.map((item) => ({
+      id: item.id,
+      date: DateTime.fromISO(item.added_on).toFormat("MM/dd"),
+      type: [item.entry_type],
+      session_added_on: item.sessions?.scheduled_date,
+      duration: item.sessions?.status === "completed" ? "Completed" : "Skipped",
+      note: item.mood_description,
+      photoUrl: item.picture_url ? undefined : undefined,
+    }));
+
+    setTimelineData(mappedData || []);
+
+    if (data?.some((item) => item.picture_url)) {
+      setIsLoadingPhotos(true);
+      loadPhotos(data);
+    }
+  };
+
+  const loadPhotos = async (data: any[]) => {
+    const photoPromises = data
+      .filter((item) => item.picture_url)
+      .map(async (item) => {
+        try {
+          const { data: imageData, error } = await supabase.storage
+            .from("photo-progress")
+            .download(`${user.id}/${item.picture_url}`);
+
+          if (error) throw error;
+
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(imageData);
+            reader.onload = () => {
+              resolve({
+                id: item.id,
+                photoUrl: reader.result as string,
+              });
+            };
+            reader.onerror = reject;
+          });
+        } catch (error) {
+          console.error("Error downloading photo:", error);
+          return null;
+        }
+      });
+
+    const photoResults = await Promise.all(photoPromises);
+
+    setTimelineData((prev) =>
+      prev.map((item) => {
+        const photoData = photoResults.find((p) => p?.id === item.id);
+        return photoData ? { ...item, photoUrl: photoData.photoUrl } : item;
+      })
+    );
+    setIsLoadingPhotos(false);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchBasicData();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    fetchBasicData();
+  }, []);
+
+  if (!user) {
+    return <Redirect href="/welcome" />;
+  }
+
+  const handleViewProgress = (type: "photo" | "note") => {
+    // Handle viewing progress
+    console.log(`View ${type} progress`);
+  };
+
+  const handleDelete = async (item: TimelineItem) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    Alert.alert(
+      "Delete Entry",
+      "Are you sure you want to delete this entry? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // If it's a photo entry, delete the photo from storage first
+              if (item.type.includes("picture")) {
+                // Get the original photo URL from the progress table
+                const { data: progressData, error: progressError } =
+                  await supabase
+                    .from("progress")
+                    .select("picture_url")
+                    .eq("id", item.id)
+                    .single();
+
+                if (progressError) {
+                  console.error("Error getting photo URL:", progressError);
+                  return;
+                }
+
+                if (progressData?.picture_url) {
+                  const { error: storageError } = await supabase.storage
+                    .from("photo-progress")
+                    .remove([`${user.id}/${progressData.picture_url}`]);
+
+                  if (storageError) {
+                    console.error("Error deleting photo:", storageError);
+                    return;
+                  }
+                }
+              }
+
+              // Delete the progress entry
+              const { error: deleteError } = await supabase
+                .from("progress")
+                .delete()
+                .eq("id", item.id);
+
+              if (deleteError) {
+                console.error("Error deleting entry:", deleteError);
+                return;
+              }
+
+              // Update local state to remove the deleted item
+              setTimelineData((prev) => prev.filter((i) => i.id !== item.id));
+            } catch (error) {
+              console.error("Error deleting entry:", error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  return (
+    <View style={[styles.container, { paddingTop: safeArea.top + 40 }]}>
+      <Text style={[styles.title]}>timeline</Text>
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.timeline}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {timelineData.length === 0 ? (
+          <View style={styles.emptyStateContainer}>
+            <Text style={styles.emptyStateTitle}>No progress tracked yet</Text>
+            <Text style={styles.emptyStateText}>
+              Start tracking your progress through photos and mood descriptions
+              to see your journey here.
+            </Text>
+            <View style={styles.emptyStateButtonsContainer}>
+              <TouchableOpacity
+                style={styles.emptyStateButton}
+                onPress={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  Superwall.shared
+                    .register(
+                      "trackProgressPhoto",
+                      new Map([["via", "timeline"]])
+                    )
+                    .then(() => {
+                      router.push("/home/track-picture");
+                    });
+                }}
+              >
+                <FontAwesome6 name="image" size={18} color="#FFE9D5" />
+                <Text style={styles.emptyStateButtonText}>Add Photo</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.emptyStateButton}
+                onPress={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  Superwall.shared
+                    .register(
+                      "trackProgressMood",
+                      new Map([["via", "timeline"]])
+                    )
+                    .then(() => {
+                      router.push("/home/track-mood");
+                    });
+                }}
+              >
+                <FontAwesome6 name="note-sticky" size={18} color="#FFE9D5" />
+                <Text style={styles.emptyStateButtonText}>Add Note</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View>
+            {Object.entries(groupByDate(timelineData)).map(([date, items]) => (
+              <View key={date} style={styles.timelineItem}>
+                <View style={styles.timelineLine} />
+                <View style={styles.timelineDot} />
+                <View style={styles.content}>
+                  <Text style={styles.date}>{date}</Text>
+                  {items.map((item, index) => (
+                    <View key={item.id + index} style={styles.itemContainer}>
+                      <View style={styles.itemHeader}>
+                        <Text style={styles.description}>
+                          {item.type
+                            .map((type) =>
+                              type === "picture"
+                                ? "Photo"
+                                : type === "session"
+                                ? item.duration
+                                : "Note"
+                            )
+                            .join(" & ")}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => handleDelete(item)}
+                          style={styles.deleteButton}
+                        >
+                          <FontAwesome6
+                            name="trash-can"
+                            size={16}
+                            color="#FF0000"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                      {item.type.includes("picture") && (
+                        <>
+                          {!item.photoUrl ? (
+                            <PhotoSkeleton
+                              width="100%"
+                              height={200}
+                              borderRadius={8}
+                            />
+                          ) : (
+                            <Image
+                              source={{ uri: item.photoUrl }}
+                              style={styles.photo}
+                            />
+                          )}
+                        </>
+                      )}
+                      {item.note && (
+                        <View style={styles.noteContainer}>
+                          <Text style={styles.noteText}>
+                            "{item.note}"
+                            {/* {item.note.length > 100
+                              ? item.note.substring(0, 100) + "..."
+                              : item.note} */}
+                          </Text>
+                        </View>
+                      )}
+                      {(item.type.includes("picture") ||
+                        item.type.includes("mood")) && (
+                        <Pressable
+                          style={styles.viewProgressButton}
+                          onPress={() =>
+                            handleViewProgress(item.type[0] as "photo" | "note")
+                          }
+                        >
+                          <Text style={styles.viewProgressText}>
+                            view {item.type} progress
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+      <LinearGradient
+        colors={["rgba(255, 233, 213, 0)", "#FFE9D5"]}
+        style={styles.bottomFade}
+        pointerEvents="none"
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#FFE9D5",
+    paddingHorizontal: 32,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 48,
+    fontWeight: "bold",
+    fontFamily: "matolha-regular",
+    color: "#4A2B29",
+    marginBottom: 40,
+  },
+  timeline: {
+    paddingHorizontal: 20,
+    paddingBottom: 100,
+  },
+  timelineItem: {
+    flexDirection: "row",
+    minHeight: 60,
+    position: "relative",
+  },
+  timelineLine: {
+    position: "absolute",
+    left: 4,
+    top: 0,
+    bottom: 0,
+    width: 2,
+    backgroundColor: "#4A2B29",
+  },
+  timelineDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#4A2B29",
+    marginRight: 15,
+  },
+  content: {
+    flex: 1,
+    paddingBottom: 20,
+    gap: 8,
+  },
+  date: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#4A2B29",
+  },
+  description: {
+    fontSize: 16,
+    color: "#4A2B29",
+  },
+  noteContainer: {
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
+    backgroundColor: "#FFF1E4",
+    borderWidth: 1,
+    borderColor: "#E8B892",
+    shadowColor: "#4A2B29",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  noteText: {
+    color: "#4A2B29",
+    fontSize: 16,
+    lineHeight: 22,
+    fontStyle: "italic",
+  },
+  viewProgressButton: {
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 12,
+    backgroundColor: "#4A2B29",
+    alignSelf: "flex-start",
+  },
+  viewProgressText: {
+    color: "#FFE9D5",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  bottomFade: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+    zIndex: 1,
+  },
+  photo: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: 8,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  emptyStateTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#4A2B29",
+    marginBottom: 10,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: "#4A2B29",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  emptyStateButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  emptyStateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: "#4A2B29",
+  },
+  emptyStateButtonText: {
+    color: "#FFE9D5",
+    fontSize: 16,
+    fontWeight: "500",
+    marginLeft: 10,
+  },
+  itemContainer: {
+    marginBottom: 16,
+  },
+  itemHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  deleteButton: {
+    padding: 8,
+  },
+});
