@@ -12,7 +12,6 @@ import { Redirect, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import supabase from "@/lib/supabase";
 import { useAuth } from "@/components/auth-context";
-import { createSchedule, checkScheduleStatus } from "@/lib/schedule";
 import { DateTime } from "luxon";
 import { calculateConsistency, ConsistencyStats } from "@/lib/consistency";
 import mixpanel from "@/lib/mixpanel";
