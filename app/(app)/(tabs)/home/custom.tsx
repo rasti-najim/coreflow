@@ -12,6 +12,7 @@ import { DateTime } from "luxon";
 import mixpanel from "@/lib/mixpanel";
 import { requestReview } from "@/lib/store-review";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const DURATION_OPTIONS = [
   { value: "5", label: "5 minutes" },
@@ -210,7 +211,8 @@ export default function Page() {
           session_id: session_id,
         });
 
-        await requestReview(user.id);
+        // Set flag for review request
+        await AsyncStorage.setItem("shouldRequestReview", "true");
 
         router.dismiss();
       } catch (error) {

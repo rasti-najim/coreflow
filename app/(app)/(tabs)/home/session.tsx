@@ -11,6 +11,7 @@ import mixpanel from "@/lib/mixpanel";
 import { Loading } from "@/components/loading";
 import { FOCUS_MAP } from "@/lib/schedule";
 import { requestReview } from "@/lib/store-review";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Modal() {
   const { user } = useAuth();
@@ -71,6 +72,8 @@ export default function Modal() {
         console.log("session updated", sessionData);
         console.log("progress inserted", progressData);
         router.dismiss();
+
+        await AsyncStorage.setItem("shouldRequestReview", "true");
       } catch (error) {
         console.error("Error updating session status:", error);
       }

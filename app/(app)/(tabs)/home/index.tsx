@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,8 @@ import { requestReview } from "@/lib/store-review";
 import { registerForPushNotificationsAsync } from "@/lib/notifications";
 import * as Notifications from "expo-notifications";
 import { checkAndUpdateTimezone } from "@/lib/timezone";
+import { useFocusEffect } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Session = {
   focus: string;
@@ -97,6 +99,19 @@ export default function Page() {
   //       Notifications.removeNotificationSubscription(responseListener.current);
   //   };
   // }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const checkAndRequestReview = async () => {
+        const shouldRequest = await AsyncStorage.getItem("shouldRequestReview");
+        if (shouldRequest === "true") {
+          await AsyncStorage.removeItem("shouldRequestReview");
+          await requestReview(user.id);
+        }
+      };
+      checkAndRequestReview();
+    }, [])
+  );
 
   useEffect(() => {
     console.log("user", user);
