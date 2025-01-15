@@ -7,7 +7,7 @@ values
 insert into storage.buckets
 (id, name, public)
 values
-('exercise-animations', 'exercise-animations', false)
+('exercise-animations', 'exercise-animations', false);
 
 -- Enable RLS on storage.objects
 ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
