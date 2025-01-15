@@ -110,24 +110,35 @@ export default function Page() {
       // Get animation URLs
       for (const exercise of allExercises) {
         if (exercise.lottie_file_url) {
-          const { data: animationUrl } = supabase.storage
-            .from("exercise_animations")
-            .getPublicUrl(exercise.lottie_file_url);
+          const { data: animationData, error: animationError } =
+            await supabase.storage
+              .from("exercise-animations")
+              .createSignedUrl(exercise.lottie_file_url, 3600); // URL valid for 1 hour
+
+          if (animationError) {
+            console.error("Error getting animation URL:", animationError);
+            continue;
+          }
 
           setAnimationSources((prev) => ({
             ...prev,
-            [exercise.id]: animationUrl.publicUrl,
+            [exercise.id]: animationData.signedUrl,
           }));
         }
 
         if (exercise.voice_description_url) {
-          const { data: voiceDescriptionUrl } = supabase.storage
+          const { data: voiceData, error: voiceError } = await supabase.storage
             .from("exercise_sounds")
-            .getPublicUrl(exercise.voice_description_url);
+            .createSignedUrl(exercise.voice_description_url, 3600);
+
+          if (voiceError) {
+            console.error("Error getting voice description URL:", voiceError);
+            continue;
+          }
 
           setVoiceDescriptionSources((prev) => ({
             ...prev,
-            [exercise.id]: voiceDescriptionUrl.publicUrl,
+            [exercise.id]: voiceData.signedUrl,
           }));
         }
       }
