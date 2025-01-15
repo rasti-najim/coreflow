@@ -13,28 +13,20 @@ export const checkReferralCode = async (userId: string): Promise<boolean> => {
       return false;
     }
 
-    // If we have a cached true result, verify in background
-    if (localStatus === "true") {
-      // Verify in database in background
-      supabase
-        .from("referral_codes")
-        .select("status")
-        .eq("used_by_user_id", userId)
-        .eq("status", "active")
-        .limit(1)
-        .single()
-        .then(({ data, error }) => {
-          if (error || !data) {
-            // Clear local storage if verification fails
-            AsyncStorage.removeItem(`has_referral_code_${userId}`);
-          }
-        });
+    const { data, error } = await supabase
+      .from("referral_codes")
+      .select("status")
+      .eq("used_by_user_id", userId)
+      .eq("status", "active")
+      .limit(1)
+      .single();
 
-      return true;
+    if (error || !data) {
+      AsyncStorage.setItem(`has_referral_code_${userId}`, "false");
+      return false;
     }
 
-    // If no cache entry exists, user doesn't have a referral code
-    return false;
+    return true;
   } catch (error) {
     console.error("Error checking referral code:", error);
     return false;
