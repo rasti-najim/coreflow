@@ -33,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const hasReferral = await checkReferralCode(state.user.id);
+      console.log("hasReferral", hasReferral);
 
       await Superwall.shared.setUserAttributes({
         isReferred: hasReferral,
