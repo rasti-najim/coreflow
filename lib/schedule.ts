@@ -3,7 +3,7 @@ import { DateTime } from "luxon";
 
 type WeeklySession = "3" | "5" | "everyday";
 type Focus = "full body" | "upper body" | "lower body" | "core";
-type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri";
+type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 type ScheduleAction = "create" | "update" | "extend";
 
 export interface ScheduledWorkout {
@@ -39,7 +39,9 @@ function getNextDate(
   startDate: DateTime = DateTime.now(),
   includeToday: boolean = false
 ): DateTime {
-  const dayIndex = ["Mon", "Tue", "Wed", "Thu", "Fri"].indexOf(day);
+  const dayIndex = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(
+    day
+  );
   const currentDay = startDate.weekday; // 1 = Monday, 7 = Sunday
   const targetDay = dayIndex + 1; // Add 1 because our days start from Monday=1
 
@@ -83,7 +85,12 @@ export function createWeeklyRoutine(
   startDate: DateTime = DateTime.now(),
   includeToday: boolean = false
 ): ScheduledWorkout[] {
-  const availableDays: Day[] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+  // Define both weekday and full week arrays
+  const weekdays: Day[] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+  const fullWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  // Choose which array to use based on preference
+  const availableDays = weekly_preference === "everyday" ? fullWeek : weekdays;
   const schedule: ScheduledWorkout[] = [];
 
   switch (weekly_preference) {
@@ -98,7 +105,7 @@ export function createWeeklyRoutine(
 
       workoutDays.forEach((day, index) => {
         schedule.push({
-          date: getNextDate(day, weekOffset, startDate, includeToday),
+          date: getNextDate(day as Day, weekOffset, startDate, includeToday),
           focus: focuses[index],
         });
       });
@@ -112,7 +119,7 @@ export function createWeeklyRoutine(
         "core",
       ]);
 
-      availableDays.forEach((day, index) => {
+      weekdays.forEach((day, index) => {
         let focus: Focus;
         if (index === 0 || index === 4) {
           focus = "full body";
@@ -141,8 +148,8 @@ export function createWeeklyRoutine(
 
       availableDays.forEach((day, index) => {
         schedule.push({
-          date: getNextDate(day, weekOffset, startDate, includeToday),
-          focus: focuses[index],
+          date: getNextDate(day as Day, weekOffset, startDate, includeToday),
+          focus: focuses[index % focuses.length], // Use modulo to cycle through focuses
         });
       });
       break;
