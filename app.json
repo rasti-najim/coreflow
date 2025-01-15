@@ -19,7 +19,7 @@
           }
         ]
       },
-      "bundleIdentifier": "com.pilates-coreflow.app",
+      "bundleIdentifier": "com.barnburnerhockey.coreflow",
       "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
