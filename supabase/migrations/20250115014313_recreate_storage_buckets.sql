@@ -12,6 +12,12 @@ values
 -- Enable RLS on storage.objects
 ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can upload photos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view photos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete photos" ON storage.objects;
+DROP POLICY IF EXISTS "Anyone can view exercise animations" ON storage.objects;
+
 -- Create policies for photo-progress bucket
 CREATE POLICY "Users can upload photos" ON storage.objects
 FOR INSERT WITH CHECK (
