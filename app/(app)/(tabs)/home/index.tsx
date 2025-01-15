@@ -303,7 +303,9 @@ export default function Page() {
               });
             }}
           >
-            <Text style={styles.streakText}>{streak?.count} 🔥</Text>
+            <Text style={styles.streakText}>
+              {streak?.count} {streak?.emoji} 🔥
+            </Text>
           </TouchableOpacity>
         </View>
 

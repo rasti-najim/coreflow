@@ -20,12 +20,12 @@ export default function Page() {
           <Text style={styles.streakNumber}>{parseInt(streak)}</Text> pilates
           sessions in a row.
         </Text>
-        <Text style={styles.nextLevelText}>
+        {/* <Text style={styles.nextLevelText}>
           Stay consistent for{" "}
           <Text style={styles.streakNumber}>{parseInt(nextLevel)}</Text> more
           day
           {parseInt(nextLevel) > 1 ? "s" : ""} to level up!
-        </Text>
+        </Text> */}
       </View>
 
       <TouchableOpacity
