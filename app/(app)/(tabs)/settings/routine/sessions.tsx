@@ -6,44 +6,26 @@ import supabase from "@/lib/supabase";
 import { useAuth } from "@/components/auth-context";
 import { Redirect } from "expo-router";
 import { createSchedule } from "@/lib/schedule";
-
-const ROUTINE_OPTIONS = [
-  {
-    value: "1-2",
-    label: "1-2",
-    recommended: false,
-  },
-  {
-    value: "3",
-    label: "3",
-    recommended: true,
-  },
-  {
-    value: "5",
-    label: "5",
-    recommended: false,
-  },
-];
+import { Routine, ROUTINE_OPTIONS } from "@/components/select-routine";
 
 export default function Page() {
   const { user } = useAuth();
   const safeArea = useSafeAreaInsets();
-  const [selectedRoutine, setSelectedRoutine] = useState<string | null>();
-  const [initialRoutine, setInitialRoutine] = useState<string | null>();
+  const [selectedRoutine, setSelectedRoutine] = useState<Routine | null>();
+  const [initialRoutine, setInitialRoutine] = useState<Routine | null>();
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!user) {
     return <Redirect href="/welcome" />;
   }
 
-  const hasChanges = () => {
-    if (selectedRoutine !== initialRoutine) return true;
-    return false;
-  };
+  const hasChanges = () => selectedRoutine !== initialRoutine;
 
-  const handleSelectRoutine = async (routine: string) => {
+  const handleSelectRoutine = async (routine: Routine) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedRoutine(routine);
+    setError(null); // Clear any previous errors
   };
 
   const handleSave = async () => {
@@ -61,23 +43,43 @@ export default function Page() {
           onPress: async () => {
             try {
               setIsSaving(true);
-              const { data, error } = await supabase
+              setError(null);
+
+              if (!selectedRoutine) throw new Error("No routine selected");
+
+              // Update user preferences
+              const { error: updateError } = await supabase
                 .from("user_preferences")
                 .update({ weekly_sessions: selectedRoutine })
-                .eq("user_id", user.id)
-                .select();
+                .eq("user_id", user.id);
 
-              if (error) {
-                console.error(error);
-                return;
+              if (updateError) throw updateError;
+
+              // Create new schedule
+              const schedule = await createSchedule(user.id, "update");
+
+              if (!schedule) {
+                throw new Error("Failed to create schedule");
               }
 
-              const schedule = await createSchedule(user.id, "update");
-              console.log(schedule);
-
               setInitialRoutine(selectedRoutine);
+
+              // Show success feedback
+              await Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success
+              );
             } catch (error) {
               console.error(error);
+              setError(
+                error instanceof Error
+                  ? error.message
+                  : "Failed to update routine"
+              );
+
+              // Show error feedback
+              await Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Error
+              );
             } finally {
               setIsSaving(false);
             }
@@ -94,21 +96,17 @@ export default function Page() {
           .from("user_preferences")
           .select("weekly_sessions")
           .eq("user_id", user.id)
-          .limit(1);
+          .single();
 
-        if (error) {
-          console.error(error);
-          return;
-        }
+        if (error) throw error;
 
-        console.log(data);
-
-        if (data[0]?.weekly_sessions) {
-          setSelectedRoutine(data[0]?.weekly_sessions);
-          setInitialRoutine(data[0]?.weekly_sessions);
+        if (data?.weekly_sessions) {
+          setSelectedRoutine(data.weekly_sessions);
+          setInitialRoutine(data.weekly_sessions);
         }
       } catch (error) {
         console.error(error);
+        setError("Failed to load routine preferences");
       }
     };
     fetchRoutine();
@@ -122,6 +120,7 @@ export default function Page() {
           style={[
             styles.saveButton,
             !hasChanges() && styles.saveButtonDisabled,
+            isSaving && styles.saveButtonDisabled,
           ]}
           onPress={handleSave}
           disabled={!hasChanges() || isSaving}
@@ -131,7 +130,10 @@ export default function Page() {
           </Text>
         </TouchableOpacity>
       </View>
+
       <Text style={styles.sectionTitle}>Sessions Per Week</Text>
+
+      {error && <Text style={styles.errorText}>{error}</Text>}
 
       <View style={styles.optionsContainer}>
         {ROUTINE_OPTIONS.map(({ value, label, recommended }) => (
@@ -233,5 +235,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#000000",
     marginTop: 4,
+  },
+  errorText: {
+    color: "red",
+    marginBottom: 16,
   },
 });

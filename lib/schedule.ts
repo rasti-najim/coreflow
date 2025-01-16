@@ -227,52 +227,45 @@ export async function createSchedule(
   weeksToSchedule: number = 4
 ) {
   try {
-    const { data, error } = await supabase
-      .from("user_preferences")
-      .select("weekly_sessions, session_duration")
-      .eq("user_id", userId)
-      .limit(1)
-      .single();
+    // Get user preferences and last session in a single query
+    const [preferencesResponse, lastSessionResponse] = await Promise.all([
+      supabase
+        .from("user_preferences")
+        .select("weekly_sessions, session_duration")
+        .eq("user_id", userId)
+        .limit(1)
+        .single(),
+      action === "extend"
+        ? supabase
+            .from("sessions")
+            .select("scheduled_date")
+            .eq("user_id", userId)
+            .order("scheduled_date", { ascending: false })
+            .limit(1)
+            .single()
+        : Promise.resolve(null),
+    ]);
 
-    if (error) {
-      throw error;
-    }
+    if (preferencesResponse.error) throw preferencesResponse.error;
 
-    // Get the start date based on action
-    let startDate: DateTime;
-    switch (action) {
-      case "create":
-      case "update":
-        startDate = DateTime.now();
-        break;
-      case "extend":
-        const { data: lastSession } = await supabase
-          .from("sessions")
-          .select("scheduled_date")
-          .eq("user_id", userId)
-          .order("scheduled_date", { ascending: false })
-          .limit(1)
-          .single();
+    // Determine start date
+    const startDate =
+      action === "extend" && lastSessionResponse?.data
+        ? DateTime.fromISO(lastSessionResponse.data.scheduled_date).plus({
+            days: 1,
+          })
+        : DateTime.now();
 
-        startDate = lastSession
-          ? DateTime.fromISO(lastSession.scheduled_date)
-          : DateTime.now();
-        startDate = startDate.plus({ days: 1 });
-        break;
-    }
-
-    // Create a 4-week schedule
+    // Create schedule
     const schedule = createMonthlyRoutine(
-      data.weekly_sessions,
+      preferencesResponse.data.weekly_sessions,
       startDate,
       weeksToSchedule,
       action === "create"
     );
 
-    console.log("schedule", schedule);
-
+    // Delete existing scheduled sessions if needed
     if (action === "update" || action === "create") {
-      // Delete any existing scheduled (not completed) sessions
       await supabase
         .from("sessions")
         .delete()
@@ -281,39 +274,40 @@ export async function createSchedule(
         .gte("scheduled_date", DateTime.now().toISODate());
     }
 
-    // Create sessions for each day in the schedule
-    for (const day of schedule) {
-      const session = await createSession(data.session_duration, day.focus);
-      if (!session) continue;
+    // Create all sessions in parallel
+    const sessionPromises = schedule.map(async (day) => {
+      const session = await createSession(
+        preferencesResponse.data.session_duration,
+        day.focus
+      );
+      if (!session) return null;
 
-      const { warmup_exercise, target_exercises, cooldown_exercise } = session;
+      return {
+        user_id: userId,
+        focus: day.focus,
+        scheduled_date: day.date.toISODate(),
+        warmup_exercise: session.warmup_exercise,
+        target_exercises: session.target_exercises,
+        cooldown_exercise: session.cooldown_exercise,
+        status: "scheduled",
+        is_custom: false,
+      };
+    });
 
-      console.log(warmup_exercise, target_exercises, cooldown_exercise);
+    const sessionData = (await Promise.all(sessionPromises)).filter(Boolean);
 
-      const { data: sessionData, error: sessionError } = await supabase
-        .from("sessions")
-        .insert({
-          user_id: userId,
-          focus: day.focus,
-          scheduled_date: day.date.toISODate(),
-          warmup_exercise: warmup_exercise,
-          target_exercises: target_exercises,
-          cooldown_exercise: cooldown_exercise,
-          status: "scheduled",
-          is_custom: false,
-        })
-        .select();
+    // Batch insert all sessions
+    const { data: insertedSessions, error: insertError } = await supabase
+      .from("sessions")
+      .insert(sessionData)
+      .select();
 
-      if (sessionError) {
-        throw sessionError;
-      }
-
-      console.log(sessionData);
-    }
+    if (insertError) throw insertError;
 
     return schedule;
   } catch (error) {
-    console.error(error);
+    console.error("Error in createSchedule:", error);
+    throw error; // Re-throw to handle in calling function
   }
 }
 
