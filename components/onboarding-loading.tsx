@@ -18,10 +18,7 @@ export const OnboardingLoading = ({
   onboardingData: OnboardingData;
 }) => {
   const [toast, setToast] = useState<ToastProps | null>(null);
-  const [isRetrying, setIsRetrying] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
   const [isLongWait, setIsLongWait] = useState(false);
-  const MAX_RETRIES = 3;
   const LONG_WAIT_THRESHOLD = 10000; // 10 seconds
 
   const saveOnboardingData = async (userId: string) => {
@@ -116,7 +113,6 @@ export const OnboardingLoading = ({
 
   const save = async () => {
     try {
-      setIsRetrying(true);
       setIsLongWait(false);
 
       // Set up timer for long wait feedback
@@ -147,21 +143,10 @@ export const OnboardingLoading = ({
     } catch (error: any) {
       console.error("Failed to save onboarding data:", error.message);
       setToast({
-        message:
-          retryCount >= MAX_RETRIES
-            ? "Maximum retry attempts reached. Please try again later."
-            : "Failed to save onboarding data. Tap to retry.",
+        message: "Failed to save onboarding data. Please try again later.",
         type: "error",
       });
-      setIsRetrying(false);
     }
-  };
-
-  const handleRetry = () => {
-    if (retryCount >= MAX_RETRIES) return;
-    setRetryCount((prev) => prev + 1);
-    setToast(null);
-    save();
   };
 
   useEffect(() => {
@@ -178,17 +163,14 @@ export const OnboardingLoading = ({
       <Text style={styles.subtitle}>
         {isLongWait
           ? "This is taking longer than expected...\nPlease wait while we finish setting up."
-          : isRetrying
-          ? "Retrying..."
           : "This may take a moment..."}
       </Text>
 
       {toast && (
         <Toast
           message={toast.message}
-          onHide={() => retryCount < MAX_RETRIES && setToast(null)}
+          onHide={() => setToast(null)}
           type={toast.type}
-          onPress={retryCount < MAX_RETRIES ? handleRetry : undefined}
         />
       )}
     </View>
