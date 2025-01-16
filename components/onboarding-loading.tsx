@@ -11,7 +11,6 @@ import { DateTime } from "luxon";
 import { Toast, ToastProps } from "./toast";
 import { decode } from "base64-arraybuffer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Superwall from "@superwall/react-native-superwall";
 
 export const OnboardingLoading = ({
   onboardingData,
@@ -19,6 +18,11 @@ export const OnboardingLoading = ({
   onboardingData: OnboardingData;
 }) => {
   const [toast, setToast] = useState<ToastProps | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isLongWait, setIsLongWait] = useState(false);
+  const MAX_RETRIES = 3;
+  const LONG_WAIT_THRESHOLD = 10000; // 10 seconds
 
   const saveOnboardingData = async (userId: string) => {
     console.log("user id", userId);
@@ -37,143 +41,131 @@ export const OnboardingLoading = ({
       throw new Error("Phone number or email is required");
     }
 
-    const { error: userError } = await supabase.from("users").insert({
-      id: userId,
-      phone_number: onboardingData.phoneNumber
-        ? onboardingData.phoneNumber
-        : null,
-      email: onboardingData.email ? onboardingData.email : null,
-      experience_level: onboardingData.pilatesLevel,
-      push_token: onboardingData.pushToken,
-    });
+    try {
+      // Start a transaction
+      const { error: transactionError } = await supabase.rpc(
+        "save_onboarding_data",
+        {
+          p_user_id: userId,
+          p_phone_number: onboardingData.phoneNumber || null,
+          p_email: onboardingData.email || null,
+          p_experience_level: onboardingData.pilatesLevel,
+          p_push_token: onboardingData.pushToken,
+          p_goals: onboardingData.goals,
+          p_weekly_sessions: onboardingData.routine,
+          p_session_duration: onboardingData.duration,
+          p_tracking_method: onboardingData.tracking,
+          p_reminder_time: onboardingData.reminderTime,
+          p_timezone: onboardingData.timezone,
+        }
+      );
 
-    if (userError) throw userError;
+      if (transactionError) throw transactionError;
 
-    // Goals insertion
-    const { error: goalsError } = await supabase.from("user_goals").insert(
-      onboardingData.goals.map((goal) => ({
-        user_id: userId,
-        name: goal,
-      }))
-    );
+      // Handle photo upload and progress tracking separately (since storage operations can't be part of the DB transaction)
+      if (
+        onboardingData.tracking !== "neither" &&
+        onboardingData.tracking !== null
+      ) {
+        let pictureUrl = null;
 
-    if (goalsError) throw goalsError;
+        if (onboardingData.photo) {
+          const fileExtension = onboardingData.photo?.fileName?.split(".")[1];
+          const filePath = `${userId}/${DateTime.now().toISO()}.${fileExtension}`;
 
-    // Preferences insertion
-    const { error: prefsError } = await supabase
-      .from("user_preferences")
-      .insert({
-        user_id: userId,
-        weekly_sessions: onboardingData.routine,
-        session_duration: onboardingData.duration,
-        tracking_method: onboardingData.tracking,
-        reminder_time: onboardingData.reminderTime,
-        timezone: onboardingData.timezone,
-      });
+          const { data, error } = await supabase.storage
+            .from("photo-progress")
+            .upload(filePath, decode(onboardingData.photo?.base64 || ""), {
+              contentType: onboardingData.photo?.mimeType,
+            });
 
-    if (prefsError) throw prefsError;
+          if (!error) {
+            pictureUrl = data?.path?.split("/")[1];
+          }
+        }
 
-    // Store timezone in AsyncStorage
-    if (onboardingData.timezone) {
-      await AsyncStorage.setItem(`timezone_${userId}`, onboardingData.timezone);
-    }
-
-    // Handle photo upload and progress tracking if needed
-    if (
-      onboardingData.tracking !== "neither" &&
-      onboardingData.tracking !== null
-    ) {
-      let pictureUrl = null;
-
-      if (onboardingData.photo) {
-        const fileExtension = onboardingData.photo?.fileName?.split(".")[1];
-        const filePath = `${userId}/${DateTime.now().toISO()}.${fileExtension}`;
-
-        const { data, error } = await supabase.storage
-          .from("photo-progress")
-          .upload(filePath, decode(onboardingData.photo?.base64 || ""), {
-            contentType: onboardingData.photo?.mimeType,
+        const { error: progressError } = await supabase
+          .from("progress")
+          .insert({
+            user_id: userId,
+            entry_type:
+              onboardingData.tracking === "pictures" ? "picture" : "mood",
+            mood_description: onboardingData.mood ? onboardingData.mood : null,
+            picture_url: pictureUrl,
+            added_on: DateTime.now().toISODate(),
           });
 
-        if (!error) {
-          pictureUrl = data?.path?.split("/")[1];
-        }
+        if (progressError) throw progressError;
       }
 
-      const { error: progressError } = await supabase.from("progress").insert({
-        user_id: userId,
-        entry_type: onboardingData.tracking === "pictures" ? "picture" : "mood",
-        mood_description: onboardingData.mood ? onboardingData.mood : null,
-        picture_url: pictureUrl,
-        added_on: DateTime.now().toISODate(),
-      });
+      // Store timezone in AsyncStorage
+      if (onboardingData.timezone) {
+        await AsyncStorage.setItem(
+          `timezone_${userId}`,
+          onboardingData.timezone
+        );
+      }
 
-      if (progressError) throw progressError;
+      console.log("onboarding data saved", onboardingData);
+      return Promise.resolve({ success: true });
+    } catch (error) {
+      console.error("Error saving onboarding data:", error);
+      return Promise.resolve({ success: false });
     }
+  };
 
-    // Claim referral code if one was provided
-    if (onboardingData.referralCode) {
-      const { error: referralError } = await supabase.rpc(
-        "claim_referral_code",
-        {
-          p_code: onboardingData.referralCode,
-          p_user_id: userId,
-        }
-      );
+  const save = async () => {
+    try {
+      setIsRetrying(true);
+      setIsLongWait(false);
 
-      if (referralError) throw referralError;
+      // Set up timer for long wait feedback
+      const longWaitTimer = setTimeout(() => {
+        setIsLongWait(true);
+      }, LONG_WAIT_THRESHOLD);
 
-      await Superwall.shared.setUserAttributes({
-        isReferred: true,
-        referralCode: onboardingData.referralCode,
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) throw userError;
+      if (!user) throw new Error("No user found");
+
+      const { success } = await saveOnboardingData(user.id);
+      if (!success) throw new Error("Failed to save onboarding data");
+
+      await createSchedule(user.id, "create");
+
+      // Clear the timer if operation succeeds
+      clearTimeout(longWaitTimer);
+
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      mixpanel.identify(user.id);
+      mixpanel.track("Sign Up");
+      router.push("/(app)/(tabs)/home");
+    } catch (error: any) {
+      console.error("Failed to save onboarding data:", error.message);
+      setToast({
+        message:
+          retryCount >= MAX_RETRIES
+            ? "Maximum retry attempts reached. Please try again later."
+            : "Failed to save onboarding data. Tap to retry.",
+        type: "error",
       });
-
-      await AsyncStorage.setItem(`has_referral_code_${userId}`, "true");
-      await AsyncStorage.setItem(
-        `referral_code_${userId}`,
-        onboardingData.referralCode
-      );
-    } else {
-      await Superwall.shared.setUserAttributes({
-        isReferred: false,
-      });
+      setIsRetrying(false);
     }
+  };
 
-    console.log("onboarding data saved", onboardingData);
+  const handleRetry = () => {
+    if (retryCount >= MAX_RETRIES) return;
+    setRetryCount((prev) => prev + 1);
+    setToast(null);
+    save();
   };
 
   useEffect(() => {
     console.log("onboardingData", onboardingData);
-    const save = async () => {
-      try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-
-        if (userError) throw userError;
-        if (!user) throw new Error("No user found");
-
-        // console.log("onboarding data", onboardingData);
-
-        await saveOnboardingData(user.id);
-        await createSchedule(user.id, "create");
-
-        await Haptics.notificationAsync(
-          Haptics.NotificationFeedbackType.Success
-        );
-        mixpanel.identify(user.id);
-        mixpanel.track("Sign Up");
-        router.push("/(app)/(tabs)/home");
-        return;
-      } catch (error: any) {
-        console.error("Failed to save onboarding data:", error.message);
-        setToast({
-          message: "Failed to save onboarding data",
-          type: "error",
-        });
-      }
-    };
     save();
   }, []);
 
@@ -183,13 +175,20 @@ export const OnboardingLoading = ({
       <View style={styles.loadingContainer}>
         <Loading />
       </View>
-      <Text style={styles.subtitle}>This may take a moment...</Text>
+      <Text style={styles.subtitle}>
+        {isLongWait
+          ? "This is taking longer than expected...\nPlease wait while we finish setting up."
+          : isRetrying
+          ? "Retrying..."
+          : "This may take a moment..."}
+      </Text>
 
       {toast && (
         <Toast
           message={toast.message}
-          onHide={() => setToast(null)}
+          onHide={() => retryCount < MAX_RETRIES && setToast(null)}
           type={toast.type}
+          onPress={retryCount < MAX_RETRIES ? handleRetry : undefined}
         />
       )}
     </View>
@@ -220,5 +219,6 @@ const styles = StyleSheet.create({
     color: "#4A2318",
     opacity: 0.7,
     textAlign: "center",
+    lineHeight: 24,
   },
 });
