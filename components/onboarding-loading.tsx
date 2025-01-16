@@ -20,6 +20,7 @@ export const OnboardingLoading = ({
   const [toast, setToast] = useState<ToastProps | null>(null);
   const [isLongWait, setIsLongWait] = useState(false);
   const LONG_WAIT_THRESHOLD = 10000; // 10 seconds
+  const [longWaitTimer, setLongWaitTimer] = useState<NodeJS.Timeout>();
 
   const saveOnboardingData = async (userId: string) => {
     console.log("user id", userId);
@@ -39,7 +40,6 @@ export const OnboardingLoading = ({
     }
 
     try {
-      // Start a transaction
       const { error: transactionError } = await supabase.rpc(
         "save_onboarding_data",
         {
@@ -59,55 +59,61 @@ export const OnboardingLoading = ({
 
       if (transactionError) throw transactionError;
 
-      // Handle photo upload and progress tracking separately (since storage operations can't be part of the DB transaction)
-      if (
-        onboardingData.tracking !== "neither" &&
-        onboardingData.tracking !== null
-      ) {
-        let pictureUrl = null;
-
-        if (onboardingData.photo) {
-          const fileExtension = onboardingData.photo?.fileName?.split(".")[1];
-          const filePath = `${userId}/${DateTime.now().toISO()}.${fileExtension}`;
-
-          const { data, error } = await supabase.storage
-            .from("photo-progress")
-            .upload(filePath, decode(onboardingData.photo?.base64 || ""), {
-              contentType: onboardingData.photo?.mimeType,
-            });
-
-          if (!error) {
-            pictureUrl = data?.path?.split("/")[1];
-          }
-        }
-
-        const { error: progressError } = await supabase
-          .from("progress")
-          .insert({
-            user_id: userId,
-            entry_type:
-              onboardingData.tracking === "pictures" ? "picture" : "mood",
-            mood_description: onboardingData.mood ? onboardingData.mood : null,
-            picture_url: pictureUrl,
-            added_on: DateTime.now().toISODate(),
-          });
-
-        if (progressError) throw progressError;
+      // Start photo upload in background if exists
+      if (onboardingData.tracking === "pictures" && onboardingData.photo) {
+        uploadPhotoInBackground(userId, onboardingData.photo);
       }
 
-      // Store timezone in AsyncStorage
+      // Handle mood tracking
+      if (onboardingData.tracking === "mood") {
+        await supabase.from("progress").insert({
+          user_id: userId,
+          entry_type: "mood",
+          mood_description: onboardingData.mood,
+          added_on: DateTime.now().toISODate(),
+        });
+      }
+
+      // Store timezone in background
       if (onboardingData.timezone) {
-        await AsyncStorage.setItem(
+        AsyncStorage.setItem(
           `timezone_${userId}`,
           onboardingData.timezone
-        );
+        ).catch(console.error);
       }
 
-      console.log("onboarding data saved", onboardingData);
-      return Promise.resolve({ success: true });
+      return { success: true };
     } catch (error) {
       console.error("Error saving onboarding data:", error);
-      return Promise.resolve({ success: false });
+      return { success: false };
+    }
+  };
+
+  const uploadPhotoInBackground = async (userId: string, photo: any) => {
+    try {
+      const fileExtension = photo?.fileName?.split(".")[1];
+      const filePath = `${userId}/${DateTime.now().toISO()}.${fileExtension}`;
+
+      const { data, error } = await supabase.storage
+        .from("photo-progress")
+        .upload(filePath, decode(photo?.base64 || ""), {
+          contentType: photo?.mimeType,
+        });
+
+      if (error) {
+        console.error("Photo upload failed:", error);
+        return;
+      }
+
+      // Insert progress entry after successful upload
+      await supabase.from("progress").insert({
+        user_id: userId,
+        entry_type: "picture",
+        picture_url: data?.path?.split("/")[1],
+        added_on: DateTime.now().toISODate(),
+      });
+    } catch (error) {
+      console.error("Background photo upload failed:", error);
     }
   };
 
@@ -115,10 +121,11 @@ export const OnboardingLoading = ({
     try {
       setIsLongWait(false);
 
-      // Set up timer for long wait feedback
-      const longWaitTimer = setTimeout(() => {
+      const timer = setTimeout(() => {
         setIsLongWait(true);
       }, LONG_WAIT_THRESHOLD);
+
+      setLongWaitTimer(timer);
 
       const {
         data: { user },
@@ -134,7 +141,7 @@ export const OnboardingLoading = ({
       await createSchedule(user.id, "create");
 
       // Clear the timer if operation succeeds
-      clearTimeout(longWaitTimer);
+      clearTimeout(timer);
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       mixpanel.identify(user.id);
@@ -153,6 +160,12 @@ export const OnboardingLoading = ({
     console.log("onboardingData", onboardingData);
     save();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (longWaitTimer) clearTimeout(longWaitTimer);
+    };
+  }, [longWaitTimer]);
 
   return (
     <View style={styles.container}>
