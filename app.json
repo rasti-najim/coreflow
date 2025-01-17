@@ -56,7 +56,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "The app accesses your photos to let you upload them."
+          "photosPermission": "We request access to your photo library to upload existing images, allowing you to monitor your progress. These images will be displayed in your timeline for easy reference."
         }
       ],
       [
@@ -75,8 +75,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
+          "cameraPermission": "We request access to your camera to capture photos that help you track your progress. These photos will appear in your timeline for easy reference.",
           "recordAudioAndroid": true
         }
       ],
