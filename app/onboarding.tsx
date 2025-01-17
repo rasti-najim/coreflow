@@ -206,10 +206,10 @@ export default function Onboarding() {
           break;
 
         case 8:
-        // Superwall.shared.register("onboarding").then(async () => {
-        //   setStep(step + 1);
-        // });
-        // return;
+          Superwall.shared.register("onboarding").then(async () => {
+            setStep(step + 1);
+          });
+          return;
 
         case 9:
           if (onboardingData.phoneNumber) {
