@@ -90,7 +90,7 @@ async function calculateDailyStreak(userId: string) {
     .eq("user_id", userId)
     .eq("is_custom", false)
     .eq("status", "completed")
-    .order("completed_date", { ascending: true });
+    .order("scheduled_date", { ascending: true });
 
   if (error || !allScheduledSessions) {
     console.error(error);
