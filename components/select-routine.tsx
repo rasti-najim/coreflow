@@ -5,7 +5,7 @@ import * as Haptics from "expo-haptics";
 export type Routine = "3" | "5" | "everyday";
 export type Duration = "5" | "10" | "15" | "20" | "30";
 
-const ROUTINE_OPTIONS: { value: Routine; label: string }[] = [
+export const ROUTINE_OPTIONS: { value: Routine; label: string }[] = [
   {
     value: "3",
     label: "3x per week",

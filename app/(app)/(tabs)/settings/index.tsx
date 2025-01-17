@@ -19,13 +19,25 @@ export default function Settings() {
   const { signOut, deleteAccount } = useAuth();
 
   const handleLogout = async () => {
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      mixpanel.track("Logout");
-      await signOut();
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
+    Alert.alert("Log Out", "Are you sure you want to log out?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Log Out",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            mixpanel.track("Logout");
+            await signOut();
+          } catch (error) {
+            console.error("Error signing out:", error);
+          }
+        },
+      },
+    ]);
   };
 
   const handleDeleteAccount = () => {
@@ -45,7 +57,6 @@ export default function Settings() {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
               mixpanel.track("Delete Account");
               await deleteAccount();
-              // The auth context will handle the redirect to welcome screen
             } catch (error) {
               console.error("Error deleting account:", error);
               Alert.alert(
@@ -62,11 +73,13 @@ export default function Settings() {
   return (
     <ScrollView
       style={[styles.container, { paddingTop: safeArea.top + 24 }]}
-      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 40 }}
+      showsVerticalScrollIndicator={false}
     >
       <Text style={styles.title}>settings</Text>
 
       <View style={styles.menuContainer}>
+        <Text style={styles.sectionHeader}>Preferences</Text>
         <Link href="/settings/edit-goals" asChild>
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuText}>Edit Goals</Text>
@@ -79,18 +92,13 @@ export default function Settings() {
           </TouchableOpacity>
         </Link>
 
-        <Link href="/settings/subscription" asChild>
-          <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuText}>Subscription</Text>
-          </TouchableOpacity>
-        </Link>
-
         <Link href="/settings/reminders" asChild>
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuText}>Reminders</Text>
           </TouchableOpacity>
         </Link>
 
+        <Text style={styles.sectionHeader}>Legal</Text>
         <Link
           href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
           asChild
@@ -116,9 +124,16 @@ export default function Settings() {
           </TouchableOpacity>
         </Link>
 
+        <Text style={styles.sectionHeader}>Account</Text>
+        <Link href="/settings/subscription" asChild>
+          <TouchableOpacity style={styles.menuItem}>
+            <Text style={styles.menuText}>Subscription</Text>
+          </TouchableOpacity>
+        </Link>
+
         <TouchableOpacity style={[styles.legalItem]} onPress={handleLogout}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <FontAwesome6 name="right-from-bracket" size={16} color="#4A2318" />
+            <FontAwesome6 name="right-from-bracket" size={20} color="#4A2318" />
             <Text style={styles.legalText}>Log Out</Text>
           </View>
         </TouchableOpacity>
@@ -128,7 +143,7 @@ export default function Settings() {
           onPress={handleDeleteAccount}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <FontAwesome6 name="trash-can" size={16} color="#FF0000" />
+            <FontAwesome6 name="trash-can" size={20} color="#FF0000" />
             <Text style={[styles.legalText, { color: "#FF0000" }]}>
               Delete Account
             </Text>
@@ -149,17 +164,24 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: "bold",
     color: "#4A2318",
-    // marginBottom: 48,
     fontFamily: "matolha-regular",
   },
   menuContainer: {
-    gap: 24,
+    gap: 16,
+  },
+  sectionHeader: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#4A2318",
+    marginTop: 16,
+    marginBottom: 8,
   },
   menuItem: {
     paddingVertical: 8,
   },
   menuText: {
-    fontSize: 32,
+    fontSize: 20,
+    color: "#4A2318",
   },
   legalItem: {
     flexDirection: "row",
@@ -168,7 +190,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   legalText: {
-    fontSize: 16,
+    fontSize: 20,
     color: "#4A2318",
   },
 });

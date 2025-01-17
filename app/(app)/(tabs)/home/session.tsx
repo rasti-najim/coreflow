@@ -82,93 +82,110 @@ export default function Modal() {
 
   useEffect(() => {
     const fetchSession = async () => {
-      const { data, error } = await supabase
-        .from("sessions")
-        .select(
+      try {
+        // 1. Fetch session with all exercise data in a single query
+        const { data: sessionData, error: sessionError } = await supabase
+          .from("sessions")
+          .select(
+            `
+            *,
+            warmup:exercises!sessions_warmup_exercise_fkey(*),
+            cooldown:exercises!sessions_cooldown_exercise_fkey(*),
+            target_exercises
           `
-          *,
-          warmup:exercises!sessions_warmup_exercise_fkey(*),
-          cooldown:exercises!sessions_cooldown_exercise_fkey(*),
-          target_exercises
-        `
-        )
-        .eq("id", session_id)
-        .eq("user_id", user.id)
-        .single();
+          )
+          .eq("id", session_id)
+          .eq("user_id", user.id)
+          .single();
 
-      if (error) {
+        if (sessionError) throw sessionError;
+
+        // 2. Fetch all target exercises in a single query
+        const { data: targetExercises, error: targetError } =
+          sessionData.target_exercises &&
+          sessionData.target_exercises.length > 0
+            ? await supabase
+                .from("exercises")
+                .select("*")
+                .in("id", sessionData.target_exercises)
+            : { data: [], error: null };
+
+        if (targetError) throw targetError;
+
+        // 3. Combine all exercises
+        const allExercises = [
+          sessionData.warmup && { ...sessionData.warmup, type: "Warmup" },
+          ...targetExercises.map((exercise) => ({
+            ...exercise,
+            type: "Target",
+          })),
+          sessionData.cooldown && { ...sessionData.cooldown, type: "Cooldown" },
+        ].filter(Boolean);
+
+        // 4. Get all unique file URLs that need signing
+        const animationUrls = allExercises
+          .filter((ex) => ex?.lottie_file_url)
+          .map((ex) => ({ id: ex?.id, path: ex?.lottie_file_url }));
+
+        const voiceUrls = allExercises
+          .filter((ex) => ex?.voice_description_url)
+          .map((ex) => ({ id: ex?.id, path: ex?.voice_description_url }));
+
+        // 5. Generate signed URLs in parallel
+        const [animationSignedUrls, voiceSignedUrls] = await Promise.all([
+          Promise.all(
+            animationUrls.map(
+              ({ id, path }) =>
+                path &&
+                supabase.storage
+                  .from("exercise-animations")
+                  .createSignedUrl(path, 3600)
+                  .then(({ data }) => ({ id, url: data?.signedUrl }))
+            )
+          ),
+          Promise.all(
+            voiceUrls.map(
+              ({ id, path }) =>
+                path &&
+                supabase.storage
+                  .from("exercise_sounds")
+                  .createSignedUrl(path, 3600)
+                  .then(({ data }) => ({ id, url: data?.signedUrl }))
+            )
+          ),
+        ]);
+
+        // 6. Update state with all data at once
+        const newAnimationSources = Object.fromEntries(
+          animationSignedUrls
+            .filter(
+              (item): item is { id: string; url: string } =>
+                typeof item === "object" &&
+                item !== null &&
+                typeof item.id === "string" &&
+                typeof item.url === "string"
+            )
+            .map(({ id, url }) => [id, url])
+        );
+
+        const newVoiceDescriptionSources = Object.fromEntries(
+          voiceSignedUrls
+            .filter(
+              (item): item is { id: string; url: string } =>
+                typeof item === "object" &&
+                item !== null &&
+                typeof item.id === "string" &&
+                typeof item.url === "string"
+            )
+            .map(({ id, url }) => [id, url])
+        );
+
+        setAnimationSources(newAnimationSources);
+        setVoiceDescriptionSources(newVoiceDescriptionSources);
+        setExercises(allExercises);
+      } catch (error) {
         console.error("Error fetching session:", error);
-        return;
       }
-
-      console.log("data", data);
-      const allExercises = [];
-
-      // Add warmup exercise
-      if (data.warmup) {
-        allExercises.push({ ...data.warmup, type: "Warmup" });
-      }
-
-      // Fetch target exercises in a single query
-      if (data.target_exercises && data.target_exercises.length > 0) {
-        const { data: targetData, error: targetError } = await supabase
-          .from("exercises")
-          .select("*")
-          .in("id", data.target_exercises);
-
-        if (targetError) {
-          console.error("Error fetching target exercises:", targetError);
-        } else {
-          allExercises.push(
-            ...targetData.map((exercise) => ({ ...exercise, type: "Target" }))
-          );
-        }
-      }
-
-      // Add cooldown exercise
-      if (data.cooldown) {
-        allExercises.push({ ...data.cooldown, type: "Cooldown" });
-      }
-
-      console.log("allExercises", allExercises, "length", allExercises.length);
-
-      // Get animation URLs
-      for (const exercise of allExercises) {
-        if (exercise.lottie_file_url) {
-          const { data: animationData, error: animationError } =
-            await supabase.storage
-              .from("exercise-animations")
-              .createSignedUrl(exercise.lottie_file_url, 3600); // URL valid for 1 hour
-
-          if (animationError) {
-            console.error("Error getting animation URL:", animationError);
-            continue;
-          }
-
-          setAnimationSources((prev) => ({
-            ...prev,
-            [exercise.id]: animationData.signedUrl,
-          }));
-        }
-
-        if (exercise.voice_description_url) {
-          const { data: voiceData, error: voiceError } = await supabase.storage
-            .from("exercise_sounds")
-            .createSignedUrl(exercise.voice_description_url, 3600);
-
-          if (voiceError) {
-            console.error("Error getting voice description URL:", voiceError);
-            continue;
-          }
-
-          setVoiceDescriptionSources((prev) => ({
-            ...prev,
-            [exercise.id]: voiceData.signedUrl,
-          }));
-        }
-      }
-
-      setExercises(allExercises);
     };
 
     fetchSession();

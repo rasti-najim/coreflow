@@ -38,7 +38,7 @@ type Streak = {
 };
 
 export default function Page() {
-  const { user, isReferred } = useAuth();
+  const { user } = useAuth();
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
   const [schedule, setSchedule] = useState<Session[]>([]);
@@ -136,43 +136,45 @@ export default function Page() {
   //   checkSchedule();
   // }, []);
 
-  useEffect(() => {
-    const loadSchedule = async () => {
-      try {
-        const today = DateTime.now();
-        const mondayOfThisWeek = today.startOf("week");
-        const weekStartStr = mondayOfThisWeek.toISODate();
+  useFocusEffect(
+    useCallback(() => {
+      const loadSchedule = async () => {
+        try {
+          const today = DateTime.now();
+          const mondayOfThisWeek = today.startOf("week");
+          const weekStartStr = mondayOfThisWeek.toISODate();
 
-        const { data: weekSchedule } = await supabase
-          .from("weekly_sessions")
-          .select("*")
-          .eq("user_id", user.id)
-          .gte("week_start", weekStartStr)
-          // .gte("week_start", weekStartStr)
-          // .lte("week_end", weekEndStr)
-          .order("week_start", { ascending: true })
-          .limit(1)
-          .single();
+          const { data: weekSchedule } = await supabase
+            .from("weekly_sessions")
+            .select("*")
+            .eq("user_id", user.id)
+            .gte("week_start", weekStartStr)
+            // .gte("week_start", weekStartStr)
+            // .lte("week_end", weekEndStr)
+            .order("week_start", { ascending: true })
+            .limit(1)
+            .single();
 
-        console.log("weekSchedule", weekSchedule);
+          console.log("weekSchedule", weekSchedule);
 
-        if (weekSchedule) {
-          setSchedule(weekSchedule.sessions);
+          if (weekSchedule) {
+            setSchedule(weekSchedule.sessions);
 
-          // Find today's workout from the sessions array
-          const session = weekSchedule.sessions.find(
-            (session: any) => session.scheduled_date === today.toISODate()
-          );
+            // Find today's workout from the sessions array
+            const session = weekSchedule.sessions.find(
+              (session: any) => session.scheduled_date === today.toISODate()
+            );
 
-          setTodaySession(session);
+            setTodaySession(session);
+          }
+        } catch (error) {
+          console.error("Error loading schedule:", error);
         }
-      } catch (error) {
-        console.error("Error loading schedule:", error);
-      }
-    };
+      };
 
-    loadSchedule();
-  }, []);
+      loadSchedule();
+    }, [])
+  );
 
   useEffect(() => {
     const getConsistency = async () => {
@@ -331,8 +333,9 @@ export default function Page() {
             <Text style={styles.workout}>
               {todaySession?.status === "completed"
                 ? "🎉 You completed your workout!"
-                : duration + "m " + todaySession?.focus ??
-                  "No workout scheduled. Enjoy your day!"}
+                : todaySession?.focus
+                ? `${duration}m ${todaySession.focus}`
+                : "No workout scheduled. Enjoy your day!"}
             </Text>
 
             {todaySession?.status !== "completed" &&

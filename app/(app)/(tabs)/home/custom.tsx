@@ -68,112 +68,104 @@ export default function Page() {
         selectedFocus as any
       );
 
-      const allExercises = [];
-
-      // Fetch warmup exercise
-      const { data: warmupData } = await supabase
+      // Fetch all exercises in a single query
+      const { data: exercisesData, error: exercisesError } = await supabase
         .from("exercises")
         .select("*")
-        .eq("id", session.warmup_exercise)
-        .limit(1)
-        .single();
+        .in("id", [
+          session.warmup_exercise,
+          ...session.target_exercises,
+          session.cooldown_exercise,
+        ]);
 
-      if (warmupData) {
-        allExercises.push({ ...warmupData, type: "Warmup" });
-      }
+      if (exercisesError) throw exercisesError;
 
-      // Fetch target exercises
-      for (const exerciseId of session.target_exercises) {
-        const { data: exerciseData } = await supabase
-          .from("exercises")
-          .select("*")
-          .eq("id", exerciseId)
-          .limit(1)
-          .single();
+      // Organize exercises by type
+      const allExercises = exercisesData.map((exercise) => ({
+        ...exercise,
+        type:
+          exercise.id === session.warmup_exercise
+            ? "Warmup"
+            : exercise.id === session.cooldown_exercise
+            ? "Cooldown"
+            : "Target",
+      }));
 
-        if (exerciseData) {
-          allExercises.push({ ...exerciseData, type: "Target" });
-        }
-      }
+      // Collect all file URLs that need signing
+      const animationUrls = allExercises
+        .filter((ex) => ex.lottie_file_url)
+        .map((ex) => ({
+          id: ex.id,
+          path: ex.lottie_file_url!,
+        }));
 
-      // Fetch cooldown exercise
-      const { data: cooldownData } = await supabase
-        .from("exercises")
-        .select("*")
-        .eq("id", session.cooldown_exercise)
-        .limit(1)
-        .single();
+      const voiceUrls = allExercises
+        .filter((ex) => ex.voice_description_url)
+        .map((ex) => ({
+          id: ex.id,
+          path: ex.voice_description_url!,
+        }));
 
-      if (cooldownData) {
-        allExercises.push({ ...cooldownData, type: "Cooldown" });
-      }
+      // Generate signed URLs in parallel
+      const [animationSignedUrls, voiceSignedUrls, sessionData] =
+        await Promise.all([
+          Promise.all(
+            animationUrls.map((url) =>
+              supabase.storage
+                .from("exercise-animations")
+                .createSignedUrl(url.path, 3600)
+                .then((res) => ({ id: url.id, url: res.data?.signedUrl }))
+            )
+          ),
+          Promise.all(
+            voiceUrls.map((url) =>
+              supabase.storage
+                .from("exercise_sounds")
+                .createSignedUrl(url.path, 3600)
+                .then((res) => ({ id: url.id, url: res.data?.signedUrl }))
+            )
+          ),
+          supabase
+            .from("sessions")
+            .insert({
+              user_id: user.id,
+              scheduled_date: DateTime.now().toISODate(),
+              status: "scheduled",
+              is_custom: true,
+              focus: selectedFocus as any,
+            })
+            .select()
+            .limit(1)
+            .single(),
+        ]);
 
-      // Get animation URLs
-      for (const exercise of allExercises) {
-        if (exercise.lottie_file_url) {
-          const { data: animationData, error: animationError } =
-            await supabase.storage
-              .from("exercise-animations")
-              .createSignedUrl(exercise.lottie_file_url, 3600); // URL valid for 1 hour
+      // Convert arrays to objects for easier lookup
+      const animationSourcesObj = Object.fromEntries(
+        animationSignedUrls
+          .filter((item) => item.url)
+          .map((item) => [item.id, item.url!])
+      );
 
-          if (animationError) {
-            console.error("Error getting animation URL:", animationError);
-            continue;
-          }
+      const voiceSourcesObj = Object.fromEntries(
+        voiceSignedUrls
+          .filter((item) => item.url)
+          .map((item) => [item.id, item.url!])
+      );
 
-          setAnimationSources((prev) => ({
-            ...prev,
-            [exercise.id]: animationData.signedUrl,
-          }));
-        }
-
-        if (exercise.voice_description_url) {
-          const { data: voiceData, error: voiceError } = await supabase.storage
-            .from("exercise_sounds")
-            .createSignedUrl(exercise.voice_description_url, 3600);
-
-          if (voiceError) {
-            console.error("Error getting voice description URL:", voiceError);
-            continue;
-          }
-
-          setVoiceDescriptionSources((prev) => ({
-            ...prev,
-            [exercise.id]: voiceData.signedUrl,
-          }));
-        }
-      }
-
+      setAnimationSources(animationSourcesObj);
+      setVoiceDescriptionSources(voiceSourcesObj);
       setExercises(allExercises);
       setIsWorkoutStarted(true);
-
-      const { data: sessionData, error: sessionError } = await supabase
-        .from("sessions")
-        .insert({
-          user_id: user.id,
-          scheduled_date: DateTime.now().toISODate(),
-          status: "scheduled",
-          is_custom: true,
-          focus: selectedFocus,
-        })
-        .select()
-        .limit(1)
-        .single();
-
-      if (sessionError) {
-        console.error("Error creating custom workout:", sessionError);
-      }
+      setSessionId(sessionData.data?.id!);
 
       mixpanel.track("Create Custom Workout Session", {
         duration: selectedDuration,
         focus: selectedFocus,
-        session_id: sessionData?.id,
+        session_id: sessionData.data?.id,
       });
-
-      setSessionId(sessionData?.id);
-      setIsLoading(false);
     } catch (error) {
       console.error("Error creating custom workout:", error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -195,7 +187,7 @@ export default function Page() {
           supabase
             .from("sessions")
             .update({ status: "completed" })
-            .eq("id", session_id)
+            .eq("id", session_id!)
             .eq("user_id", user.id),
         ]);
 

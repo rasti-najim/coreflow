@@ -7,7 +7,6 @@ import { CreateAccount } from "@/components/create-account";
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { PaywallScreen } from "@/components/paywall";
 import { Tracking } from "@/components/tracking";
 import {
   StartingJourney,
@@ -15,14 +14,12 @@ import {
 } from "@/components/starting-journey";
 import supabase from "@/lib/supabase";
 import { VerifyOTP } from "@/components/verify-otp";
-import { createSchedule } from "@/lib/schedule";
 import mixpanel from "@/lib/mixpanel";
 import { DateTime } from "luxon";
 import * as ImagePicker from "expo-image-picker";
 import { decode } from "base64-arraybuffer";
 import { Routine, Duration } from "@/components/select-routine";
 import Superwall from "@superwall/react-native-superwall";
-import { ReferralCode } from "@/components/referral-code";
 import { OnboardingLoading } from "@/components/onboarding-loading";
 import { Reminders } from "@/components/reminders";
 import { Notifications } from "@/components/notifications";
@@ -41,7 +38,6 @@ export interface OnboardingData {
   mood?: string;
   photo?: ImagePicker.ImagePickerAsset | null;
   otp?: string;
-  referralCode?: string;
   pushToken?: string;
   notificationsEnabled?: boolean;
   reminderTime?: string;
@@ -63,7 +59,6 @@ export default function Onboarding() {
     mood: "",
     photo: null,
     otp: "",
-    referralCode: "",
     pushToken: "",
     reminderTime: "",
     timezone: "",
@@ -71,7 +66,7 @@ export default function Onboarding() {
   const router = useRouter();
   const [isValidating, setIsValidating] = useState(false);
 
-  const totalSteps = useMemo(() => 12, []);
+  const totalSteps = useMemo(() => 11, []);
 
   const handlePhoneSignIn = async (phoneNumber: string) => {
     console.log("Phone sign in with", phoneNumber);
@@ -108,92 +103,6 @@ export default function Onboarding() {
     }
   };
 
-  const saveOnboardingData = async (userId: string) => {
-    console.log("user id", userId);
-
-    if (
-      !onboardingData.routine ||
-      !onboardingData.duration ||
-      !onboardingData.tracking ||
-      !onboardingData.pilatesLevel
-    )
-      throw new Error("Routine, duration, or tracking is required");
-
-    console.log("onboarding email", onboardingData.email);
-
-    if (!onboardingData.phoneNumber && !onboardingData.email) {
-      throw new Error("Phone number or email is required");
-    }
-
-    const { error: userError } = await supabase.from("users").insert({
-      id: userId,
-      phone_number: onboardingData.phoneNumber
-        ? onboardingData.phoneNumber
-        : null,
-      email: onboardingData.email ? onboardingData.email : null,
-      experience_level: onboardingData.pilatesLevel,
-    });
-
-    if (userError) throw userError;
-
-    // Goals insertion
-    const { error: goalsError } = await supabase.from("user_goals").insert(
-      onboardingData.goals.map((goal) => ({
-        user_id: userId,
-        name: goal,
-      }))
-    );
-
-    if (goalsError) throw goalsError;
-
-    // Preferences insertion
-    const { error: prefsError } = await supabase
-      .from("user_preferences")
-      .insert({
-        user_id: userId,
-        weekly_sessions: onboardingData.routine,
-        session_duration: onboardingData.duration,
-        tracking_method: onboardingData.tracking,
-      });
-
-    if (prefsError) throw prefsError;
-
-    // Handle photo upload and progress tracking if needed
-    if (
-      onboardingData.tracking !== "neither" &&
-      onboardingData.tracking !== null
-    ) {
-      let pictureUrl = null;
-
-      if (onboardingData.photo) {
-        const fileExtension = onboardingData.photo?.fileName?.split(".")[1];
-        const filePath = `${userId}/${DateTime.now().toISO()}.${fileExtension}`;
-
-        const { data, error } = await supabase.storage
-          .from("photo-progress")
-          .upload(filePath, decode(onboardingData.photo?.base64 || ""), {
-            contentType: onboardingData.photo?.mimeType,
-          });
-
-        if (!error) {
-          pictureUrl = data?.path?.split("/")[1];
-        }
-      }
-
-      const { error: progressError } = await supabase.from("progress").insert({
-        user_id: userId,
-        entry_type: onboardingData.tracking === "pictures" ? "picture" : "mood",
-        mood_description: onboardingData.mood ? onboardingData.mood : null,
-        picture_url: pictureUrl,
-        added_on: DateTime.now().toISODate(),
-      });
-
-      if (progressError) throw progressError;
-    }
-
-    console.log("onboarding data saved", onboardingData);
-  };
-
   const handleNext = async () => {
     try {
       if (step >= totalSteps) return;
@@ -203,21 +112,20 @@ export default function Onboarding() {
       switch (step) {
         case 7:
           if (onboardingData.tracking === "neither") {
-            setStep(step + 2);
-            return;
-          }
-          break;
-
-        case 9:
-          if (!onboardingData.referralCode) {
             Superwall.shared.register("onboarding").then(async () => {
-              setStep(step + 1);
+              setStep(step + 2);
             });
             return;
           }
           break;
 
-        case 10:
+        case 8:
+          Superwall.shared.register("onboarding").then(async () => {
+            setStep(step + 1);
+          });
+          return;
+
+        case 9:
           if (onboardingData.phoneNumber) {
             const result = await handlePhoneSignIn(onboardingData.phoneNumber);
             if (!result?.success) return;
@@ -228,7 +136,7 @@ export default function Onboarding() {
           }
           break;
 
-        case 11:
+        case 10:
           if (onboardingData.otp) {
             const success = await handleVerifyOTP(onboardingData.otp);
             if (success) {
@@ -260,9 +168,9 @@ export default function Onboarding() {
             return;
           }
           break;
-        case 12:
+        case 11:
           if (onboardingData.email) {
-            setStep(10);
+            setStep(9);
             return;
           }
           break;
@@ -298,13 +206,9 @@ export default function Onboarding() {
         if (onboardingData.tracking === "pictures")
           return !onboardingData.photo;
         return !onboardingData.mood;
-      // case 7:
-      //   return !onboardingData.hasPurchased;
       case 9:
-        return false;
-      case 10:
         return !onboardingData.phoneNumber && !onboardingData.email;
-      case 11:
+      case 10:
         return !onboardingData.otp && !onboardingData.hasAccount;
       default:
         return false;
@@ -352,28 +256,12 @@ export default function Onboarding() {
   };
 
   useEffect(() => {
-    if (step === 10 && onboardingData.email) {
+    if (step === 9 && onboardingData.email) {
       handleNext();
     }
   }, [onboardingData.email]);
 
   const renderStep = () => {
-    // if (step === 7) {
-    //   return (
-    //     <PaywallScreen
-    //       onPurchase={() => {
-    //         setOnboardingData((prev) => ({ ...prev, hasPurchased: true }));
-    //         handleNext();
-    //       }}
-    //       onSkip={() => {
-    //         // Handle skip logic (e.g., show limited features)
-    //         setOnboardingData((prev) => ({ ...prev, hasPurchased: false }));
-    //         handleNext();
-    //       }}
-    //     />
-    //   );
-    // }
-
     switch (step) {
       case 0:
         return (
@@ -487,29 +375,6 @@ export default function Onboarding() {
         );
       case 9:
         return (
-          <ReferralCode
-            onCodeChange={async (code) => {
-              try {
-                const { data, error } = await supabase.rpc(
-                  "check_referral_code",
-                  {
-                    p_code: code,
-                  }
-                );
-
-                if (error) throw error;
-                if (!data) throw new Error("Invalid or expired referral code");
-
-                setOnboardingData((prev) => ({ ...prev, referralCode: code }));
-              } catch (error) {
-                console.error("Error checking referral code:", error);
-                throw error;
-              }
-            }}
-          />
-        );
-      case 10:
-        return (
           <CreateAccount
             type="signup"
             title="Create Your Account"
@@ -546,7 +411,7 @@ export default function Onboarding() {
             }}
           />
         );
-      case 11:
+      case 10:
         return (
           <VerifyOTP
             phoneNumber={onboardingData.phoneNumber || ""}
@@ -558,7 +423,7 @@ export default function Onboarding() {
             onResend={() => handlePhoneSignIn(onboardingData.phoneNumber || "")}
           />
         );
-      case 12:
+      case 11:
         return <OnboardingLoading onboardingData={onboardingData} />;
 
       default:
@@ -573,7 +438,7 @@ export default function Onboarding() {
       onBack={handleBack}
       onNext={handleNext}
       isNextDisabled={isNextDisabled()}
-      showLayout={step !== 12}
+      showLayout={step !== 11}
       hideArrow={step == 4}
     >
       {renderStep()}

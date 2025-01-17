@@ -438,6 +438,22 @@ export type Database = {
         }
         Returns: boolean
       }
+      save_onboarding_data: {
+        Args: {
+          p_user_id: string
+          p_phone_number: string
+          p_email: string
+          p_experience_level: string
+          p_push_token: string
+          p_goals: string[]
+          p_weekly_sessions: string
+          p_session_duration: string
+          p_tracking_method: string
+          p_reminder_time: string
+          p_timezone: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       entry_type_enum: "session" | "picture" | "mood"

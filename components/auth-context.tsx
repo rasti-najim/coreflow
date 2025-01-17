@@ -1,14 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import supabase from "@/lib/supabase";
 import { Session, User } from "@supabase/supabase-js";
-import { checkReferralCode } from "@/lib/referral-codes";
-import Superwall from "@superwall/react-native-superwall";
 
 interface AuthState {
   session: Session | null;
   user: User | null;
   loading: boolean;
-  isReferred: boolean;
 }
 
 interface AuthContextType extends AuthState {
@@ -25,41 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session: null,
     user: null,
     loading: true,
-    isReferred: false,
   });
-
-  const checkReferralStatus = async () => {
-    if (!state.user?.id) return;
-
-    try {
-      const hasReferral = await checkReferralCode(state.user.id);
-      console.log("hasReferral", hasReferral);
-
-      await Superwall.shared.setUserAttributes({
-        isReferred: hasReferral,
-      });
-
-      setState((prev) => ({
-        ...prev,
-        isReferred: hasReferral,
-      }));
-    } catch (error) {
-      console.error("Error checking referral code:", error);
-      await Superwall.shared.setUserAttributes({
-        isReferred: false,
-      });
-      setState((prev) => ({
-        ...prev,
-        isReffered: false,
-      }));
-    }
-  };
-
-  useEffect(() => {
-    if (state.user?.id) {
-      checkReferralStatus();
-    }
-  }, [state.user]);
 
   useEffect(() => {
     // Check for existing session

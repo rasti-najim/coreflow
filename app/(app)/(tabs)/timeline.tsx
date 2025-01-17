@@ -333,7 +333,7 @@ export default function Page() {
                           </Text>
                         </View>
                       )}
-                      {(item.type.includes("picture") ||
+                      {/* {(item.type.includes("picture") ||
                         item.type.includes("mood")) && (
                         <Pressable
                           style={styles.viewProgressButton}
@@ -345,7 +345,7 @@ export default function Page() {
                             view {item.type} progress
                           </Text>
                         </Pressable>
-                      )}
+                      )} */}
                     </View>
                   ))}
                 </View>

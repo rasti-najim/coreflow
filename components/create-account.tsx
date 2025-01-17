@@ -224,28 +224,30 @@ export const CreateAccount = ({
           onChangePhoneNumber={onChangePhoneNumber}
         />
 
-        <Text style={styles.termsText}>
-          By continuing, you agree to our{" "}
-          <Text
-            style={styles.termsLink}
-            onPress={() =>
-              Linking.openURL(
-                "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
-              )
-            }
-          >
-            Terms of Service
-          </Text>{" "}
-          and{" "}
-          <Text
-            style={styles.termsLink}
-            onPress={() =>
-              Linking.openURL("https://barnburnerllc.github.io/CoreFlow/")
-            }
-          >
-            Privacy Policy
+        {type === "signup" && (
+          <Text style={styles.termsText}>
+            By continuing, you agree to our{" "}
+            <Text
+              style={styles.termsLink}
+              onPress={() =>
+                Linking.openURL(
+                  "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+                )
+              }
+            >
+              Terms of Service
+            </Text>{" "}
+            and{" "}
+            <Text
+              style={styles.termsLink}
+              onPress={() =>
+                Linking.openURL("https://barnburnerllc.github.io/CoreFlow/")
+              }
+            >
+              Privacy Policy
+            </Text>
           </Text>
-        </Text>
+        )}
 
         {toast && (
           <Toast
