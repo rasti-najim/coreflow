@@ -19,13 +19,25 @@ export default function Settings() {
   const { signOut, deleteAccount } = useAuth();
 
   const handleLogout = async () => {
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      mixpanel.track("Logout");
-      await signOut();
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
+    Alert.alert("Log Out", "Are you sure you want to log out?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Log Out",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            mixpanel.track("Logout");
+            await signOut();
+          } catch (error) {
+            console.error("Error signing out:", error);
+          }
+        },
+      },
+    ]);
   };
 
   const handleDeleteAccount = () => {

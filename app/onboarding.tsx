@@ -103,92 +103,6 @@ export default function Onboarding() {
     }
   };
 
-  const saveOnboardingData = async (userId: string) => {
-    console.log("user id", userId);
-
-    if (
-      !onboardingData.routine ||
-      !onboardingData.duration ||
-      !onboardingData.tracking ||
-      !onboardingData.pilatesLevel
-    )
-      throw new Error("Routine, duration, or tracking is required");
-
-    console.log("onboarding email", onboardingData.email);
-
-    if (!onboardingData.phoneNumber && !onboardingData.email) {
-      throw new Error("Phone number or email is required");
-    }
-
-    const { error: userError } = await supabase.from("users").insert({
-      id: userId,
-      phone_number: onboardingData.phoneNumber
-        ? onboardingData.phoneNumber
-        : null,
-      email: onboardingData.email ? onboardingData.email : null,
-      experience_level: onboardingData.pilatesLevel,
-    });
-
-    if (userError) throw userError;
-
-    // Goals insertion
-    const { error: goalsError } = await supabase.from("user_goals").insert(
-      onboardingData.goals.map((goal) => ({
-        user_id: userId,
-        name: goal,
-      }))
-    );
-
-    if (goalsError) throw goalsError;
-
-    // Preferences insertion
-    const { error: prefsError } = await supabase
-      .from("user_preferences")
-      .insert({
-        user_id: userId,
-        weekly_sessions: onboardingData.routine,
-        session_duration: onboardingData.duration,
-        tracking_method: onboardingData.tracking,
-      });
-
-    if (prefsError) throw prefsError;
-
-    // Handle photo upload and progress tracking if needed
-    if (
-      onboardingData.tracking !== "neither" &&
-      onboardingData.tracking !== null
-    ) {
-      let pictureUrl = null;
-
-      if (onboardingData.photo) {
-        const fileExtension = onboardingData.photo?.fileName?.split(".")[1];
-        const filePath = `${userId}/${DateTime.now().toISO()}.${fileExtension}`;
-
-        const { data, error } = await supabase.storage
-          .from("photo-progress")
-          .upload(filePath, decode(onboardingData.photo?.base64 || ""), {
-            contentType: onboardingData.photo?.mimeType,
-          });
-
-        if (!error) {
-          pictureUrl = data?.path?.split("/")[1];
-        }
-      }
-
-      const { error: progressError } = await supabase.from("progress").insert({
-        user_id: userId,
-        entry_type: onboardingData.tracking === "pictures" ? "picture" : "mood",
-        mood_description: onboardingData.mood ? onboardingData.mood : null,
-        picture_url: pictureUrl,
-        added_on: DateTime.now().toISODate(),
-      });
-
-      if (progressError) throw progressError;
-    }
-
-    console.log("onboarding data saved", onboardingData);
-  };
-
   const handleNext = async () => {
     try {
       if (step >= totalSteps) return;
@@ -254,9 +168,9 @@ export default function Onboarding() {
             return;
           }
           break;
-        case 12:
+        case 11:
           if (onboardingData.email) {
-            setStep(10);
+            setStep(9);
             return;
           }
           break;
