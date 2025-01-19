@@ -1,5 +1,18 @@
-import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  ScrollView,
+} from "react-native";
 import LottieView from "lottie-react-native";
 import * as Haptics from "expo-haptics";
 import { useFonts } from "expo-font";
@@ -7,6 +20,19 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Audio, AVPlaybackStatus } from "expo-av";
+import BottomSheet, {
+  BottomSheetModal,
+  BottomSheetBackdrop,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const scale = SCREEN_WIDTH / 375; // 375 is standard iPhone width
+
+const normalize = (size: number) => {
+  const newSize = size * scale;
+  return Math.round(Math.min(newSize, size * 1.2)); // Cap the maximum size
+};
 
 interface ExerciseLayoutProps {
   id: string;
@@ -29,6 +55,8 @@ interface ExerciseLayoutProps {
   autoPlay?: boolean;
   onAutoPlay?: () => void;
   isSavingProgress?: boolean;
+  isDescriptionExpanded?: boolean;
+  onShowDescription?: () => void;
 }
 
 export const ExerciseLayout = ({
@@ -48,6 +76,7 @@ export const ExerciseLayout = ({
   autoPlay = false,
   onAutoPlay,
   isSavingProgress = false,
+  onShowDescription,
 }: ExerciseLayoutProps) => {
   const [timeLeft, setTimeLeft] = useState(duration);
   const [isActive, setIsActive] = useState(false);
@@ -230,7 +259,15 @@ export const ExerciseLayout = ({
       <Text style={styles.title}>
         {type}: {title}
       </Text>
-      <Text style={styles.description}>{description}</Text>
+      <TouchableOpacity
+        onPress={onShowDescription}
+        style={styles.descriptionContainer}
+      >
+        <Text style={styles.description} numberOfLines={2}>
+          {description}
+        </Text>
+        <FontAwesome name="chevron-down" size={16} color="#4A2318" />
+      </TouchableOpacity>
 
       <LottieView
         key={animationSource}
@@ -361,46 +398,54 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFE9D5",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingBottom: 32,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   title: {
-    fontSize: 24,
+    fontSize: normalize(24),
     fontWeight: "bold",
     color: "#4A2318",
     marginBottom: 8,
     alignSelf: "flex-start",
   },
+  descriptionContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingRight: 8,
+    marginBottom: 16,
+  },
   description: {
-    fontSize: 18,
+    flex: 1,
+    fontSize: normalize(16),
     color: "#4A2318",
-    marginBottom: 32,
-    alignSelf: "flex-start",
-    lineHeight: 24,
+    lineHeight: 20,
+    marginRight: 8,
   },
   animation: {
-    flex: 1,
     width: "100%",
+    aspectRatio: 1,
+    maxHeight: "45%",
+    minHeight: 250,
+    alignSelf: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    // backgroundColor: "red",
-    // marginBottom: 32,
   },
   timerContainer: {
     alignItems: "center",
     marginBottom: 32,
   },
   timerText: {
-    fontSize: 48,
+    fontSize: normalize(48),
     fontFamily: "matolha-regular",
     color: "#4A2318",
     textAlign: "center",
   },
   completedText: {
-    fontSize: 48,
+    fontSize: normalize(48),
     fontFamily: "matolha-regular",
     color: "#2E8B57",
     textAlign: "center",
@@ -414,7 +459,7 @@ const styles = StyleSheet.create({
   },
   beginButtonText: {
     color: "#FFE9D5",
-    fontSize: 20,
+    fontSize: normalize(20),
     fontWeight: "bold",
     textAlign: "center",
   },
@@ -430,7 +475,7 @@ const styles = StyleSheet.create({
     borderColor: "#4A2318",
   },
   quitButtonText: {
-    fontSize: 18,
+    fontSize: normalize(18),
     color: "#FF0000",
     fontWeight: "bold",
     textAlign: "center",
@@ -446,13 +491,13 @@ const styles = StyleSheet.create({
     borderColor: "#4A2318",
   },
   differentExerciseButtonText: {
-    fontSize: 18,
+    fontSize: normalize(18),
     color: "#4A2318",
     fontWeight: "bold",
     textAlign: "center",
   },
   progress: {
-    fontSize: 18,
+    fontSize: normalize(18),
     color: "#4A2318",
     marginBottom: 8,
     alignSelf: "flex-start",
@@ -466,7 +511,7 @@ const styles = StyleSheet.create({
   },
   nextButtonText: {
     color: "#FFE9D5",
-    fontSize: 20,
+    fontSize: normalize(20),
     fontWeight: "bold",
     textAlign: "center",
   },
@@ -485,7 +530,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#4A2318",
   },
   autoPlayText: {
-    fontSize: 16,
+    fontSize: normalize(16),
     color: "#4A2318",
     fontWeight: "bold",
   },
@@ -508,7 +553,7 @@ const styles = StyleSheet.create({
     borderColor: "#4A2318",
   },
   playVoiceButtonText: {
-    fontSize: 18,
+    fontSize: normalize(18),
     color: "#4A2318",
     fontWeight: "bold",
     textAlign: "center",
@@ -528,5 +573,64 @@ const styles = StyleSheet.create({
   },
   repeatButtonActive: {
     backgroundColor: "#4A2318",
+  },
+  bottomSheetBackground: {
+    backgroundColor: "#FFE9D5",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  bottomSheetIndicator: {
+    backgroundColor: "#4A2318",
+    width: 40,
+    height: 4,
+  },
+  bottomSheetContent: {
+    flex: 1,
+    padding: 24,
+  },
+  bottomSheetHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  bottomSheetTitle: {
+    fontSize: normalize(24),
+    fontWeight: "bold",
+    color: "#4A2318",
+    flex: 1,
+    marginRight: 16,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  bottomSheetScrollView: {
+    flex: 1,
+  },
+  bottomSheetDescription: {
+    fontSize: normalize(18),
+    lineHeight: 28,
+    color: "#4A2318",
+    marginBottom: 24,
+  },
+  bottomSheetDetails: {
+    backgroundColor: "rgba(74, 35, 24, 0.05)",
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+  },
+  detailItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  detailLabel: {
+    fontSize: normalize(16),
+    color: "#4A2318",
+    fontWeight: "600",
+  },
+  detailValue: {
+    fontSize: normalize(16),
+    color: "#4A2318",
   },
 });

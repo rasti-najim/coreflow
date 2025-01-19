@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import supabase from "@/lib/supabase";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { DateTime } from "luxon";
 import mixpanel from "@/lib/mixpanel";
@@ -12,6 +12,8 @@ import { Loading } from "@/components/loading";
 import { FOCUS_MAP } from "@/lib/schedule";
 import { requestReview } from "@/lib/store-review";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import BottomSheet from "@gorhom/bottom-sheet";
+import { ExerciseBottomSheet } from "@/components/exercise-bottom-sheet";
 
 export default function Modal() {
   const { user } = useAuth();
@@ -27,6 +29,7 @@ export default function Modal() {
   const [voiceDescriptionSources, setVoiceDescriptionSources] = useState<{
     [key: string]: string;
   }>({});
+  const bottomSheetRef = useRef<BottomSheet>(null);
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -282,6 +285,16 @@ export default function Modal() {
         currentExercise={currentExerciseIndex + 1}
         // onDifferentExercise={handleDifferentExercise}
         voiceDescriptionSource={voiceDescriptionSources[currentExercise.id]}
+        onShowDescription={() => bottomSheetRef.current?.expand()}
+      />
+
+      <ExerciseBottomSheet
+        type={currentExercise.type}
+        title={currentExercise.name}
+        description={currentExercise.description}
+        focus={currentExercise.focus}
+        duration={45}
+        bottomSheetRef={bottomSheetRef}
       />
     </View>
   );
