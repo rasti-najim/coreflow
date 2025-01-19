@@ -80,16 +80,22 @@ export default function Page() {
 
       if (exercisesError) throw exercisesError;
 
-      // Organize exercises by type
-      const allExercises = exercisesData.map((exercise) => ({
-        ...exercise,
-        type:
-          exercise.id === session.warmup_exercise
-            ? "Warmup"
-            : exercise.id === session.cooldown_exercise
-            ? "Cooldown"
-            : "Target",
-      }));
+      // Organize exercises by type and sequence
+      const warmupExercise = exercisesData.find(
+        (exercise) => exercise.id === session.warmup_exercise
+      );
+      const targetExercises = exercisesData.filter((exercise) =>
+        session.target_exercises.includes(exercise.id)
+      );
+      const cooldownExercise = exercisesData.find(
+        (exercise) => exercise.id === session.cooldown_exercise
+      );
+
+      const allExercises = [
+        { ...warmupExercise, type: "Warmup" },
+        ...targetExercises.map((exercise) => ({ ...exercise, type: "Target" })),
+        { ...cooldownExercise, type: "Cooldown" },
+      ].filter(Boolean);
 
       // Collect all file URLs that need signing
       const animationUrls = allExercises
