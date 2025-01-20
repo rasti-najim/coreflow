@@ -16,16 +16,16 @@ export default function Page() {
         <Text style={styles.title}>{level}</Text>
         <Text style={styles.emoji}>{emoji}</Text>
         <Text style={styles.streakText}>
-          You have done{" "}
-          <Text style={styles.streakNumber}>{parseInt(streak)}</Text> pilates
-          sessions in a row.
+          {parseInt(streak) === 0 ? (
+            "Start a session to begin your streak!"
+          ) : (
+            <>
+              You have done{" "}
+              <Text style={styles.streakNumber}>{parseInt(streak)}</Text>{" "}
+              pilates sessions in a row.
+            </>
+          )}
         </Text>
-        {/* <Text style={styles.nextLevelText}>
-          Stay consistent for{" "}
-          <Text style={styles.streakNumber}>{parseInt(nextLevel)}</Text> more
-          day
-          {parseInt(nextLevel) > 1 ? "s" : ""} to level up!
-        </Text> */}
       </View>
 
       <TouchableOpacity
@@ -35,7 +35,9 @@ export default function Page() {
           router.dismiss();
         }}
       >
-        <Text style={styles.closeButtonText}>close</Text>
+        <Text style={styles.closeButtonText}>
+          {parseInt(streak) ? "close" : "start your flow"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
