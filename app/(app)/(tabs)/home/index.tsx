@@ -307,17 +307,28 @@ export default function Page() {
           <TouchableOpacity
             style={styles.streakButton}
             onPress={async () => {
-              if (!streak?.count) return;
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push({
-                pathname: "/home/streak-level",
-                params: {
-                  streak: streak.count,
-                  level: streak.level || "Beginner Pose",
-                  emoji: streak.emoji || "🔥",
-                  nextLevel: 0,
-                },
-              });
+              if (!streak?.count) {
+                router.push({
+                  pathname: "/home/streak-level",
+                  params: {
+                    streak: 0,
+                    level: "Streaks",
+                    emoji: "🔥",
+                    nextLevel: 0,
+                  },
+                });
+              } else {
+                router.push({
+                  pathname: "/home/streak-level",
+                  params: {
+                    streak: streak.count,
+                    level: streak.level || "Beginner Pose",
+                    emoji: streak.emoji || "🔥",
+                    nextLevel: 0,
+                  },
+                });
+              }
             }}
           >
             <Text style={styles.streakText}>

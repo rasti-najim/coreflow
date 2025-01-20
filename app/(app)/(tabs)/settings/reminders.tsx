@@ -154,6 +154,7 @@ export default function Page() {
           is24Hour={false}
           onChange={onChange}
           style={styles.picker}
+          themeVariant="light"
         />
       </View>
     </View>

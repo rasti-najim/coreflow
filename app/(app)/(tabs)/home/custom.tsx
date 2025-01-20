@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Redirect, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { FontAwesome } from "@expo/vector-icons";
@@ -13,6 +13,8 @@ import mixpanel from "@/lib/mixpanel";
 import { requestReview } from "@/lib/store-review";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ExerciseBottomSheet } from "@/components/exercise-bottom-sheet";
+import BottomSheet from "@gorhom/bottom-sheet";
 
 const DURATION_OPTIONS = [
   { value: "5", label: "5 minutes" },
@@ -50,6 +52,7 @@ export default function Page() {
   const progress = `${currentExerciseIndex + 1}/${exercises.length}`;
   const [autoPlay, setAutoPlay] = useState(false);
   const [isSavingProgress, setIsSavingProgress] = useState(false);
+  const bottomSheetRef = useRef<BottomSheet>(null);
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -80,16 +83,22 @@ export default function Page() {
 
       if (exercisesError) throw exercisesError;
 
-      // Organize exercises by type
-      const allExercises = exercisesData.map((exercise) => ({
-        ...exercise,
-        type:
-          exercise.id === session.warmup_exercise
-            ? "Warmup"
-            : exercise.id === session.cooldown_exercise
-            ? "Cooldown"
-            : "Target",
-      }));
+      // Organize exercises by type and sequence
+      const warmupExercise = exercisesData.find(
+        (exercise) => exercise.id === session.warmup_exercise
+      );
+      const targetExercises = exercisesData.filter((exercise) =>
+        session.target_exercises.includes(exercise.id)
+      );
+      const cooldownExercise = exercisesData.find(
+        (exercise) => exercise.id === session.cooldown_exercise
+      );
+
+      const allExercises = [
+        { ...warmupExercise, type: "Warmup" },
+        ...targetExercises.map((exercise) => ({ ...exercise, type: "Target" })),
+        { ...cooldownExercise, type: "Cooldown" },
+      ].filter(Boolean);
 
       // Collect all file URLs that need signing
       const animationUrls = allExercises
@@ -244,6 +253,16 @@ export default function Page() {
           onAutoPlay={() => setAutoPlay(!autoPlay)}
           isSavingProgress={isSavingProgress}
           voiceDescriptionSource={voiceDescriptionSources[currentExercise.id]}
+          onShowDescription={() => bottomSheetRef.current?.expand()}
+        />
+
+        <ExerciseBottomSheet
+          type={currentExercise.type}
+          title={currentExercise.name}
+          description={currentExercise.description}
+          focus={currentExercise.focus}
+          duration={45}
+          bottomSheetRef={bottomSheetRef}
         />
       </View>
     );
