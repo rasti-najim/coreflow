@@ -20,7 +20,6 @@
         ]
       },
       "bundleIdentifier": "com.barnburnerhockey.coreflow",
-      "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
       }
