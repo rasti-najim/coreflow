@@ -94,6 +94,13 @@ export type Database = {
             foreignKeyName: "progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_streak_levels"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -125,6 +132,13 @@ export type Database = {
           used_by_user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "referral_codes_used_by_user_id_fkey"
+            columns: ["used_by_user_id"]
+            isOneToOne: true
+            referencedRelation: "user_streak_levels"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "referral_codes_used_by_user_id_fkey"
             columns: ["used_by_user_id"]
@@ -188,6 +202,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "random_exercises"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_streak_levels"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "sessions_user_id_fkey"
@@ -263,6 +284,13 @@ export type Database = {
             foreignKeyName: "user_goals_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_streak_levels"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -307,6 +335,13 @@ export type Database = {
             foreignKeyName: "user_preferences_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "user_streak_levels"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -315,27 +350,36 @@ export type Database = {
       users: {
         Row: {
           created_at: string | null
+          current_streak: number
           email: string | null
           experience_level: Database["public"]["Enums"]["experience_level_enum"]
           id: string
+          last_checkin_date: string | null
+          longest_streak: number
           phone_number: string | null
           push_token: string | null
           referral_code_id: string | null
         }
         Insert: {
           created_at?: string | null
+          current_streak?: number
           email?: string | null
           experience_level: Database["public"]["Enums"]["experience_level_enum"]
           id?: string
+          last_checkin_date?: string | null
+          longest_streak?: number
           phone_number?: string | null
           push_token?: string | null
           referral_code_id?: string | null
         }
         Update: {
           created_at?: string | null
+          current_streak?: number
           email?: string | null
           experience_level?: Database["public"]["Enums"]["experience_level_enum"]
           id?: string
+          last_checkin_date?: string | null
+          longest_streak?: number
           phone_number?: string | null
           push_token?: string | null
           referral_code_id?: string | null
@@ -414,6 +458,13 @@ export type Database = {
           week_start: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_streak_levels"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "sessions_user_id_fkey"
             columns: ["user_id"]

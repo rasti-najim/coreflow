@@ -61,14 +61,18 @@ export function useStreak() {
           .lte("streak_count", effectiveStreak)
           .order("streak_count", { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (streakError) throw streakError;
 
+        // If no streak level found, use default values
+        const levelName = streakLevel?.name || "Beginner Pose";
+        const levelEmoji = streakLevel?.emoji || "🧘";
+
         setStreak({
           count: effectiveStreak,
-          level: streakLevel?.name || "",
-          emoji: streakLevel?.emoji || "",
+          level: levelName,
+          emoji: levelEmoji,
         });
 
         // If streak should be 0 but isn't in the database, update it
