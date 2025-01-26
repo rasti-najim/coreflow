@@ -337,14 +337,11 @@ export default function Page() {
                                 Focus: {item.session.focus}
                               </Text>
                             )}
-                            {item.session.scheduled_date && (
+                            {/* {item.duration && (
                               <Text style={styles.sessionText}>
-                                Scheduled:{" "}
-                                {DateTime.fromISO(
-                                  item.session.scheduled_date
-                                ).toFormat("LLL dd, t")}
+                                Duration: {item.duration}
                               </Text>
-                            )}
+                            )} */}
                           </View>
                         </View>
                       )}
