@@ -30,6 +30,11 @@ type TimelineItem = {
   duration?: string;
   note?: string;
   photoUrl?: string;
+  session?: {
+    focus?: string;
+    scheduled_date?: string;
+    status?: string;
+  };
 };
 
 const groupByDate = (items: TimelineItem[]): Record<string, TimelineItem[]> => {
@@ -86,6 +91,13 @@ export default function Page() {
       duration: item.sessions?.status === "completed" ? "Completed" : "Skipped",
       note: item.mood_description,
       photoUrl: item.picture_url ? undefined : undefined,
+      session: item.sessions
+        ? {
+            focus: item.sessions.focus,
+            scheduled_date: item.sessions.scheduled_date,
+            status: item.sessions.status,
+          }
+        : undefined,
     }));
 
     setTimelineData(mappedData || []);
@@ -285,17 +297,6 @@ export default function Page() {
                   {items.map((item, index) => (
                     <View key={item.id + index} style={styles.itemContainer}>
                       <View style={styles.itemHeader}>
-                        <Text style={styles.description}>
-                          {item.type
-                            .map((type) =>
-                              type === "picture"
-                                ? "Photo"
-                                : type === "session"
-                                ? item.duration
-                                : "Note"
-                            )
-                            .join(" & ")}
-                        </Text>
                         <TouchableOpacity
                           onPress={() => handleDelete(item)}
                           style={styles.deleteButton}
@@ -323,29 +324,35 @@ export default function Page() {
                           )}
                         </>
                       )}
-                      {item.note && (
-                        <View style={styles.noteContainer}>
-                          <Text style={styles.noteText}>
-                            "{item.note}"
-                            {/* {item.note.length > 100
-                              ? item.note.substring(0, 100) + "..."
-                              : item.note} */}
-                          </Text>
+                      {item.type.includes("session") && item.session && (
+                        <View style={styles.sessionContainer}>
+                          <View style={styles.sessionHeader}>
+                            <Text style={styles.sessionStatus}>
+                              {item.session.status?.toUpperCase()}
+                            </Text>
+                          </View>
+                          <View style={styles.sessionDetails}>
+                            {item.session.focus && (
+                              <Text style={styles.sessionText}>
+                                Focus: {item.session.focus}
+                              </Text>
+                            )}
+                            {item.session.scheduled_date && (
+                              <Text style={styles.sessionText}>
+                                Scheduled:{" "}
+                                {DateTime.fromISO(
+                                  item.session.scheduled_date
+                                ).toFormat("LLL dd, t")}
+                              </Text>
+                            )}
+                          </View>
                         </View>
                       )}
-                      {/* {(item.type.includes("picture") ||
-                        item.type.includes("mood")) && (
-                        <Pressable
-                          style={styles.viewProgressButton}
-                          onPress={() =>
-                            handleViewProgress(item.type[0] as "photo" | "note")
-                          }
-                        >
-                          <Text style={styles.viewProgressText}>
-                            view {item.type} progress
-                          </Text>
-                        </Pressable>
-                      )} */}
+                      {item.type.includes("mood") && item.note && (
+                        <View style={styles.noteContainer}>
+                          <Text style={styles.noteText}>"{item.note}"</Text>
+                        </View>
+                      )}
                     </View>
                   ))}
                 </View>
@@ -506,12 +513,44 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   itemHeader: {
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 8,
   },
   deleteButton: {
     padding: 8,
+  },
+  sessionContainer: {
+    borderRadius: 12,
+    marginTop: 8,
+    backgroundColor: "#4A2B29",
+    overflow: "hidden",
+    shadowColor: "#4A2B29",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  sessionHeader: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#FFE9D5",
+  },
+  sessionStatus: {
+    color: "#FFE9D5",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  sessionDetails: {
+    padding: 12,
+    gap: 4,
+  },
+  sessionText: {
+    color: "#FFE9D5",
+    fontSize: 14,
   },
 });

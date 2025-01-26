@@ -396,7 +396,7 @@ export default function Page() {
         </View>
 
         {/* Consistency Tracking */}
-        <View style={styles.consistencyContainer}>
+        {/* <View style={styles.consistencyContainer}>
           <View style={styles.consistencyHeader}>
             <Text style={styles.consistencyTitle}>
               Patience & Persistence 🔑
@@ -422,7 +422,7 @@ export default function Page() {
             </Text>{" "}
             daily streak
           </Text> */}
-        </View>
+        {/* </View> */}
 
         <View style={styles.consistencyContainer}>
           <View style={styles.consistencyHeader}>
@@ -444,19 +444,6 @@ export default function Page() {
             </Text>
           </TouchableOpacity>
         </View>
-
-        {/* Navigation Bar */}
-        {/* <View style={styles.navbar}>
-          <TouchableOpacity>
-            <FontAwesome name="plus" size={24} color="#4A2318" />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <FontAwesome name="calendar" size={24} color="#4A2318" />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <FontAwesome name="cog" size={24} color="#4A2318" />
-          </TouchableOpacity>
-        </View> */}
       </ScrollView>
 
       <View style={styles.addButtonContainer}>
