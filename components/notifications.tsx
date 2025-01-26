@@ -55,6 +55,7 @@ export const Notifications = ({ onTimeSelected }: NotificationsProps) => {
           is24Hour={false}
           onChange={onChange}
           style={styles.picker}
+          themeVariant="light"
         />
       </View>
     </View>
