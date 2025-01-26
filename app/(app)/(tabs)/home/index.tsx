@@ -22,6 +22,7 @@ import * as Notifications from "expo-notifications";
 import { checkAndUpdateTimezone } from "@/lib/timezone";
 import { useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useStreak } from "@/lib/hooks/useStreaks";
 
 type Session = {
   focus: string;
@@ -45,18 +46,7 @@ export default function Page() {
   const [todaySession, setTodaySession] = useState<Session | undefined>();
   const [showOptions, setShowOptions] = useState(false);
   const [duration, setDuration] = useState<string>("");
-  const [consistency, setConsistency] = useState<ConsistencyStats>({
-    currentWeekCount: 0,
-    weeklyStreak: 0,
-    dailyStreak: 0,
-  });
-  const [expoPushToken, setExpoPushToken] = useState("");
-  const [notification, setNotification] = useState<
-    Notifications.Notification | undefined
-  >(undefined);
-  const notificationListener = useRef<Notifications.EventSubscription>();
-  const responseListener = useRef<Notifications.EventSubscription>();
-  const [streak, setStreak] = useState<Streak | undefined>();
+  const { streak, isLoading: isStreakLoading } = useStreak();
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -177,44 +167,12 @@ export default function Page() {
   );
 
   useEffect(() => {
-    const getConsistency = async () => {
-      const consistencyStats = await calculateConsistency(user.id);
-      console.log("consistency", consistencyStats);
-      setConsistency(consistencyStats);
-    };
-    getConsistency();
-  }, [schedule]);
-
-  useEffect(() => {
     const updateTimezone = async () => {
       if (!user?.id) return;
       await checkAndUpdateTimezone(user.id);
     };
 
     updateTimezone();
-  }, []);
-
-  useEffect(() => {
-    const getStreak = async () => {
-      try {
-        const { data: streak } = await supabase
-          .from("user_streak_levels")
-          .select("*")
-          .eq("user_id", user.id)
-          .limit(1)
-          .single();
-        if (streak) {
-          setStreak({
-            count: streak.daily_streak || 0,
-            level: streak.streak_level_name || "",
-            emoji: streak.streak_level_emoji || "",
-          });
-        }
-      } catch (error) {
-        console.error("Error getting streak:", error);
-      }
-    };
-    getStreak();
   }, []);
 
   const onBegin = async () => {
@@ -296,6 +254,31 @@ export default function Page() {
     return date.toFormat("EEE");
   };
 
+  const handleStreakPress = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!streak?.count) {
+      router.push({
+        pathname: "/home/streak-level",
+        params: {
+          streak: 0,
+          level: "Streaks",
+          emoji: "🔥",
+          nextLevel: 0,
+        },
+      });
+    } else {
+      router.push({
+        pathname: "/home/streak-level",
+        params: {
+          streak: streak.count,
+          level: streak.level || "Beginner Pose",
+          emoji: streak.emoji || "🔥",
+          nextLevel: 0,
+        },
+      });
+    }
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: "#FFE9D5" }}>
       <ScrollView
@@ -306,33 +289,12 @@ export default function Page() {
           <Text style={styles.logo}>coreflow</Text>
           <TouchableOpacity
             style={styles.streakButton}
-            onPress={async () => {
-              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              if (!streak?.count) {
-                router.push({
-                  pathname: "/home/streak-level",
-                  params: {
-                    streak: 0,
-                    level: "Streaks",
-                    emoji: "🔥",
-                    nextLevel: 0,
-                  },
-                });
-              } else {
-                router.push({
-                  pathname: "/home/streak-level",
-                  params: {
-                    streak: streak.count,
-                    level: streak.level || "Beginner Pose",
-                    emoji: streak.emoji || "🔥",
-                    nextLevel: 0,
-                  },
-                });
-              }
-            }}
+            onPress={handleStreakPress}
           >
             <Text style={styles.streakText}>
-              {streak?.count || 0} {streak?.emoji} 🔥
+              {isStreakLoading
+                ? "..."
+                : `${streak?.count || 0} ${streak?.emoji || ""} 🔥`}
             </Text>
           </TouchableOpacity>
         </View>
