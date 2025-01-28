@@ -180,7 +180,7 @@ export default function Page() {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     Superwall.shared.register("beginWorkoutSession").then(() => {
-      posthog.capture("user_started_scheduled_workout", {
+      posthog.capture("user_started_wscheduled_workout", {
         duration: duration,
         session_id: todaySession?.session_id,
       });
