@@ -23,6 +23,8 @@ import Superwall from "@superwall/react-native-superwall";
 import { OnboardingLoading } from "@/components/onboarding-loading";
 import { Reminders } from "@/components/reminders";
 import { Notifications } from "@/components/notifications";
+import { Toast, ToastProps } from "@/components/toast";
+import { Keyboard, View } from "react-native";
 
 export interface OnboardingData {
   pilatesLevel: "beginner" | "intermediate" | "advanced" | null;
@@ -65,6 +67,7 @@ export default function Onboarding() {
   });
   const router = useRouter();
   const [isValidating, setIsValidating] = useState(false);
+  const [toast, setToast] = useState<ToastProps | null>(null);
 
   const totalSteps = useMemo(() => 11, []);
 
@@ -73,6 +76,22 @@ export default function Onboarding() {
     if (!phoneNumber) return;
 
     try {
+      const { data, error } = await supabase.functions.invoke("check-phone", {
+        body: { phoneNumber },
+      });
+
+      if (error) throw error;
+
+      if (data.exists) {
+        Keyboard.dismiss();
+        setToast({
+          message:
+            "This phone number already has an account. Please sign in instead.",
+          type: "error",
+        });
+        return Promise.resolve({ success: false });
+      }
+
       const { data: user, error: userError } = await supabase
         .from("users")
         .select("*")
@@ -128,6 +147,7 @@ export default function Onboarding() {
         case 9:
           if (onboardingData.phoneNumber) {
             const result = await handlePhoneSignIn(onboardingData.phoneNumber);
+            console.log("result", result);
             if (!result?.success) return;
           }
           if (onboardingData.email) {
@@ -432,16 +452,21 @@ export default function Onboarding() {
   };
 
   return (
-    <OnboardingLayout
-      currentStep={step}
-      totalSteps={totalSteps}
-      onBack={handleBack}
-      onNext={handleNext}
-      isNextDisabled={isNextDisabled()}
-      showLayout={step !== 11}
-      hideArrow={step == 4}
-    >
-      {renderStep()}
-    </OnboardingLayout>
+    <View style={{ flex: 1 }}>
+      <OnboardingLayout
+        currentStep={step}
+        totalSteps={totalSteps}
+        onBack={handleBack}
+        onNext={handleNext}
+        isNextDisabled={isNextDisabled()}
+        showLayout={step !== 11}
+        hideArrow={step == 4}
+      >
+        {renderStep()}
+      </OnboardingLayout>
+      {step === 9 && toast && (
+        <Toast message={toast.message} type={toast.type} />
+      )}
+    </View>
   );
 }
