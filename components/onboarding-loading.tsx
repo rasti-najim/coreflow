@@ -3,7 +3,6 @@ import { View, Text, StyleSheet } from "react-native";
 import { Loading } from "./loading";
 import { OnboardingData } from "@/app/onboarding";
 import { router } from "expo-router";
-import mixpanel from "@/lib/mixpanel";
 import supabase from "@/lib/supabase";
 import { createSchedule } from "@/lib/schedule";
 import * as Haptics from "expo-haptics";
@@ -11,7 +10,7 @@ import { DateTime } from "luxon";
 import { Toast, ToastProps } from "./toast";
 import { decode } from "base64-arraybuffer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { usePostHog } from "posthog-react-native";
 export const OnboardingLoading = ({
   onboardingData,
 }: {
@@ -21,7 +20,7 @@ export const OnboardingLoading = ({
   const [isLongWait, setIsLongWait] = useState(false);
   const LONG_WAIT_THRESHOLD = 10000; // 10 seconds
   const [longWaitTimer, setLongWaitTimer] = useState<NodeJS.Timeout>();
-
+  const posthog = usePostHog();
   const saveOnboardingData = async (userId: string) => {
     console.log("user id", userId);
 
@@ -144,8 +143,8 @@ export const OnboardingLoading = ({
       clearTimeout(timer);
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      mixpanel.identify(user.id);
-      mixpanel.track("Sign Up");
+      posthog.identify(user.id);
+      posthog.capture("onboarding_completed");
       router.push("/(app)/(tabs)/home");
     } catch (error: any) {
       console.error("Failed to save onboarding data:", error.message);

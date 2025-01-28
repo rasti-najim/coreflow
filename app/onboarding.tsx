@@ -14,7 +14,6 @@ import {
 } from "@/components/starting-journey";
 import supabase from "@/lib/supabase";
 import { VerifyOTP } from "@/components/verify-otp";
-import mixpanel from "@/lib/mixpanel";
 import { DateTime } from "luxon";
 import * as ImagePicker from "expo-image-picker";
 import { decode } from "base64-arraybuffer";
@@ -25,6 +24,7 @@ import { Reminders } from "@/components/reminders";
 import { Notifications } from "@/components/notifications";
 import { Toast, ToastProps } from "@/components/toast";
 import { Keyboard, View } from "react-native";
+import { usePostHog } from "posthog-react-native";
 
 export interface OnboardingData {
   pilatesLevel: "beginner" | "intermediate" | "advanced" | null;
@@ -68,7 +68,7 @@ export default function Onboarding() {
   const router = useRouter();
   const [isValidating, setIsValidating] = useState(false);
   const [toast, setToast] = useState<ToastProps | null>(null);
-
+  const posthog = usePostHog();
   const totalSteps = useMemo(() => 11, []);
 
   const handlePhoneSignIn = async (phoneNumber: string) => {
@@ -267,7 +267,7 @@ export default function Onboarding() {
 
       console.log("OTP verified successfully");
       setOnboardingData((prev) => ({ ...prev, hasAccount: true }));
-      mixpanel.track("Verify OTP");
+      posthog.capture("onboarding_verified_otp");
       return true;
     } catch (error) {
       console.error("OTP verification failed:", error);
@@ -289,7 +289,7 @@ export default function Onboarding() {
             selectedGoals={onboardingData.goals}
             onSelectGoal={(goals) => {
               setOnboardingData((prev) => ({ ...prev, goals: goals }));
-              mixpanel.track("Select Goals", {
+              posthog.capture("onboarding_selected_goals", {
                 goals: goals,
               });
             }}
@@ -304,7 +304,7 @@ export default function Onboarding() {
                 ...prev,
                 pilatesLevel: level as "beginner" | "intermediate" | "advanced",
               }));
-              mixpanel.track("Select Pilates Level", {
+              posthog.capture("onboarding_selected_pilates_level", {
                 level: level,
               });
             }}
@@ -316,7 +316,7 @@ export default function Onboarding() {
             selectedRoutine={onboardingData.routine}
             onSelectRoutine={(routine) => {
               setOnboardingData((prev) => ({ ...prev, routine: routine }));
-              mixpanel.track("Select Routine", {
+              posthog.capture("onboarding_selected_routine", {
                 routine: routine,
               });
             }}
@@ -328,7 +328,7 @@ export default function Onboarding() {
             selectedDuration={onboardingData.duration}
             onSelectDuration={(duration) => {
               setOnboardingData((prev) => ({ ...prev, duration: duration }));
-              mixpanel.track("Select Duration", {
+              posthog.capture("onboarding_selected_duration", {
                 duration: duration,
               });
             }}
@@ -368,7 +368,7 @@ export default function Onboarding() {
             onSelectTracking={(tracking) => {
               // @ts-ignore
               setOnboardingData((prev) => ({ ...prev, tracking: tracking }));
-              mixpanel.track("Select Tracking", {
+              posthog.capture("onboarding_selected_tracking", {
                 tracking: tracking,
               });
             }}
@@ -380,7 +380,7 @@ export default function Onboarding() {
             <StartingJourneyPhoto
               onPhotoSelect={(photo) => {
                 setOnboardingData((prev) => ({ ...prev, photo: photo }));
-                mixpanel.track("Starting Journey Photo");
+                posthog.capture("onboarding_starting_journey_photo");
               }}
             />
           );
@@ -389,7 +389,7 @@ export default function Onboarding() {
           <StartingJourney
             onMoodChange={(mood) => {
               setOnboardingData((prev) => ({ ...prev, mood: mood }));
-              mixpanel.track("Starting Journey Mood");
+              posthog.capture("onboarding_starting_journey_mood");
             }}
           />
         );
@@ -408,7 +408,7 @@ export default function Onboarding() {
 
               await new Promise((resolve) => setTimeout(resolve, 1000));
 
-              mixpanel.track("Google Sign In");
+              posthog.capture("onboarding_google_sign_in");
             }}
             onAppleSignIn={async (user) => {
               // Handle Apple sign in and skip OTP
@@ -420,7 +420,7 @@ export default function Onboarding() {
 
               await new Promise((resolve) => setTimeout(resolve, 1000));
 
-              mixpanel.track("Apple Sign In");
+              posthog.capture("onboarding_apple_sign_in");
             }}
             phoneNumber={onboardingData.phoneNumber || ""}
             onChangePhoneNumber={(phoneNumber) => {

@@ -9,12 +9,12 @@ import { useAuth } from "@/components/auth-context";
 import { createSession } from "@/lib/schedule";
 import { ExerciseLayout } from "@/components/excercise-layout";
 import { DateTime } from "luxon";
-import mixpanel from "@/lib/mixpanel";
 import { requestReview } from "@/lib/store-review";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ExerciseBottomSheet } from "@/components/exercise-bottom-sheet";
 import BottomSheet from "@gorhom/bottom-sheet";
+import { usePostHog } from "posthog-react-native";
 
 const DURATION_OPTIONS = [
   { value: "5", label: "5 minutes" },
@@ -32,6 +32,7 @@ const FOCUS_OPTIONS = [
 ];
 
 export default function Page() {
+  const posthog = usePostHog();
   const { user } = useAuth();
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
@@ -167,7 +168,7 @@ export default function Page() {
       setIsWorkoutStarted(true);
       setSessionId(sessionData.data?.id!);
 
-      mixpanel.track("Create Custom Workout Session", {
+      posthog.capture("user_created_custom_workout", {
         duration: selectedDuration,
         focus: selectedFocus,
         session_id: sessionData.data?.id,
@@ -207,7 +208,7 @@ export default function Page() {
           );
         }
 
-        mixpanel.track("Custom Workout Session Completed", {
+        posthog.capture("user_completed_custom_workout", {
           duration: selectedDuration,
           session_id: session_id,
         });

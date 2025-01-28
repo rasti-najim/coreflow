@@ -5,6 +5,7 @@ import * as Haptics from "expo-haptics";
 import { useFonts } from "expo-font";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
+import { usePostHog } from "posthog-react-native";
 
 const features = [
   "Pilates sessions tailored to you",
@@ -17,7 +18,7 @@ const features = [
 export default function Page() {
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
-
+  const posthog = usePostHog();
   return (
     <View style={styles.container}>
       <Text style={styles.logo}>coreflow</Text>
@@ -57,6 +58,7 @@ export default function Page() {
           await Haptics.notificationAsync(
             Haptics.NotificationFeedbackType.Success
           );
+          posthog.capture("onboarding_started");
           router.push("/onboarding");
         }}
       >

@@ -15,8 +15,11 @@ import supabase from "@/lib/supabase";
 import { DateTime } from "luxon";
 import { FontAwesome } from "@expo/vector-icons";
 import { Toast } from "@/components/toast";
+import { usePostHog } from "posthog-react-native";
+
 export default function Page() {
   const { user } = useAuth();
+  const posthog = usePostHog();
   const [mood, setMood] = useState("");
   const router = useRouter();
   const safeArea = useSafeAreaInsets();
@@ -49,6 +52,7 @@ export default function Page() {
       } else {
         console.log("Mood update added successfully:", data);
         setToast("Mood update added successfully");
+        posthog.capture("user_added_mood_update");
       }
 
       router.dismiss();
