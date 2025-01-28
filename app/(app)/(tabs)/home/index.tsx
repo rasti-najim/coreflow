@@ -271,8 +271,8 @@ export default function Page() {
         pathname: "/home/streak-level",
         params: {
           streak: streak.count,
-          level: streak.level || "Beginner Pose",
-          emoji: streak.emoji || "🔥",
+          level: streak.level,
+          emoji: streak.emoji,
           nextLevel: 0,
         },
       });
@@ -292,9 +292,7 @@ export default function Page() {
             onPress={handleStreakPress}
           >
             <Text style={styles.streakText}>
-              {isStreakLoading
-                ? "..."
-                : `${streak?.count || 0} ${streak?.emoji || ""} 🔥`}
+              {isStreakLoading ? "..." : `${streak?.count} ${streak?.emoji}`}
             </Text>
           </TouchableOpacity>
         </View>
