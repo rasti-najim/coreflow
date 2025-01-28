@@ -17,9 +17,11 @@ import { Toast } from "@/components/toast";
 import { Dimensions } from "react-native";
 import React from "react";
 import { ImagePreviewModal } from "@/components/image-preview";
+import { usePostHog } from "posthog-react-native";
 
 export default function Page() {
   const { user } = useAuth();
+  const posthog = usePostHog();
   const router = useRouter();
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const safeArea = useSafeAreaInsets();
@@ -106,6 +108,7 @@ export default function Page() {
 
       console.log("photo uploaded", data);
       setToast("Picture update added successfully");
+      posthog.capture("user_added_picture_update");
       router.dismiss();
     } catch (error) {
       console.error(error);

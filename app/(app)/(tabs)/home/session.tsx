@@ -7,14 +7,13 @@ import supabase from "@/lib/supabase";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { DateTime } from "luxon";
-import mixpanel from "@/lib/mixpanel";
 import { Loading } from "@/components/loading";
 import { FOCUS_MAP } from "@/lib/schedule";
 import { requestReview } from "@/lib/store-review";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { ExerciseBottomSheet } from "@/components/exercise-bottom-sheet";
-
+import { usePostHog } from "posthog-react-native";
 export default function Modal() {
   const { user } = useAuth();
   const { session_id, duration, focus } = useLocalSearchParams();
@@ -30,6 +29,7 @@ export default function Modal() {
     [key: string]: string;
   }>({});
   const bottomSheetRef = useRef<BottomSheet>(null);
+  const posthog = usePostHog();
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -65,7 +65,7 @@ export default function Modal() {
           console.error("Error inserting progress:", progressError);
         }
 
-        mixpanel.track("Session Completed", {
+        posthog.capture("user_completed_workout", {
           duration: duration,
           session_id: session_id,
         });

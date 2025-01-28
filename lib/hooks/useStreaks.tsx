@@ -57,8 +57,9 @@ export function useStreak() {
         // Get the streak level based on the effective streak
         const { data: streakLevel, error: streakError } = await supabase
           .from("streak_levels")
-          .select("name, emoji")
+          .select("name, emoji, streak_count")
           .lte("streak_count", effectiveStreak)
+          .gt("streak_count", 0) // Ensure we don't get the 0 streak level if it exists
           .order("streak_count", { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -66,8 +67,8 @@ export function useStreak() {
         if (streakError) throw streakError;
 
         // If no streak level found, use default values
-        const levelName = streakLevel?.name || "Beginner Pose";
-        const levelEmoji = streakLevel?.emoji || "🧘";
+        const levelName = streakLevel?.name || "Streaks";
+        const levelEmoji = streakLevel?.emoji || "🔥";
 
         setStreak({
           count: effectiveStreak,

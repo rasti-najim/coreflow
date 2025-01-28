@@ -14,7 +14,6 @@ import supabase from "@/lib/supabase";
 import { useAuth } from "@/components/auth-context";
 import { DateTime } from "luxon";
 import { calculateConsistency, ConsistencyStats } from "@/lib/consistency";
-import mixpanel from "@/lib/mixpanel";
 import Superwall from "@superwall/react-native-superwall";
 import { requestReview } from "@/lib/store-review";
 import { registerForPushNotificationsAsync } from "@/lib/notifications";
@@ -23,6 +22,7 @@ import { checkAndUpdateTimezone } from "@/lib/timezone";
 import { useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useStreak } from "@/lib/hooks/useStreaks";
+import { usePostHog } from "posthog-react-native";
 
 type Session = {
   focus: string;
@@ -46,6 +46,7 @@ export default function Page() {
   const [todaySession, setTodaySession] = useState<Session | undefined>();
   const [showOptions, setShowOptions] = useState(false);
   const [duration, setDuration] = useState<string>("");
+  const posthog = usePostHog();
   const { streak, isLoading: isStreakLoading } = useStreak();
 
   if (!user) {
@@ -179,7 +180,7 @@ export default function Page() {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     Superwall.shared.register("beginWorkoutSession").then(() => {
-      mixpanel.track("Begin Workout Session", {
+      posthog.capture("user_started_scheduled_workout", {
         duration: duration,
         session_id: todaySession?.session_id,
       });
@@ -271,8 +272,8 @@ export default function Page() {
         pathname: "/home/streak-level",
         params: {
           streak: streak.count,
-          level: streak.level || "Beginner Pose",
-          emoji: streak.emoji || "🔥",
+          level: streak.level,
+          emoji: streak.emoji,
           nextLevel: 0,
         },
       });
@@ -292,9 +293,7 @@ export default function Page() {
             onPress={handleStreakPress}
           >
             <Text style={styles.streakText}>
-              {isStreakLoading
-                ? "..."
-                : `${streak?.count || 0} ${streak?.emoji || ""} 🔥`}
+              {isStreakLoading ? "..." : `${streak?.count} ${streak?.emoji}`}
             </Text>
           </TouchableOpacity>
         </View>
@@ -397,6 +396,7 @@ export default function Page() {
               Superwall.shared
                 .register("startCustomWorkoutSession")
                 .then(() => {
+                  posthog.capture("user_started_custom_workout");
                   router.push("/home/custom");
                 });
             }}

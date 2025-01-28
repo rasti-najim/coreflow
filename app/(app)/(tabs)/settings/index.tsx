@@ -11,12 +11,12 @@ import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/components/auth-context";
 import * as Haptics from "expo-haptics";
 import { FontAwesome6 } from "@expo/vector-icons";
-import mixpanel from "@/lib/mixpanel";
-
+import { usePostHog } from "posthog-react-native";
 export default function Settings() {
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
   const { signOut, deleteAccount } = useAuth();
+  const posthog = usePostHog();
 
   const handleLogout = async () => {
     Alert.alert("Log Out", "Are you sure you want to log out?", [
@@ -30,7 +30,7 @@ export default function Settings() {
         onPress: async () => {
           try {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            mixpanel.track("Logout");
+            posthog.capture("user_logged_out");
             await signOut();
           } catch (error) {
             console.error("Error signing out:", error);
@@ -55,7 +55,7 @@ export default function Settings() {
           onPress: async () => {
             try {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-              mixpanel.track("Delete Account");
+              posthog.capture("user_deleted_account");
               await deleteAccount();
             } catch (error) {
               console.error("Error deleting account:", error);

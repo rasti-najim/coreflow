@@ -1,23 +1,40 @@
 import React, { useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { Keyboard, StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { OnboardingLayout } from "@/components/onboarding-layout";
 import { CreateAccount } from "@/components/create-account";
 import { VerifyOTP } from "@/components/verify-otp";
 import supabase from "@/lib/supabase";
-import mixpanel from "@/lib/mixpanel";
-
+import { Toast, ToastProps } from "@/components/toast";
+import { usePostHog } from "posthog-react-native";
 export default function Login() {
   const [step, setStep] = useState(0);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otp, setOtp] = useState("");
   const router = useRouter();
-
+  const [toast, setToast] = useState<ToastProps | null>(null);
+  const posthog = usePostHog();
   const handlePhoneSignIn = async () => {
     if (!phoneNumber) return;
 
     try {
+      const { data: checkPhoneData, error: checkPhoneError } =
+        await supabase.functions.invoke("check-phone", {
+          body: { phoneNumber },
+        });
+
+      if (checkPhoneError) throw checkPhoneError;
+
+      if (!checkPhoneData.exists) {
+        Keyboard.dismiss();
+        setToast({
+          message: "User does not exist. Please sign up instead.",
+          type: "error",
+        });
+        return;
+      }
+
       const { data: user, error: userError } = await supabase
         .from("users")
         .select("*")
@@ -55,8 +72,8 @@ export default function Login() {
       });
 
       if (!error && user) {
-        mixpanel.identify(user.id);
-        mixpanel.track("Sign In");
+        posthog.identify(user.id);
+        posthog.capture("onboarding_sign_in");
         router.replace("/(app)/(tabs)/home");
       }
     } catch (error) {
@@ -76,13 +93,13 @@ export default function Login() {
             onGoogleSignIn={async (user) => {
               // Handle Google sign in and skip OTP
               console.log("google user", user);
-              mixpanel.track("Google Sign In");
+              posthog.capture("onboarding_google_sign_in");
               router.replace("/(app)/(tabs)/home");
             }}
             onAppleSignIn={async (user) => {
               // Handle Apple sign in and skip OTP
               console.log("apple user", user);
-              mixpanel.track("Apple Sign In");
+              posthog.capture("onboarding_apple_sign_in");
               router.replace("/(app)/(tabs)/home");
             }}
           />
@@ -103,17 +120,20 @@ export default function Login() {
   };
 
   return (
-    <OnboardingLayout
-      currentStep={step}
-      totalSteps={2}
-      onBack={() => (step === 0 ? router.back() : setStep(0))}
-      onNext={step === 0 ? handlePhoneSignIn : handleVerifyOTP}
-      isNextDisabled={step === 0 ? !phoneNumber : !otp}
-      nextButtonText="Continue"
-      hideProgressBar={true}
-    >
-      {renderStep()}
-    </OnboardingLayout>
+    <View style={{ flex: 1 }}>
+      <OnboardingLayout
+        currentStep={step}
+        totalSteps={2}
+        onBack={() => (step === 0 ? router.back() : setStep(0))}
+        onNext={step === 0 ? handlePhoneSignIn : handleVerifyOTP}
+        isNextDisabled={step === 0 ? !phoneNumber : !otp}
+        nextButtonText="Continue"
+        hideProgressBar={true}
+      >
+        {renderStep()}
+      </OnboardingLayout>
+      {toast && <Toast message={toast.message} type={toast.type} />}
+    </View>
   );
 }
 

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Coreflow",
     "slug": "coreflow",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -12,6 +12,11 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.122474468786-642ks6s0n55ffi191kan78g4819h5avj"
+            ]
+          },
           {
             "CFBundleURLSchemes": [
               "com.googleusercontent.apps.122474468786-642ks6s0n55ffi191kan78g4819h5avj"
@@ -30,6 +35,8 @@
         "backgroundColor": "#FFE9D5"
       },
       "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.CAMERA"
       ],
@@ -91,6 +98,12 @@
         "projectId": "a5d6e3ed-1ccf-4a77-be68-caacffe20c04"
       }
     },
-    "owner": "rasti_najim"
+    "owner": "rasti_najim",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a5d6e3ed-1ccf-4a77-be68-caacffe20c04"
+    }
   }
 }
