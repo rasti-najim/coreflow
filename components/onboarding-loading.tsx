@@ -11,6 +11,8 @@ import { Toast, ToastProps } from "./toast";
 import { decode } from "base64-arraybuffer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePostHog } from "posthog-react-native";
+import { getCalendars } from "expo-localization";
+
 export const OnboardingLoading = ({
   onboardingData,
 }: {
@@ -21,6 +23,7 @@ export const OnboardingLoading = ({
   const LONG_WAIT_THRESHOLD = 10000; // 10 seconds
   const [longWaitTimer, setLongWaitTimer] = useState<NodeJS.Timeout>();
   const posthog = usePostHog();
+
   const saveOnboardingData = async (userId: string) => {
     console.log("user id", userId);
 
@@ -39,20 +42,25 @@ export const OnboardingLoading = ({
     }
 
     try {
+      // Get default timezone from device
+      const deviceTimezone = getCalendars()[0].timeZone || "UTC";
+
       const { error: transactionError } = await supabase.rpc(
         "save_onboarding_data",
         {
           p_user_id: userId,
-          p_phone_number: onboardingData.phoneNumber || null,
-          p_email: onboardingData.email || null,
+          p_phone_number: onboardingData.phoneNumber ?? "",
+          p_email: onboardingData.email ?? "",
           p_experience_level: onboardingData.pilatesLevel,
-          p_push_token: onboardingData.pushToken,
+          p_push_token: onboardingData.pushToken ?? "",
           p_goals: onboardingData.goals,
           p_weekly_sessions: onboardingData.routine,
           p_session_duration: onboardingData.duration,
           p_tracking_method: onboardingData.tracking,
-          p_reminder_time: onboardingData.reminderTime,
-          p_timezone: onboardingData.timezone,
+          p_reminder_time: onboardingData.reminderTime
+            ? onboardingData.reminderTime
+            : "09:00:00",
+          p_timezone: onboardingData.timezone || deviceTimezone,
         }
       );
 

@@ -1,0 +1,67 @@
+create or replace function save_onboarding_data(
+  p_user_id uuid,
+  p_phone_number text,
+  p_email text,
+  p_experience_level text,
+  p_push_token text,
+  p_goals text[],
+  p_weekly_sessions text,
+  p_session_duration text,
+  p_tracking_method text,
+  p_reminder_time text,
+  p_timezone text
+) returns void as $$
+declare
+  v_reminder_time time;
+  v_timezone text;
+begin
+  -- Handle timezone
+  v_timezone := COALESCE(NULLIF(p_timezone, ''), 'UTC');
+
+  -- Convert reminder_time to proper time type
+  begin
+    v_reminder_time := p_reminder_time::time;
+  exception when others then
+    v_reminder_time := '09:00:00'::time; -- Default to 9 AM if invalid
+  end;
+
+  -- Start transaction
+  begin
+    -- Insert user data with proper enum casting
+    insert into users (
+      id,
+      phone_number,
+      email,
+      experience_level,
+      push_token
+    ) values (
+      p_user_id,
+      NULLIF(p_phone_number, ''),
+      NULLIF(p_email, ''),
+      p_experience_level::experience_level_enum,
+      NULLIF(p_push_token, '')
+    );
+
+    -- Insert goals
+    insert into user_goals (user_id, name)
+    select p_user_id, unnest(p_goals);
+
+    -- Insert preferences with proper enum casting
+    insert into user_preferences (
+      user_id,
+      weekly_sessions,
+      session_duration,
+      tracking_method,
+      reminder_time,
+      timezone
+    ) values (
+      p_user_id,
+      p_weekly_sessions::weekly_sessions_enum,
+      p_session_duration::session_duration_enum,
+      p_tracking_method::tracking_method_enum,
+      v_reminder_time,
+      v_timezone
+    );
+  end;
+end;
+$$ language plpgsql;

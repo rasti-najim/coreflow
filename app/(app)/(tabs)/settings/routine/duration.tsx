@@ -8,7 +8,7 @@ import { Redirect } from "expo-router";
 
 const DURATION_OPTIONS = [
   {
-    value: "5",
+    value: "5-10",
     label: "5 minutes",
   },
   {
