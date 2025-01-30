@@ -6,6 +6,8 @@ import {
   Text,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { FontAwesome6 } from "@expo/vector-icons";
 import {
@@ -23,6 +25,7 @@ interface CustomSessionLayoutProps {
   isNextDisabled?: boolean;
   nextButtonText?: string;
   title: string;
+  hideNextButton?: boolean;
 }
 
 export const CustomSessionLayout = ({
@@ -34,25 +37,27 @@ export const CustomSessionLayout = ({
   isNextDisabled = false,
   nextButtonText = "Next",
   title,
+  hideNextButton = false,
 }: CustomSessionLayoutProps) => {
   const safeAreaInsets = useSafeAreaInsets();
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-    >
-      <SafeAreaView style={styles.container}>
-        <View style={styles.scrollContent}>
-          <View style={styles.header}>
-            <TouchableOpacity style={styles.backButton} onPress={onBack}>
-              <FontAwesome6 name="arrow-left" size={24} color="#513B2F" />
-            </TouchableOpacity>
-            <Text style={styles.title}>{title}</Text>
-          </View>
+    <TouchableWithoutFeedback style={{ flex: 1 }} onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <SafeAreaView style={styles.container}>
+          <View style={styles.scrollContent}>
+            <View style={styles.header}>
+              <TouchableOpacity style={styles.backButton} onPress={onBack}>
+                <FontAwesome6 name="arrow-left" size={24} color="#513B2F" />
+              </TouchableOpacity>
+              <Text style={styles.title}>{title}</Text>
+            </View>
 
-          {/* <View style={styles.progressBar}>
+            {/* <View style={styles.progressBar}>
             <View
               style={[
                 styles.progressFill,
@@ -61,24 +66,27 @@ export const CustomSessionLayout = ({
             />
           </View> */}
 
-          {children}
+            {children}
 
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={[
-                styles.nextButton,
-                isNextDisabled && styles.nextButtonDisabled,
-              ]}
-              onPress={onNext}
-              disabled={isNextDisabled}
-            >
-              <Text style={styles.nextButtonText}>{nextButtonText}</Text>
-              <Arrow color="#4A2318" />
-            </TouchableOpacity>
+            <View style={styles.footer}>
+              {!hideNextButton && (
+                <TouchableOpacity
+                  style={[
+                    styles.nextButton,
+                    isNextDisabled && styles.nextButtonDisabled,
+                  ]}
+                  onPress={onNext}
+                  disabled={isNextDisabled}
+                >
+                  {/* <Text style={styles.nextButtonText}>{nextButtonText}</Text> */}
+                  <Arrow color="#4A2318" />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
-        </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -120,12 +128,12 @@ const styles = StyleSheet.create({
   },
   footer: {
     marginTop: "auto",
-    paddingVertical: 24,
-    alignItems: "center",
+    // paddingVertical: 24,
+    alignItems: "flex-end",
   },
   nextButton: {
-    backgroundColor: "#FFE9D5",
-    borderWidth: 1,
+    // backgroundColor: "#FFE9D5",
+    // borderWidth: 1,
     borderColor: "#4A2318",
     borderRadius: 12,
     paddingVertical: 16,
