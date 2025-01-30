@@ -32,6 +32,15 @@ const FOCUS_OPTIONS = [
   { value: "core", label: "Core" },
 ];
 
+const SETUP_OPTIONS = [
+  {
+    value: "quick",
+    label: "Quick Setup",
+    description: "Choose duration and focus area",
+  },
+  { value: "custom", label: "Custom Setup", description: "Pick each exercise" },
+];
+
 export default function Page() {
   const posthog = usePostHog();
   const { user } = useAuth();
@@ -52,10 +61,13 @@ export default function Page() {
   const [isWorkoutStarted, setIsWorkoutStarted] = useState(false);
   const [session_id, setSessionId] = useState<string | null>(null);
   const currentExercise = exercises[currentExerciseIndex];
-  const progress = `${currentExerciseIndex + 1}/${exercises.length}`;
+  const [progress] = useState<string>(
+    `${currentExerciseIndex + 1}/${exercises.length}`
+  );
   const [autoPlay, setAutoPlay] = useState(false);
   const [isSavingProgress, setIsSavingProgress] = useState(false);
   const bottomSheetRef = useRef<BottomSheet>(null);
+  const [setupType, setSetupType] = useState<"quick" | "custom" | null>(null);
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -64,8 +76,9 @@ export default function Page() {
   const handleNext = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    if (currentStep === 1) {
-      // Create workout after selecting both duration and focus
+    if (currentStep === 0 && !setupType) return;
+
+    if (setupType === "quick" && currentStep === 2) {
       await handleCreateWorkout();
       return;
     }
@@ -254,6 +267,43 @@ export default function Page() {
         return (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>
+              How would you like to create your workout?
+            </Text>
+            <View style={styles.optionsContainer}>
+              {SETUP_OPTIONS.map(({ value, label, description }) => (
+                <TouchableOpacity
+                  key={value}
+                  style={[
+                    styles.setupOptionButton,
+                    setupType === value && styles.selectedOption,
+                  ]}
+                  onPress={() => setSetupType(value as "quick" | "custom")}
+                >
+                  <Text
+                    style={[
+                      styles.setupOptionTitle,
+                      setupType === value && styles.selectedOptionText,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.setupOptionDescription,
+                      setupType === value && styles.selectedOptionText,
+                    ]}
+                  >
+                    {description}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        );
+      case 1:
+        return (
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>
               How long do you want to work out?
             </Text>
             <View style={styles.optionsContainer}>
@@ -279,41 +329,47 @@ export default function Page() {
             </View>
           </View>
         );
-      case 1:
-        return (
-          <View style={styles.stepContainer}>
-            <Text style={styles.stepTitle}>
-              What would you like to focus on?
-            </Text>
-            <View style={styles.optionsContainer}>
-              {FOCUS_OPTIONS.map(({ value, label }) => (
-                <TouchableOpacity
-                  key={value}
-                  style={[
-                    styles.optionButton,
-                    selectedFocus === value && styles.selectedOption,
-                  ]}
-                  onPress={() => setSelectedFocus(value)}
-                >
-                  <Text
+      case 2:
+        if (setupType === "quick") {
+          return (
+            <View style={styles.stepContainer}>
+              <Text style={styles.stepTitle}>
+                What would you like to focus on?
+              </Text>
+              <View style={styles.optionsContainer}>
+                {FOCUS_OPTIONS.map(({ value, label }) => (
+                  <TouchableOpacity
+                    key={value}
                     style={[
-                      styles.optionText,
-                      selectedFocus === value && styles.selectedOptionText,
+                      styles.optionButton,
+                      selectedFocus === value && styles.selectedOption,
                     ]}
+                    onPress={() => setSelectedFocus(value)}
                   >
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selectedFocus === value && styles.selectedOptionText,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-          </View>
-        );
+          );
+        }
+        // Custom setup flow will go here
+        return null;
     }
   };
 
   const isNextDisabled = () => {
-    if (currentStep === 0) return !selectedDuration;
-    if (currentStep === 1) return !selectedFocus || isLoading;
+    if (currentStep === 0) return !setupType;
+    if (currentStep === 1) return !selectedDuration;
+    if (currentStep === 2 && setupType === "quick")
+      return !selectedFocus || isLoading;
     return false;
   };
 
@@ -364,11 +420,13 @@ export default function Page() {
   return (
     <CustomSessionLayout
       currentStep={currentStep}
-      totalSteps={2}
+      totalSteps={setupType === "quick" ? 3 : 4}
       onBack={handleBack}
       onNext={handleNext}
       isNextDisabled={isNextDisabled()}
-      nextButtonText={currentStep === 1 ? "Create Workout" : "Next"}
+      nextButtonText={
+        setupType === "quick" && currentStep === 2 ? "Create Workout" : "Next"
+      }
       title="Custom Workout"
     >
       {renderStep()}
@@ -463,5 +521,22 @@ const styles = StyleSheet.create({
     color: "#4A2318",
     marginBottom: 32,
     fontFamily: "matolha-regular",
+  },
+  setupOptionButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#4A2318",
+    alignItems: "center",
+  },
+  setupOptionTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#4A2318",
+  },
+  setupOptionDescription: {
+    fontSize: 12,
+    color: "#4A2318",
   },
 });
