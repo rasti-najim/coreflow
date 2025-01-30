@@ -92,9 +92,11 @@ export default function Modal() {
           .select(
             `
             *,
-            warmup:exercises!sessions_warmup_exercise_fkey(*),
-            cooldown:exercises!sessions_cooldown_exercise_fkey(*),
-            target_exercises
+            exercises:session_exercises(
+              exercise:exercises(*),
+              sequence,
+              duration
+            )
           `
           )
           .eq("id", session_id)
@@ -103,29 +105,18 @@ export default function Modal() {
 
         if (sessionError) throw sessionError;
 
-        // 2. Fetch all target exercises in a single query
-        const { data: targetExercises, error: targetError } =
-          sessionData.target_exercises &&
-          sessionData.target_exercises.length > 0
-            ? await supabase
-                .from("exercises")
-                .select("*")
-                .in("id", sessionData.target_exercises)
-            : { data: [], error: null };
-
-        if (targetError) throw targetError;
-
-        // 3. Combine all exercises
-        const allExercises = [
-          sessionData.warmup && { ...sessionData.warmup, type: "Warmup" },
-          ...targetExercises.map((exercise) => ({
+        // 2. Process exercises
+        const allExercises = sessionData.exercises
+          .sort((a, b) => a.sequence - b.sequence)
+          .map(({ exercise, duration }) => ({
             ...exercise,
-            type: "Target",
-          })),
-          sessionData.cooldown && { ...sessionData.cooldown, type: "Cooldown" },
-        ].filter(Boolean);
+            duration,
+            type: exercise?.type
+              ? exercise.type.charAt(0).toUpperCase() + exercise.type.slice(1)
+              : "Target",
+          }));
 
-        // 4. Get all unique file URLs that need signing
+        // 3. Get all unique file URLs that need signing
         const animationUrls = allExercises
           .filter((ex) => ex?.lottie_file_url)
           .map((ex) => ({ id: ex?.id, path: ex?.lottie_file_url }));
@@ -134,7 +125,7 @@ export default function Modal() {
           .filter((ex) => ex?.voice_description_url)
           .map((ex) => ({ id: ex?.id, path: ex?.voice_description_url }));
 
-        // 5. Generate signed URLs in parallel
+        // 4. Generate signed URLs in parallel
         const [animationSignedUrls, voiceSignedUrls] = await Promise.all([
           Promise.all(
             animationUrls.map(
@@ -158,7 +149,7 @@ export default function Modal() {
           ),
         ]);
 
-        // 6. Update state with all data at once
+        // 5. Update state with all data at once
         const newAnimationSources = Object.fromEntries(
           animationSignedUrls
             .filter(

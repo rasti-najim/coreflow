@@ -135,6 +135,8 @@ export default function Page() {
 
       // For custom workouts, use the selected exercises directly
       let exercisesData;
+      let sessionId = null;
+
       if (isCustom) {
         const { data, error } = await supabase
           .from("exercises")
@@ -142,12 +144,34 @@ export default function Page() {
           .in("id", selectedExercises);
 
         if (error) throw error;
-        exercisesData = data;
+        exercisesData = data.map((ex) => ({
+          ...ex,
+          duration: ex.duration || 15,
+        }));
+
+        // Only create session for custom workouts
+        const { data: sessionData, error: sessionError } = await supabase
+          .from("sessions")
+          .insert({
+            user_id: user.id,
+            name: "Custom Workout",
+            focus: "full body",
+            status: "scheduled",
+            is_custom: true,
+            scheduled_date: DateTime.now().toISODate(),
+          })
+          .select()
+          .single();
+
+        if (sessionError) throw sessionError;
+        sessionId = sessionData.id;
       } else {
-        // Create a session for quick setup
+        // Create a session for quick setup without saving to database
         const session = await createSession(
           selectedDuration ? parseInt(selectedDuration) : 45,
-          selectedFocus as any
+          selectedFocus as any,
+          user.id,
+          DateTime.now()
         );
 
         const { data, error } = await supabase
@@ -164,41 +188,28 @@ export default function Page() {
       }
 
       // Get signed URLs for all exercises
-      const [animationSignedUrls, voiceSignedUrls, sessionData] =
-        await Promise.all([
-          Promise.all(
-            exercisesData
-              .filter((ex) => ex.lottie_file_url)
-              .map((ex) =>
-                supabase.storage
-                  .from("exercise-animations")
-                  .createSignedUrl(ex.lottie_file_url!, 3600)
-                  .then((res) => ({ id: ex.id, url: res.data?.signedUrl }))
-              )
-          ),
-          Promise.all(
-            exercisesData
-              .filter((ex) => ex.voice_description_url)
-              .map((ex) =>
-                supabase.storage
-                  .from("exercise_sounds")
-                  .createSignedUrl(ex.voice_description_url!, 3600)
-                  .then((res) => ({ id: ex.id, url: res.data?.signedUrl }))
-              )
-          ),
-          supabase
-            .from("sessions")
-            .insert({
-              user_id: user.id,
-              scheduled_date: DateTime.now().toISODate(),
-              status: "scheduled",
-              is_custom: isCustom,
-              focus: selectedFocus as any,
-            })
-            .select()
-            .limit(1)
-            .single(),
-        ]);
+      const [animationSignedUrls, voiceSignedUrls] = await Promise.all([
+        Promise.all(
+          exercisesData
+            .filter((ex) => ex.lottie_file_url)
+            .map((ex) =>
+              supabase.storage
+                .from("exercise-animations")
+                .createSignedUrl(ex.lottie_file_url!, 3600)
+                .then((res) => ({ id: ex.id, url: res.data?.signedUrl }))
+            )
+        ),
+        Promise.all(
+          exercisesData
+            .filter((ex) => ex.voice_description_url)
+            .map((ex) =>
+              supabase.storage
+                .from("exercise_sounds")
+                .createSignedUrl(ex.voice_description_url!, 3600)
+                .then((res) => ({ id: ex.id, url: res.data?.signedUrl }))
+            )
+        ),
+      ]);
 
       // Convert arrays to objects for easier lookup
       const animationSourcesObj = Object.fromEntries(
@@ -217,12 +228,12 @@ export default function Page() {
       setVoiceDescriptionSources(voiceSourcesObj);
       setExercises(exercisesData);
       setIsWorkoutStarted(true);
-      setSessionId(sessionData.data?.id!);
+      setSessionId(sessionId);
 
       posthog.capture("user_chose_quick_setup", {
         duration: selectedDuration,
         focus: selectedFocus,
-        session_id: sessionData.data?.id,
+        session_id: sessionId,
         is_custom: isCustom,
       });
     } catch (error) {
@@ -239,30 +250,37 @@ export default function Page() {
       // Workout completed
       setIsSavingProgress(true);
       try {
-        const [progress, session] = await Promise.all([
-          supabase.from("progress").insert({
+        // Always save progress
+        const { error: progressError } = await supabase
+          .from("progress")
+          .insert({
             user_id: user.id,
             entry_type: "session",
-            session_id: session_id,
+            session_id: session_id, // This will be null for quick setup workouts
             added_on: DateTime.now().toISODate(),
-          }),
-          supabase
+          });
+
+        // Only update session status if it exists
+        if (session_id) {
+          const { error: sessionError } = await supabase
             .from("sessions")
             .update({ status: "completed" })
-            .eq("id", session_id!)
-            .eq("user_id", user.id),
-        ]);
+            .eq("id", session_id)
+            .eq("user_id", user.id);
 
-        if (progress.error || session.error) {
-          console.error(
-            "Error saving progress:",
-            progress.error || session.error
-          );
+          if (sessionError) {
+            console.error("Error updating session status:", sessionError);
+          }
         }
 
-        posthog.capture("user_completed_custom_workout", {
+        if (progressError) {
+          console.error("Error saving progress:", progressError);
+        }
+
+        posthog.capture("user_completed_workout", {
           duration: selectedDuration,
           session_id: session_id,
+          is_custom: !!session_id,
         });
 
         // Set flag for review request
@@ -486,8 +504,10 @@ export default function Page() {
                   .insert({
                     user_id: user.id,
                     name: name,
-                    exercises: selectedExercises,
-                    created_at: new Date().toISOString(),
+                    focus: "full body",
+                    status: "scheduled",
+                    is_custom: true,
+                    scheduled_date: DateTime.now().toISODate(),
                   })
                   .select()
                   .single();
@@ -542,10 +562,11 @@ export default function Page() {
           id={currentExercise.id}
           title={currentExercise.name}
           description={currentExercise.description}
-          duration={currentExercise.duration || 45}
-          animationSource={animationSources[currentExercise.id]}
-          type={currentExercise.type}
           focus={currentExercise.focus}
+          type={currentExercise.type}
+          animationSource={animationSources[currentExercise.id]}
+          voiceDescriptionSource={voiceDescriptionSources[currentExercise.id]}
+          duration={currentExercise.duration}
           onNext={handleNextWorkout}
           onQuit={() => router.back()}
           totalExercises={exercises.length}
@@ -553,7 +574,6 @@ export default function Page() {
           autoPlay={autoPlay}
           onAutoPlay={() => setAutoPlay(!autoPlay)}
           isSavingProgress={isSavingProgress}
-          voiceDescriptionSource={voiceDescriptionSources[currentExercise.id]}
           onShowDescription={() => bottomSheetRef.current?.expand()}
         />
 

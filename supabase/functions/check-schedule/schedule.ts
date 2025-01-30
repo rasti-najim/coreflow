@@ -164,12 +164,10 @@ function shuffle<T>(array: T[]): T[] {
 export async function createSession(
   supabase: SupabaseClient,
   sessionDuration: number,
-  focus: Focus
-): Promise<{
-  warmup_exercise: string;
-  target_exercises: string[];
-  cooldown_exercise: string;
-}> {
+  focus: Focus,
+  userId: string,
+  date: DateTime
+): Promise<string> {
   const totalSessionSeconds = sessionDuration * 60;
   const availableTimeForTargets =
     totalSessionSeconds - EXERCISE_TIMING.WARMUP_COOLDOWN_TIME;
@@ -191,7 +189,6 @@ export async function createSession(
     .select("id")
     .eq("type", "target");
 
-  // Add focus-specific filters using the FOCUS_MAP
   if (focus !== "full body") {
     targetQuery = targetQuery.overlaps("focus", FOCUS_MAP[focus]);
   }
@@ -208,11 +205,48 @@ export async function createSession(
     .limit(1)
     .single();
 
-  return {
-    warmup_exercise: warmup_exercise?.id ?? "",
-    target_exercises: target_exercises?.map((ex) => ex.id) ?? [],
-    cooldown_exercise: cooldown_exercise?.id ?? "",
-  };
+  // Create session first
+  const { data: session, error: sessionError } = await supabase
+    .from("sessions")
+    .insert({
+      user_id: userId,
+      focus: focus,
+      scheduled_date: date.toISODate(),
+      status: "scheduled",
+      is_custom: false,
+    })
+    .select()
+    .single();
+
+  if (sessionError) throw sessionError;
+
+  // Create session exercises
+  const exercises = [
+    { exercise_id: warmup_exercise?.id, sequence: 1, duration: 60 },
+    ...(target_exercises?.map((ex, index) => ({
+      exercise_id: ex.id,
+      sequence: index + 2,
+      duration: 60,
+    })) ?? []),
+    {
+      exercise_id: cooldown_exercise?.id,
+      sequence: (target_exercises?.length ?? 0) + 2,
+      duration: 60,
+    },
+  ].filter((ex) => ex.exercise_id);
+
+  const { error: exercisesError } = await supabase
+    .from("session_exercises")
+    .insert(
+      exercises.map((ex) => ({
+        session_id: session.id,
+        ...ex,
+      }))
+    );
+
+  if (exercisesError) throw exercisesError;
+
+  return session.id;
 }
 
 export async function createSchedule(
@@ -281,33 +315,13 @@ export async function createSchedule(
       const session = await createSession(
         supabase,
         data.session_duration,
-        day.focus
+        day.focus,
+        userId,
+        day.date
       );
       if (!session) continue;
 
-      const { warmup_exercise, target_exercises, cooldown_exercise } = session;
-
-      console.log(warmup_exercise, target_exercises, cooldown_exercise);
-
-      const { data: sessionData, error: sessionError } = await supabase
-        .from("sessions")
-        .insert({
-          user_id: userId,
-          focus: day.focus,
-          scheduled_date: day.date.toISODate(),
-          warmup_exercise: warmup_exercise,
-          target_exercises: target_exercises,
-          cooldown_exercise: cooldown_exercise,
-          status: "scheduled",
-          is_custom: false,
-        })
-        .select();
-
-      if (sessionError) {
-        throw sessionError;
-      }
-
-      console.log(sessionData);
+      console.log(session);
     }
 
     return schedule;

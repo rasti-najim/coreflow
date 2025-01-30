@@ -148,61 +148,90 @@ export type Database = {
           },
         ]
       }
-      sessions: {
+      session_exercises: {
         Row: {
-          cooldown_exercise: string | null
           created_at: string | null
-          focus: Database["public"]["Enums"]["session_focus_enum"]
+          duration: number
+          exercise_id: string
           id: string
-          is_custom: boolean
-          notification_sent: boolean
-          scheduled_date: string | null
-          status: Database["public"]["Enums"]["session_status_enum"]
-          target_exercises: string[] | null
-          user_id: string
-          warmup_exercise: string | null
+          sequence: number
+          session_id: string
         }
         Insert: {
-          cooldown_exercise?: string | null
           created_at?: string | null
-          focus: Database["public"]["Enums"]["session_focus_enum"]
+          duration?: number
+          exercise_id: string
           id?: string
-          is_custom?: boolean
-          notification_sent?: boolean
-          scheduled_date?: string | null
-          status: Database["public"]["Enums"]["session_status_enum"]
-          target_exercises?: string[] | null
-          user_id: string
-          warmup_exercise?: string | null
+          sequence?: number
+          session_id: string
         }
         Update: {
-          cooldown_exercise?: string | null
           created_at?: string | null
-          focus?: Database["public"]["Enums"]["session_focus_enum"]
+          duration?: number
+          exercise_id?: string
           id?: string
-          is_custom?: boolean
-          notification_sent?: boolean
-          scheduled_date?: string | null
-          status?: Database["public"]["Enums"]["session_status_enum"]
-          target_exercises?: string[] | null
-          user_id?: string
-          warmup_exercise?: string | null
+          sequence?: number
+          session_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "sessions_cooldown_exercise_fkey"
-            columns: ["cooldown_exercise"]
+            foreignKeyName: "session_exercises_exercise_id_fkey"
+            columns: ["exercise_id"]
             isOneToOne: false
             referencedRelation: "exercises"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "sessions_cooldown_exercise_fkey"
-            columns: ["cooldown_exercise"]
+            foreignKeyName: "session_exercises_exercise_id_fkey"
+            columns: ["exercise_id"]
             isOneToOne: false
             referencedRelation: "random_exercises"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "session_exercises_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          created_at: string | null
+          focus: Database["public"]["Enums"]["session_focus_enum"]
+          id: string
+          is_custom: boolean
+          name: string | null
+          notification_sent: boolean
+          scheduled_date: string | null
+          status: Database["public"]["Enums"]["session_status_enum"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          focus: Database["public"]["Enums"]["session_focus_enum"]
+          id?: string
+          is_custom?: boolean
+          name?: string | null
+          notification_sent?: boolean
+          scheduled_date?: string | null
+          status: Database["public"]["Enums"]["session_status_enum"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          focus?: Database["public"]["Enums"]["session_focus_enum"]
+          id?: string
+          is_custom?: boolean
+          name?: string | null
+          notification_sent?: boolean
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["session_status_enum"]
+          user_id?: string
+        }
+        Relationships: [
           {
             foreignKeyName: "sessions_user_id_fkey"
             columns: ["user_id"]
@@ -215,20 +244,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sessions_warmup_exercise_fkey"
-            columns: ["warmup_exercise"]
-            isOneToOne: false
-            referencedRelation: "exercises"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sessions_warmup_exercise_fkey"
-            columns: ["warmup_exercise"]
-            isOneToOne: false
-            referencedRelation: "random_exercises"
             referencedColumns: ["id"]
           },
         ]
