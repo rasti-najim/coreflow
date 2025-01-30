@@ -293,7 +293,11 @@ export default function Page() {
             onPress={handleStreakPress}
           >
             <Text style={styles.streakText}>
-              {isStreakLoading ? "..." : `${streak?.count} ${streak?.emoji}`}
+              {isStreakLoading
+                ? "..."
+                : `${streak?.count} 🔥${
+                    streak?.emoji !== "🔥" ? ` ${streak?.emoji}` : ""
+                  }`}
             </Text>
           </TouchableOpacity>
         </View>

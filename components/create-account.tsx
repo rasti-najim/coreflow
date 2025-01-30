@@ -20,6 +20,7 @@ import {
 } from "@react-native-google-signin/google-signin";
 import { Toast, ToastProps } from "./toast";
 import * as Linking from "expo-linking";
+import { Buffer } from "buffer";
 
 interface CreateAccountProps {
   title: string;
@@ -45,38 +46,6 @@ export const CreateAccount = ({
 
   const [toast, setToast] = useState<ToastProps | null>(null);
 
-  const checkIfUserExists = async (email?: string, phoneNumber?: string) => {
-    try {
-      if (!email && !phoneNumber)
-        throw new Error("Email or phone number is required");
-
-      if (email) {
-        const { data, error } = await supabase
-          .from("users")
-          .select("*")
-          .eq("email", email);
-
-        if (error) throw error;
-
-        if (data.length > 0) return true;
-      }
-      if (phoneNumber) {
-        const { data, error } = await supabase
-          .from("users")
-          .select("*")
-          .eq("phone_number", phoneNumber);
-
-        if (error) throw error;
-        if (data.length > 0) return true;
-      }
-
-      return false;
-    } catch (error) {
-      console.error("Failed to check if user exists:", error);
-      return null;
-    }
-  };
-
   const handleGoogleSignIn = async () => {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -86,6 +55,29 @@ export const CreateAccount = ({
       console.log(userInfo);
 
       if (userInfo?.data?.idToken) {
+        // User is signed in.
+        const {
+          data: { exists },
+        } = await supabase.functions.invoke("check-auth", {
+          body: { email: userInfo.data.user.email },
+        });
+
+        if (type === "login" && !exists) {
+          setToast({
+            message: "User does not exist. Please sign up instead.",
+            type: "error",
+          });
+          return;
+        }
+
+        if (type === "signup" && exists) {
+          setToast({
+            message: "User already exists. Please sign in instead.",
+            type: "error",
+          });
+          return;
+        }
+
         const {
           data: { user },
           error,
@@ -99,26 +91,6 @@ export const CreateAccount = ({
           throw new Error("Failed to sign in with Google.");
         }
 
-        // User is signed in.
-        console.log("google user", user);
-        const userExists = await checkIfUserExists(user.email, undefined);
-        if (type === "login" && !userExists) {
-          setToast({
-            message: "User does not exist. Please sign up instead.",
-            type: "error",
-          });
-          await supabase.functions.invoke("delete-account");
-          await supabase.auth.signOut();
-          return;
-        }
-        if (type === "signup" && userExists) {
-          setToast({
-            message: "User already exists. Please sign in instead.",
-            type: "error",
-          });
-          await supabase.auth.signOut();
-          return;
-        }
         onGoogleSignIn(user);
       }
     } catch (error: any) {
@@ -146,6 +118,48 @@ export const CreateAccount = ({
       console.log(credential);
 
       if (credential.identityToken) {
+        // Try to get email from credential first
+        let email = credential.email;
+
+        if (!email) {
+          // If email is private, try to decode it from the JWT token
+          try {
+            const tokenParts = credential.identityToken.split(".");
+            // Use Buffer for more reliable base64 decoding
+            const payload = JSON.parse(
+              Buffer.from(tokenParts[1], "base64").toString()
+            );
+            email = payload.email;
+          } catch (decodeError) {
+            console.error("Error decoding JWT token:", decodeError);
+          }
+        }
+
+        if (!email) {
+          throw new Error("Could not get email from Apple sign in.");
+        }
+
+        const {
+          data: { exists },
+        } = await supabase.functions.invoke("check-auth", {
+          body: { email },
+        });
+
+        if (type === "login" && !exists) {
+          setToast({
+            message: "User does not exist. Please sign up instead.",
+            type: "error",
+          });
+          return;
+        }
+        if (type === "signup" && exists) {
+          setToast({
+            message: "User already exists. Please sign in instead.",
+            type: "error",
+          });
+          return;
+        }
+
         const {
           error,
           data: { user },
@@ -163,24 +177,6 @@ export const CreateAccount = ({
         console.log("apple user", user);
         console.log("apple user email", user.email);
 
-        const userExists = await checkIfUserExists(user.email, undefined);
-        if (type === "login" && !userExists) {
-          setToast({
-            message: "User does not exist. Please sign up instead.",
-            type: "error",
-          });
-          await supabase.functions.invoke("delete-account");
-          await supabase.auth.signOut();
-          return;
-        }
-        if (type === "signup" && userExists) {
-          setToast({
-            message: "User already exists. Please sign in instead.",
-            type: "error",
-          });
-          await supabase.auth.signOut();
-          return;
-        }
         onAppleSignIn(user);
       } else {
         throw new Error("No identityToken.");
