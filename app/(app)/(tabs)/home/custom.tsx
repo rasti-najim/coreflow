@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ExerciseBottomSheet } from "@/components/exercise-bottom-sheet";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { usePostHog } from "posthog-react-native";
+import { CustomSessionLayout } from "@/components/custom-session-layout";
 
 const DURATION_OPTIONS = [
   { value: "5", label: "5 minutes" },
@@ -36,6 +37,7 @@ export default function Page() {
   const { user } = useAuth();
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(0);
   const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
   const [selectedFocus, setSelectedFocus] = useState<string | null>(null);
   const [exercises, setExercises] = useState<any[]>([]);
@@ -58,6 +60,27 @@ export default function Page() {
   if (!user) {
     return <Redirect href="/welcome" />;
   }
+
+  const handleNext = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    if (currentStep === 1) {
+      // Create workout after selecting both duration and focus
+      await handleCreateWorkout();
+      return;
+    }
+
+    setCurrentStep(currentStep + 1);
+  };
+
+  const handleBack = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (currentStep === 0) {
+      router.back();
+      return;
+    }
+    setCurrentStep(currentStep - 1);
+  };
 
   const handleCreateWorkout = async () => {
     if (!selectedDuration || !selectedFocus || !user) return;
@@ -180,7 +203,7 @@ export default function Page() {
     }
   };
 
-  const handleNext = async () => {
+  const handleNextWorkout = async () => {
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
     } else {
@@ -225,6 +248,75 @@ export default function Page() {
     }
   };
 
+  const renderStep = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>
+              How long do you want to work out?
+            </Text>
+            <View style={styles.optionsContainer}>
+              {DURATION_OPTIONS.map(({ value, label }) => (
+                <TouchableOpacity
+                  key={value}
+                  style={[
+                    styles.optionButton,
+                    selectedDuration === value && styles.selectedOption,
+                  ]}
+                  onPress={() => setSelectedDuration(value)}
+                >
+                  <Text
+                    style={[
+                      styles.optionText,
+                      selectedDuration === value && styles.selectedOptionText,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        );
+      case 1:
+        return (
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>
+              What would you like to focus on?
+            </Text>
+            <View style={styles.optionsContainer}>
+              {FOCUS_OPTIONS.map(({ value, label }) => (
+                <TouchableOpacity
+                  key={value}
+                  style={[
+                    styles.optionButton,
+                    selectedFocus === value && styles.selectedOption,
+                  ]}
+                  onPress={() => setSelectedFocus(value)}
+                >
+                  <Text
+                    style={[
+                      styles.optionText,
+                      selectedFocus === value && styles.selectedOptionText,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        );
+    }
+  };
+
+  const isNextDisabled = () => {
+    if (currentStep === 0) return !selectedDuration;
+    if (currentStep === 1) return !selectedFocus || isLoading;
+    return false;
+  };
+
   if (isWorkoutStarted && exercises.length > 0) {
     const currentExercise = exercises[currentExerciseIndex];
     return (
@@ -246,7 +338,7 @@ export default function Page() {
           animationSource={animationSources[currentExercise.id]}
           type={currentExercise.type}
           focus={currentExercise.focus}
-          onNext={handleNext}
+          onNext={handleNextWorkout}
           onQuit={() => router.back()}
           totalExercises={exercises.length}
           currentExercise={currentExerciseIndex + 1}
@@ -270,84 +362,17 @@ export default function Page() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { paddingHorizontal: 16 }]}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.dismissButton}
-          onPress={() => router.back()}
-        >
-          <FontAwesome name="times" size={20} color="#4A2318" />
-        </TouchableOpacity>
-        <Text
-          style={[
-            styles.title,
-            { flex: 1, textAlign: "center", marginLeft: -40 },
-          ]}
-        >
-          Custom Workout
-        </Text>
-      </View>
-
-      <Text style={styles.sectionTitle}>Duration</Text>
-      <View style={styles.optionsContainer}>
-        {DURATION_OPTIONS.map(({ value, label }) => (
-          <TouchableOpacity
-            key={value}
-            style={[
-              styles.optionButton,
-              selectedDuration === value && styles.selectedOption,
-            ]}
-            onPress={() => setSelectedDuration(value)}
-          >
-            <Text
-              style={[
-                styles.optionText,
-                selectedDuration === value && styles.selectedOptionText,
-              ]}
-            >
-              {label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text style={styles.sectionTitle}>Focus Area</Text>
-      <View style={styles.optionsContainer}>
-        {FOCUS_OPTIONS.map(({ value, label }) => (
-          <TouchableOpacity
-            key={value}
-            style={[
-              styles.optionButton,
-              selectedFocus === value && styles.selectedOption,
-            ]}
-            onPress={() => setSelectedFocus(value)}
-          >
-            <Text
-              style={[
-                styles.optionText,
-                selectedFocus === value && styles.selectedOptionText,
-              ]}
-            >
-              {label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <TouchableOpacity
-        style={[
-          styles.createButton,
-          isLoading && styles.createButtonDisabled,
-          (!selectedDuration || !selectedFocus) && styles.createButtonDisabled,
-        ]}
-        onPress={handleCreateWorkout}
-        disabled={!selectedDuration || !selectedFocus || isLoading}
-      >
-        <Text style={styles.createButtonText}>
-          {isLoading ? "Creating..." : "Create Workout"}
-        </Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+    <CustomSessionLayout
+      currentStep={currentStep}
+      totalSteps={2}
+      onBack={handleBack}
+      onNext={handleNext}
+      isNextDisabled={isNextDisabled()}
+      nextButtonText={currentStep === 1 ? "Create Workout" : "Next"}
+      title="Custom Workout"
+    >
+      {renderStep()}
+    </CustomSessionLayout>
   );
 }
 
@@ -427,5 +452,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#FFE9D5",
+  },
+  stepContainer: {
+    flex: 1,
+    paddingTop: 24,
+  },
+  stepTitle: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#4A2318",
+    marginBottom: 32,
+    fontFamily: "matolha-regular",
   },
 });
