@@ -248,7 +248,16 @@ export async function createSession(
       sequence: (target_exercises?.length ?? 0) + 2,
       duration: EXERCISE_TIMING.TOTAL_TIME,
     },
-  ].filter((ex) => ex.exercise_id);
+  ].filter(
+    (
+      ex
+    ): ex is {
+      session_id: string;
+      exercise_id: string;
+      sequence: number;
+      duration: number;
+    } => Boolean(ex.exercise_id)
+  );
 
   // Insert all session exercises in a single query
   const { error: exercisesError } = await supabase
@@ -315,33 +324,15 @@ export async function createSchedule(
 
     // Create all sessions in parallel
     const sessionPromises = schedule.map(async (day) => {
-      const sessionId = await createSession(
+      await createSession(
         preferencesResponse.data.session_duration,
         day.focus,
         userId,
         day.date
       );
-      if (!sessionId) return null;
-
-      return {
-        id: sessionId,
-        user_id: userId,
-        focus: day.focus,
-        scheduled_date: day.date.toISODate(),
-        status: "scheduled",
-        is_custom: false,
-      };
     });
 
-    const sessionData = (await Promise.all(sessionPromises)).filter(Boolean);
-
-    // Batch insert all sessions
-    const { data: insertedSessions, error: insertError } = await supabase
-      .from("sessions")
-      .insert(sessionData)
-      .select();
-
-    if (insertError) throw insertError;
+    await Promise.all(sessionPromises);
 
     return schedule;
   } catch (error) {
