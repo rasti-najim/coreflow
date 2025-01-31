@@ -91,6 +91,9 @@ export default function Page() {
     any | null
   >(null);
   const exerciseDetailsRef = useRef<BottomSheet>(null);
+  const [exerciseDurations, setExerciseDurations] = useState<{
+    [key: string]: number;
+  }>({});
 
   if (!user) {
     return <Redirect href="/welcome" />;
@@ -129,7 +132,7 @@ export default function Page() {
     setCurrentStep(currentStep - 1);
   };
 
-  const handleCreateWorkout = async (isCustom = false) => {
+  const handleCreateWorkout = async (isCustom = false, shouldSave = false) => {
     if (!user) return;
     if (!isCustom && (!selectedDuration || !selectedFocus)) return;
 
@@ -150,25 +153,27 @@ export default function Page() {
         if (error) throw error;
         exercisesData = data.map((ex) => ({
           ...ex,
-          duration: ex.duration || 15,
+          duration: exerciseDurations[ex.id] || 15,
         }));
 
-        // Only create session for custom workouts
-        const { data: sessionData, error: sessionError } = await supabase
-          .from("sessions")
-          .insert({
-            user_id: user.id,
-            name: "Custom Workout",
-            focus: "full body",
-            status: "scheduled",
-            is_custom: true,
-            scheduled_date: DateTime.now().toISODate(),
-          })
-          .select()
-          .single();
+        // Only create session if shouldSave is true
+        if (shouldSave) {
+          const { data: sessionData, error: sessionError } = await supabase
+            .from("sessions")
+            .insert({
+              user_id: user.id,
+              name: "Custom Workout",
+              focus: "full body",
+              status: "scheduled",
+              is_custom: true,
+              scheduled_date: DateTime.now().toISODate(),
+            })
+            .select()
+            .single();
 
-        if (sessionError) throw sessionError;
-        sessionId = sessionData.id;
+          if (sessionError) throw sessionError;
+          sessionId = sessionData.id;
+        }
       } else {
         const { warmup, target, cooldown } = await getExercisesForSession(
           selectedFocus as Focus,
@@ -328,9 +333,10 @@ export default function Page() {
           .map((item) => [item.id, item.url!])
       );
 
-      // Attach signed URLs to exercises
-      const exercisesWithUrls = data.map((exercise) => ({
+      // Attach signed URLs to exercises and set default duration
+      const exercisesWithUrls = data.map((exercise: any) => ({
         ...exercise,
+        duration: 15, // Always set to 15 since it's not in the DB
         lottie_file_url: signedUrlsObj[exercise.id] || exercise.lottie_file_url,
       }));
 
@@ -479,6 +485,7 @@ export default function Page() {
               }}
               isLoading={isLoadingExercises}
               onShowExerciseDetails={(exercise) => {
+                console.log("Showing exercise details:", exercise);
                 setSelectedExerciseDetails(exercise);
                 exerciseDetailsRef.current?.expand();
               }}
@@ -493,11 +500,10 @@ export default function Page() {
               selectedExercises.includes(ex.id)
             )}
             onUpdateDuration={(exerciseId, duration) => {
-              setAvailableExercises((exercises) =>
-                exercises.map((ex) =>
-                  ex.id === exerciseId ? { ...ex, duration } : ex
-                )
-              );
+              setExerciseDurations((prev) => ({
+                ...prev,
+                [exerciseId]: duration,
+              }));
             }}
           />
         );
@@ -505,9 +511,12 @@ export default function Page() {
       case 4:
         return (
           <SaveCustomWorkout
-            exercises={availableExercises.filter((ex) =>
-              selectedExercises.includes(ex.id)
-            )}
+            exercises={availableExercises
+              .filter((ex) => selectedExercises.includes(ex.id))
+              .map((ex) => ({
+                ...ex,
+                duration: exerciseDurations[ex.id] || 15,
+              }))}
             onSave={async (name) => {
               try {
                 const { data, error } = await supabase
@@ -530,7 +539,7 @@ export default function Page() {
                   exercise_count: selectedExercises.length,
                 });
 
-                await handleCreateWorkout();
+                await handleCreateWorkout(true, true);
               } catch (error) {
                 console.error("Error saving custom workout:", error);
               }
@@ -539,7 +548,7 @@ export default function Page() {
               posthog.capture("user_started_custom_workout_without_saving", {
                 exercise_count: selectedExercises.length,
               });
-              await handleCreateWorkout(true);
+              await handleCreateWorkout(true, false);
             }}
           />
         );
@@ -551,7 +560,7 @@ export default function Page() {
     if (currentStep === 1) return !selectedDuration;
     if (currentStep === 2) {
       if (setupType === "quick") return !selectedFocus || isLoading;
-      if (setupType === "custom") return selectedExercises.length < 3;
+      if (setupType === "custom") return selectedExercises.length === 0;
     }
     return false;
   };
@@ -601,7 +610,7 @@ export default function Page() {
   }
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <CustomSessionLayout
         currentStep={currentStep}
         totalSteps={setupType === "quick" ? 3 : 4}
@@ -621,7 +630,7 @@ export default function Page() {
         exercise={selectedExerciseDetails}
         bottomSheetRef={exerciseDetailsRef}
       />
-    </>
+    </View>
   );
 }
 

@@ -60,7 +60,7 @@ export const SelectExercises = ({
           <>
             <Text style={styles.stepTitle}>Select your exercises</Text>
             <Text style={styles.stepSubtitle}>
-              Choose at least 3 exercises for your workout
+              Choose exercises for your workout
             </Text>
 
             <ScrollView

@@ -1,7 +1,10 @@
 import React, { useRef } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import LottieView from "lottie-react-native";
-import BottomSheet, { BottomSheetBackdrop } from "@gorhom/bottom-sheet";
+import BottomSheet, {
+  BottomSheetBackdrop,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
 
 interface ExerciseDetailsModalProps {
   exercise: {
@@ -38,7 +41,7 @@ export const ExerciseDetailsModal = ({
       backgroundStyle={styles.bottomSheetBackground}
       handleIndicatorStyle={styles.bottomSheetIndicator}
     >
-      <View style={styles.modalContent}>
+      <BottomSheetView style={styles.modalContent}>
         <Text style={styles.title}>{exercise.name}</Text>
 
         <View style={styles.animationContainer}>
@@ -68,7 +71,7 @@ export const ExerciseDetailsModal = ({
             <Text style={styles.twoSided}>* Two-sided exercise</Text>
           )}
         </View>
-      </View>
+      </BottomSheetView>
     </BottomSheet>
   );
 };
