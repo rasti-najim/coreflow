@@ -13,12 +13,14 @@ interface SaveCustomWorkoutProps {
   exercises: any[];
   onSave: (name: string) => void;
   onStartWithoutSaving: () => void;
+  isSaving?: boolean;
 }
 
 export const SaveCustomWorkout = ({
   exercises,
   onSave,
   onStartWithoutSaving,
+  isSaving = false,
 }: SaveCustomWorkoutProps) => {
   const [workoutName, setWorkoutName] = useState<string>("");
 
@@ -62,16 +64,24 @@ export const SaveCustomWorkout = ({
         <TouchableOpacity
           style={styles.startButton}
           onPress={onStartWithoutSaving}
+          disabled={isSaving}
         >
-          <Text style={styles.startButtonText}>Start Without Saving</Text>
+          <Text style={styles.startButtonText}>
+            {isSaving ? "Saving..." : "Start Without Saving"}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.saveButton, !workoutName && styles.saveButtonDisabled]}
+          style={[
+            styles.saveButton,
+            (!workoutName || isSaving) && styles.saveButtonDisabled,
+          ]}
           onPress={() => workoutName && onSave(workoutName)}
-          disabled={!workoutName}
+          disabled={!workoutName || isSaving}
         >
-          <Text style={styles.saveButtonText}>Save & Start</Text>
+          <Text style={styles.saveButtonText}>
+            {isSaving ? "Saving..." : "Save & Start"}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

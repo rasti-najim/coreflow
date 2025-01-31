@@ -530,6 +530,7 @@ export default function Page() {
                     scheduled_date: DateTime.now().toISODate(),
                   })
                   .select()
+                  .limit(1)
                   .single();
 
                 if (error) throw error;

@@ -13,6 +13,7 @@ import { ExerciseDetailsModal } from "./exercise-details-modal";
 import * as Haptics from "expo-haptics";
 import LottieView from "lottie-react-native";
 import BottomSheet from "@gorhom/bottom-sheet";
+import { Loading } from "./loading";
 
 const FILTER_OPTIONS = [
   { value: "all", label: "All" },
@@ -53,6 +54,20 @@ export const SelectExercises = ({
     activeFilter === "all" ? true : exercise.type === activeFilter
   );
 
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.stepTitle}>Select your exercises</Text>
+        <Text style={styles.stepSubtitle}>
+          Choose at least 3 exercises for your workout
+        </Text>
+        <View style={styles.loadingContainer}>
+          <Loading size={50} />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -60,7 +75,7 @@ export const SelectExercises = ({
           <>
             <Text style={styles.stepTitle}>Select your exercises</Text>
             <Text style={styles.stepSubtitle}>
-              Choose exercises for your workout
+              Choose at least 3 exercises for your workout
             </Text>
 
             <ScrollView
@@ -207,6 +222,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    marginTop: 32,
   },
   exerciseList: {
     flex: 1,
