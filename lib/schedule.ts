@@ -2,7 +2,7 @@ import supabase from "./supabase";
 import { DateTime } from "luxon";
 
 type WeeklySession = "3" | "5" | "everyday";
-type Focus = "full body" | "upper body" | "lower body" | "core";
+export type Focus = "full body" | "upper body" | "lower body" | "core";
 type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 type ScheduleAction = "create" | "update" | "extend";
 
@@ -168,13 +168,10 @@ function shuffle<T>(array: T[]): T[] {
   return newArray;
 }
 
-export async function createSession(
-  sessionDuration: number, // in minutes
+export async function getExercisesForSession(
   focus: Focus,
-  userId: string,
-  date: DateTime = DateTime.now()
-): Promise<string> {
-  // Returns the session ID
+  sessionDuration: number
+): Promise<{ warmup: any; target: any[]; cooldown: any }> {
   const totalSessionSeconds = sessionDuration * 60;
   const availableTimeForTargets =
     totalSessionSeconds - EXERCISE_TIMING.WARMUP_COOLDOWN_TIME;
@@ -185,7 +182,7 @@ export async function createSession(
   // Get warmup exercise
   const { data: warmup_exercise } = await supabase
     .from("random_exercises")
-    .select("id")
+    .select("*", "exercises(*)")
     .eq("type", "warmup")
     .limit(1)
     .single();
@@ -193,7 +190,7 @@ export async function createSession(
   // Get target exercises based on focus
   let targetQuery = supabase
     .from("random_exercises")
-    .select("id")
+    .select("*", "exercises(*)")
     .eq("type", "target");
 
   // Add focus-specific filters using the FOCUS_MAP
@@ -208,10 +205,29 @@ export async function createSession(
   // Get cooldown exercise
   const { data: cooldown_exercise } = await supabase
     .from("random_exercises")
-    .select("id")
+    .select("*", "exercises(*)")
     .eq("type", "cooldown")
     .limit(1)
     .single();
+
+  return {
+    warmup: warmup_exercise,
+    target: target_exercises || [],
+    cooldown: cooldown_exercise,
+  };
+}
+
+export async function createSession(
+  sessionDuration: number,
+  focus: Focus,
+  userId: string,
+  date: DateTime = DateTime.now()
+): Promise<string> {
+  // Get exercises for the session
+  const { warmup, target, cooldown } = await getExercisesForSession(
+    focus,
+    sessionDuration
+  );
 
   // Create session first
   const { data: session, error: sessionError } = await supabase
@@ -232,11 +248,11 @@ export async function createSession(
   const exercises = [
     {
       session_id: session.id,
-      exercise_id: warmup_exercise?.id,
+      exercise_id: warmup?.id,
       sequence: 1,
       duration: EXERCISE_TIMING.TOTAL_TIME,
     },
-    ...(target_exercises?.map((ex, index) => ({
+    ...(target?.map((ex, index) => ({
       session_id: session.id,
       exercise_id: ex.id,
       sequence: index + 2,
@@ -244,8 +260,8 @@ export async function createSession(
     })) ?? []),
     {
       session_id: session.id,
-      exercise_id: cooldown_exercise?.id,
-      sequence: (target_exercises?.length ?? 0) + 2,
+      exercise_id: cooldown?.id,
+      sequence: (target?.length ?? 0) + 2,
       duration: EXERCISE_TIMING.TOTAL_TIME,
     },
   ].filter(

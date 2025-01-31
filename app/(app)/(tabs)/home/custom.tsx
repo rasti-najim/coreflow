@@ -13,7 +13,12 @@ import * as Haptics from "expo-haptics";
 import { FontAwesome } from "@expo/vector-icons";
 import supabase from "@/lib/supabase";
 import { useAuth } from "@/components/auth-context";
-import { createSession } from "@/lib/schedule";
+import {
+  createSession,
+  Focus,
+  FOCUS_MAP,
+  getExercisesForSession,
+} from "@/lib/schedule";
 import { ExerciseLayout } from "@/components/excercise-layout";
 import { DateTime } from "luxon";
 import { requestReview } from "@/lib/store-review";
@@ -59,7 +64,7 @@ export default function Page() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
-  const [selectedFocus, setSelectedFocus] = useState<string | null>(null);
+  const [selectedFocus, setSelectedFocus] = useState<Focus | null>(null);
   const [exercises, setExercises] = useState<any[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -133,7 +138,6 @@ export default function Page() {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      // For custom workouts, use the selected exercises directly
       let exercisesData;
       let sessionId = null;
 
@@ -166,25 +170,21 @@ export default function Page() {
         if (sessionError) throw sessionError;
         sessionId = sessionData.id;
       } else {
-        // Create a session for quick setup without saving to database
-        const session = await createSession(
-          selectedDuration ? parseInt(selectedDuration) : 45,
-          selectedFocus as any,
-          user.id,
-          DateTime.now()
+        const { warmup, target, cooldown } = await getExercisesForSession(
+          selectedFocus as Focus,
+          selectedDuration ? parseInt(selectedDuration) : 45
         );
 
-        const { data, error } = await supabase
-          .from("exercises")
-          .select("*")
-          .in("id", [
-            session.warmup_exercise,
-            ...session.target_exercises,
-            session.cooldown_exercise,
-          ]);
+        console.log("Exercise data:", { warmup, target, cooldown });
 
-        if (error) throw error;
-        exercisesData = data;
+        // Make sure each part is an array before spreading
+        exercisesData = [
+          ...(Array.isArray(warmup) ? warmup : [warmup]),
+          ...(Array.isArray(target) ? target : []),
+          ...(Array.isArray(cooldown) ? [cooldown] : []),
+        ].filter(Boolean); // Remove any null/undefined values
+
+        console.log("Combined exercises:", exercisesData);
       }
 
       // Get signed URLs for all exercises
@@ -237,7 +237,7 @@ export default function Page() {
         is_custom: isCustom,
       });
     } catch (error) {
-      console.error("Error creating custom workout:", error);
+      console.error("Error creating workout:", error);
     } finally {
       setIsLoading(false);
     }
@@ -256,11 +256,10 @@ export default function Page() {
           .insert({
             user_id: user.id,
             entry_type: "session",
-            session_id: session_id, // This will be null for quick setup workouts
             added_on: DateTime.now().toISODate(),
           });
 
-        // Only update session status if it exists
+        // Only update session status if it exists (custom workouts)
         if (session_id) {
           const { error: sessionError } = await supabase
             .from("sessions")
@@ -424,30 +423,42 @@ export default function Page() {
         if (setupType === "quick") {
           return (
             <View style={styles.stepContainer}>
-              <Text style={styles.stepTitle}>
-                What would you like to focus on?
-              </Text>
-              <View style={styles.optionsContainer}>
-                {FOCUS_OPTIONS.map(({ value, label }) => (
-                  <TouchableOpacity
-                    key={value}
-                    style={[
-                      styles.optionButton,
-                      selectedFocus === value && styles.selectedOption,
-                    ]}
-                    onPress={() => setSelectedFocus(value)}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        selectedFocus === value && styles.selectedOptionText,
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              {isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#4A2318" />
+                  <Text style={styles.loadingText}>
+                    Creating your workout...
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.stepTitle}>
+                    What would you like to focus on?
+                  </Text>
+                  <View style={styles.optionsContainer}>
+                    {FOCUS_OPTIONS.map(({ value, label }) => (
+                      <TouchableOpacity
+                        key={value}
+                        style={[
+                          styles.optionButton,
+                          selectedFocus === value && styles.selectedOption,
+                        ]}
+                        onPress={() => setSelectedFocus(value)}
+                      >
+                        <Text
+                          style={[
+                            styles.optionText,
+                            selectedFocus === value &&
+                              styles.selectedOptionText,
+                          ]}
+                        >
+                          {label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </>
+              )}
             </View>
           );
         }
@@ -566,7 +577,7 @@ export default function Page() {
           type={currentExercise.type}
           animationSource={animationSources[currentExercise.id]}
           voiceDescriptionSource={voiceDescriptionSources[currentExercise.id]}
-          duration={currentExercise.duration}
+          duration={currentExercise.duration || 45}
           onNext={handleNextWorkout}
           onQuit={() => router.back()}
           totalExercises={exercises.length}
@@ -723,6 +734,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#4A2318",
+    marginTop: 16,
+    textAlign: "center",
   },
   exerciseList: {
     flex: 1,
