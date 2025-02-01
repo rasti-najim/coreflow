@@ -1,4 +1,11 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState, useEffect, useRef } from "react";
 import { Redirect, useRouter } from "expo-router";
@@ -6,7 +13,12 @@ import * as Haptics from "expo-haptics";
 import { FontAwesome } from "@expo/vector-icons";
 import supabase from "@/lib/supabase";
 import { useAuth } from "@/components/auth-context";
-import { createSession } from "@/lib/schedule";
+import {
+  createSession,
+  Focus,
+  FOCUS_MAP,
+  getExercisesForSession,
+} from "@/lib/schedule";
 import { ExerciseLayout } from "@/components/excercise-layout";
 import { DateTime } from "luxon";
 import { requestReview } from "@/lib/store-review";
@@ -15,7 +27,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ExerciseBottomSheet } from "@/components/exercise-bottom-sheet";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { usePostHog } from "posthog-react-native";
-
+import { CustomSessionLayout } from "@/components/custom-session-layout";
+import { SelectExercises } from "@/components/select-exercises";
+import { SelectExerciseDurations } from "@/components/select-exercise-durations";
+import { ExerciseDetailsModal } from "@/components/exercise-details-modal";
+import { SaveCustomWorkout } from "@/components/save-custom-workout";
+import { saveWorkoutProgress } from "@/lib/progress";
 const DURATION_OPTIONS = [
   { value: "5", label: "5 minutes" },
   { value: "10", label: "10 minutes" },
@@ -31,13 +48,23 @@ const FOCUS_OPTIONS = [
   { value: "core", label: "Core" },
 ];
 
+const SETUP_OPTIONS = [
+  {
+    value: "quick",
+    label: "Quick Setup",
+    description: "Choose duration and focus area",
+  },
+  { value: "custom", label: "Custom Setup", description: "Pick each exercise" },
+];
+
 export default function Page() {
   const posthog = usePostHog();
   const { user } = useAuth();
   const safeArea = useSafeAreaInsets();
   const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(0);
   const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
-  const [selectedFocus, setSelectedFocus] = useState<string | null>(null);
+  const [selectedFocus, setSelectedFocus] = useState<Focus | null>(null);
   const [exercises, setExercises] = useState<any[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,104 +77,161 @@ export default function Page() {
   const [isWorkoutStarted, setIsWorkoutStarted] = useState(false);
   const [session_id, setSessionId] = useState<string | null>(null);
   const currentExercise = exercises[currentExerciseIndex];
-  const progress = `${currentExerciseIndex + 1}/${exercises.length}`;
+  const [progress] = useState<string>(
+    `${currentExerciseIndex + 1}/${exercises.length}`
+  );
   const [autoPlay, setAutoPlay] = useState(false);
   const [isSavingProgress, setIsSavingProgress] = useState(false);
   const bottomSheetRef = useRef<BottomSheet>(null);
+  const [setupType, setSetupType] = useState<"quick" | "custom" | null>(null);
+  const [availableExercises, setAvailableExercises] = useState<any[]>([]);
+  const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
+  const [isLoadingExercises, setIsLoadingExercises] = useState(false);
+  const [selectedExerciseDetails, setSelectedExerciseDetails] = useState<
+    any | null
+  >(null);
+  const exerciseDetailsRef = useRef<BottomSheet>(null);
+  const [exerciseDurations, setExerciseDurations] = useState<{
+    [key: string]: number;
+  }>({});
 
   if (!user) {
     return <Redirect href="/welcome" />;
   }
 
-  const handleCreateWorkout = async () => {
-    if (!selectedDuration || !selectedFocus || !user) return;
+  const handleNext = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    if (currentStep === 0 && !setupType) return;
+
+    if (setupType === "quick" && currentStep === 2) {
+      await handleCreateWorkout();
+      return;
+    }
+
+    if (setupType === "custom" && currentStep === 0) {
+      setCurrentStep(2);
+      return;
+    }
+
+    setCurrentStep(currentStep + 1);
+  };
+
+  const handleBack = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+    if (currentStep === 0) {
+      router.back();
+      return;
+    }
+
+    if (setupType === "custom" && currentStep === 2) {
+      setCurrentStep(0);
+      return;
+    }
+
+    setCurrentStep(currentStep - 1);
+  };
+
+  const handleCreateWorkout = async (
+    isCustom = false,
+    shouldSave = false,
+    existingSessionId?: string
+  ) => {
+    if (!user) return;
+    if (!isCustom && (!selectedDuration || !selectedFocus)) return;
+
     setIsLoading(true);
 
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      // Create a custom session
-      const session = await createSession(
-        parseInt(selectedDuration),
-        selectedFocus as any
-      );
+      let exercisesData;
+      let sessionId: string | null = existingSessionId || null;
 
-      // Fetch all exercises in a single query
-      const { data: exercisesData, error: exercisesError } = await supabase
-        .from("exercises")
-        .select("*")
-        .in("id", [
-          session.warmup_exercise,
-          ...session.target_exercises,
-          session.cooldown_exercise,
-        ]);
+      if (isCustom) {
+        const { data, error } = await supabase
+          .from("exercises")
+          .select("*")
+          .in("id", selectedExercises);
 
-      if (exercisesError) throw exercisesError;
-
-      // Organize exercises by type and sequence
-      const warmupExercise = exercisesData.find(
-        (exercise) => exercise.id === session.warmup_exercise
-      );
-      const targetExercises = exercisesData.filter((exercise) =>
-        session.target_exercises.includes(exercise.id)
-      );
-      const cooldownExercise = exercisesData.find(
-        (exercise) => exercise.id === session.cooldown_exercise
-      );
-
-      const allExercises = [
-        { ...warmupExercise, type: "Warmup" },
-        ...targetExercises.map((exercise) => ({ ...exercise, type: "Target" })),
-        { ...cooldownExercise, type: "Cooldown" },
-      ].filter(Boolean);
-
-      // Collect all file URLs that need signing
-      const animationUrls = allExercises
-        .filter((ex) => ex.lottie_file_url)
-        .map((ex) => ({
-          id: ex.id,
-          path: ex.lottie_file_url!,
+        if (error) throw error;
+        exercisesData = data.map((ex) => ({
+          ...ex,
+          duration: exerciseDurations[ex.id] || 15,
         }));
 
-      const voiceUrls = allExercises
-        .filter((ex) => ex.voice_description_url)
-        .map((ex) => ({
-          id: ex.id,
-          path: ex.voice_description_url!,
-        }));
-
-      // Generate signed URLs in parallel
-      const [animationSignedUrls, voiceSignedUrls, sessionData] =
-        await Promise.all([
-          Promise.all(
-            animationUrls.map((url) =>
-              supabase.storage
-                .from("exercise-animations")
-                .createSignedUrl(url.path, 3600)
-                .then((res) => ({ id: url.id, url: res.data?.signedUrl }))
-            )
-          ),
-          Promise.all(
-            voiceUrls.map((url) =>
-              supabase.storage
-                .from("exercise_sounds")
-                .createSignedUrl(url.path, 3600)
-                .then((res) => ({ id: url.id, url: res.data?.signedUrl }))
-            )
-          ),
-          supabase
+        // Only create session if shouldSave is true AND we don't have an existing sessionId
+        if (shouldSave && !existingSessionId) {
+          const { data: sessionData, error: sessionError } = await supabase
             .from("sessions")
             .insert({
               user_id: user.id,
-              scheduled_date: DateTime.now().toISODate(),
+              name: "Custom Workout",
+              focus: "full body",
               status: "scheduled",
               is_custom: true,
-              focus: selectedFocus as any,
+              scheduled_date: DateTime.now().toISODate(),
             })
             .select()
-            .limit(1)
-            .single(),
-        ]);
+            .single();
+
+          if (sessionError) throw sessionError;
+          sessionId = sessionData.id;
+
+          const sessionExercises = exercisesData.map((exercise, index) => ({
+            session_id: sessionId as string,
+            exercise_id: exercise.id,
+            sequence: index + 1,
+            duration: exercise.duration,
+          }));
+
+          const { error: exercisesError } = await supabase
+            .from("session_exercises")
+            .insert(sessionExercises);
+
+          if (exercisesError) throw exercisesError;
+        }
+      } else {
+        const { warmup, target, cooldown } = await getExercisesForSession(
+          selectedFocus as Focus,
+          selectedDuration ? parseInt(selectedDuration) : 45
+        );
+
+        console.log("Exercise data:", { warmup, target, cooldown });
+
+        // Make sure each part is an array before spreading
+        exercisesData = [
+          ...(Array.isArray(warmup) ? warmup : [warmup]),
+          ...(Array.isArray(target) ? target : []),
+          ...(Array.isArray(cooldown) ? [cooldown] : []),
+        ].filter(Boolean); // Remove any null/undefined values
+
+        console.log("Combined exercises:", exercisesData);
+      }
+
+      // Get signed URLs for all exercises
+      const [animationSignedUrls, voiceSignedUrls] = await Promise.all([
+        Promise.all(
+          exercisesData
+            .filter((ex) => ex.lottie_file_url)
+            .map((ex) =>
+              supabase.storage
+                .from("exercise-animations")
+                .createSignedUrl(ex.lottie_file_url!, 3600)
+                .then((res) => ({ id: ex.id, url: res.data?.signedUrl }))
+            )
+        ),
+        Promise.all(
+          exercisesData
+            .filter((ex) => ex.voice_description_url)
+            .map((ex) =>
+              supabase.storage
+                .from("exercise_sounds")
+                .createSignedUrl(ex.voice_description_url!, 3600)
+                .then((res) => ({ id: ex.id, url: res.data?.signedUrl }))
+            )
+        ),
+      ]);
 
       // Convert arrays to objects for easier lookup
       const animationSourcesObj = Object.fromEntries(
@@ -164,53 +248,41 @@ export default function Page() {
 
       setAnimationSources(animationSourcesObj);
       setVoiceDescriptionSources(voiceSourcesObj);
-      setExercises(allExercises);
+      setExercises(exercisesData);
       setIsWorkoutStarted(true);
-      setSessionId(sessionData.data?.id!);
+      setSessionId(sessionId);
 
-      posthog.capture("user_created_custom_workout", {
+      posthog.capture("user_chose_quick_setup", {
         duration: selectedDuration,
         focus: selectedFocus,
-        session_id: sessionData.data?.id,
+        session_id: sessionId,
+        is_custom: isCustom,
       });
     } catch (error) {
-      console.error("Error creating custom workout:", error);
+      console.error("Error creating workout:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleNext = async () => {
+  const handleNextWorkout = async () => {
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
     } else {
       // Workout completed
       setIsSavingProgress(true);
       try {
-        const [progress, session] = await Promise.all([
-          supabase.from("progress").insert({
-            user_id: user.id,
-            entry_type: "session",
-            session_id: session_id,
-            added_on: DateTime.now().toISODate(),
-          }),
-          supabase
-            .from("sessions")
-            .update({ status: "completed" })
-            .eq("id", session_id!)
-            .eq("user_id", user.id),
-        ]);
+        // Always save progress
+        const { success: progressSuccess } = await saveWorkoutProgress(user.id);
 
-        if (progress.error || session.error) {
-          console.error(
-            "Error saving progress:",
-            progress.error || session.error
-          );
+        if (!progressSuccess) {
+          console.error("Error saving progress:", progressSuccess);
         }
 
-        posthog.capture("user_completed_custom_workout", {
+        posthog.capture("user_completed_workout", {
           duration: selectedDuration,
           session_id: session_id,
+          is_custom: !!session_id,
         });
 
         // Set flag for review request
@@ -223,6 +295,290 @@ export default function Page() {
         setIsSavingProgress(false);
       }
     }
+  };
+
+  const fetchAvailableExercises = async () => {
+    setIsLoadingExercises(true);
+    try {
+      const { data, error } = await supabase
+        .from("exercises")
+        .select("*")
+        .order("type", { ascending: true });
+
+      if (error) throw error;
+
+      // Get signed URLs for all animations
+      const animationUrls = data
+        .filter((ex) => ex.lottie_file_url)
+        .map((ex) => ({
+          id: ex.id,
+          path: ex.lottie_file_url,
+        }));
+
+      const signedUrls = await Promise.all(
+        animationUrls.map((url) =>
+          supabase.storage
+            .from("exercise-animations")
+            .createSignedUrl(url.path!, 3600)
+            .then((res) => ({ id: url.id, url: res.data?.signedUrl }))
+        )
+      );
+
+      // Create a lookup object for signed URLs
+      const signedUrlsObj = Object.fromEntries(
+        signedUrls
+          .filter((item) => item.url)
+          .map((item) => [item.id, item.url!])
+      );
+
+      // Attach signed URLs to exercises and set default duration
+      const exercisesWithUrls = data.map((exercise: any) => ({
+        ...exercise,
+        duration: 15, // Always set to 15 since it's not in the DB
+        lottie_file_url: signedUrlsObj[exercise.id] || exercise.lottie_file_url,
+      }));
+
+      setAvailableExercises(exercisesWithUrls || []);
+    } catch (error) {
+      console.error("Error fetching exercises:", error);
+    } finally {
+      setIsLoadingExercises(false);
+    }
+  };
+
+  useEffect(() => {
+    if (setupType === "custom" && currentStep === 2) {
+      fetchAvailableExercises();
+    }
+  }, [setupType, currentStep]);
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>
+              How would you like to create your workout?
+            </Text>
+            <View style={styles.optionsContainer}>
+              {SETUP_OPTIONS.map(({ value, label, description }) => (
+                <TouchableOpacity
+                  key={value}
+                  style={[
+                    styles.setupOptionButton,
+                    setupType === value && styles.selectedOption,
+                  ]}
+                  onPress={() => setSetupType(value as "quick" | "custom")}
+                >
+                  <Text
+                    style={[
+                      styles.setupOptionTitle,
+                      setupType === value && styles.selectedOptionText,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.setupOptionDescription,
+                      setupType === value && styles.selectedOptionText,
+                    ]}
+                  >
+                    {description}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        );
+      case 1:
+        if (setupType === "quick") {
+          return (
+            <View style={styles.stepContainer}>
+              <Text style={styles.stepTitle}>
+                How long do you want to work out?
+              </Text>
+              <View style={styles.optionsContainer}>
+                {DURATION_OPTIONS.map(({ value, label }) => (
+                  <TouchableOpacity
+                    key={value}
+                    style={[
+                      styles.optionButton,
+                      selectedDuration === value && styles.selectedOption,
+                    ]}
+                    onPress={() => setSelectedDuration(value)}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selectedDuration === value && styles.selectedOptionText,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          );
+        }
+        return null;
+      case 2:
+        if (setupType === "quick") {
+          return (
+            <View style={styles.stepContainer}>
+              {isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#4A2318" />
+                  <Text style={styles.loadingText}>
+                    Creating your workout...
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.stepTitle}>
+                    What would you like to focus on?
+                  </Text>
+                  <View style={styles.optionsContainer}>
+                    {FOCUS_OPTIONS.map(({ value, label }) => (
+                      <TouchableOpacity
+                        key={value}
+                        style={[
+                          styles.optionButton,
+                          selectedFocus === value && styles.selectedOption,
+                        ]}
+                        onPress={() => setSelectedFocus(value)}
+                      >
+                        <Text
+                          style={[
+                            styles.optionText,
+                            selectedFocus === value &&
+                              styles.selectedOptionText,
+                          ]}
+                        >
+                          {label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </>
+              )}
+            </View>
+          );
+        }
+        if (setupType === "custom") {
+          return (
+            <SelectExercises
+              availableExercises={availableExercises}
+              selectedExercises={selectedExercises}
+              onSelectExercise={async (exerciseId) => {
+                await Haptics.selectionAsync();
+                if (selectedExercises.includes(exerciseId)) {
+                  setSelectedExercises(
+                    selectedExercises.filter((id) => id !== exerciseId)
+                  );
+                } else {
+                  setSelectedExercises([...selectedExercises, exerciseId]);
+                }
+              }}
+              isLoading={isLoadingExercises}
+              onShowExerciseDetails={(exercise) => {
+                console.log("Showing exercise details:", exercise);
+                setSelectedExerciseDetails(exercise);
+                exerciseDetailsRef.current?.expand();
+              }}
+            />
+          );
+        }
+        return null;
+      case 3:
+        return (
+          <SelectExerciseDurations
+            exercises={availableExercises.filter((ex) =>
+              selectedExercises.includes(ex.id)
+            )}
+            onUpdateDuration={(exerciseId, duration) => {
+              setExerciseDurations((prev) => ({
+                ...prev,
+                [exerciseId]: duration,
+              }));
+            }}
+          />
+        );
+
+      case 4:
+        return (
+          <SaveCustomWorkout
+            exercises={availableExercises
+              .filter((ex) => selectedExercises.includes(ex.id))
+              .map((ex) => ({
+                ...ex,
+                duration: exerciseDurations[ex.id] || 15,
+              }))}
+            onSave={async (name) => {
+              try {
+                // First create the session
+                const { data, error } = await supabase
+                  .from("sessions")
+                  .insert({
+                    user_id: user.id,
+                    name: name,
+                    focus: "full body",
+                    status: "scheduled",
+                    is_custom: true,
+                    scheduled_date: DateTime.now().toISODate(),
+                  })
+                  .select()
+                  .single();
+
+                if (error) throw error;
+
+                // Create session exercises directly here
+                const sessionExercises = availableExercises
+                  .filter((ex) => selectedExercises.includes(ex.id))
+                  .map((exercise, index) => ({
+                    session_id: data.id,
+                    exercise_id: exercise.id,
+                    sequence: index + 1,
+                    duration: exerciseDurations[exercise.id] || 15,
+                  }));
+
+                const { error: exercisesError } = await supabase
+                  .from("session_exercises")
+                  .insert(sessionExercises);
+
+                if (exercisesError) throw exercisesError;
+
+                posthog.capture("user_saved_custom_workout", {
+                  workout_name: name,
+                  exercise_count: selectedExercises.length,
+                });
+
+                // Now start the workout with the existing session
+                await handleCreateWorkout(true, false, data.id);
+              } catch (error) {
+                console.error("Error saving custom workout:", error);
+              }
+            }}
+            onStartWithoutSaving={async () => {
+              posthog.capture("user_started_custom_workout_without_saving", {
+                exercise_count: selectedExercises.length,
+              });
+              await handleCreateWorkout(true, false);
+            }}
+          />
+        );
+    }
+  };
+
+  const isNextDisabled = () => {
+    if (currentStep === 0) return !setupType;
+    if (currentStep === 1) return !selectedDuration;
+    if (currentStep === 2) {
+      if (setupType === "quick") return !selectedFocus || isLoading;
+      if (setupType === "custom") return selectedExercises.length === 0;
+    }
+    return false;
   };
 
   if (isWorkoutStarted && exercises.length > 0) {
@@ -242,18 +598,18 @@ export default function Page() {
           id={currentExercise.id}
           title={currentExercise.name}
           description={currentExercise.description}
-          duration={45}
-          animationSource={animationSources[currentExercise.id]}
-          type={currentExercise.type}
           focus={currentExercise.focus}
-          onNext={handleNext}
+          type={currentExercise.type}
+          animationSource={animationSources[currentExercise.id]}
+          voiceDescriptionSource={voiceDescriptionSources[currentExercise.id]}
+          duration={currentExercise.duration || 45}
+          onNext={handleNextWorkout}
           onQuit={() => router.back()}
           totalExercises={exercises.length}
           currentExercise={currentExerciseIndex + 1}
           autoPlay={autoPlay}
           onAutoPlay={() => setAutoPlay(!autoPlay)}
           isSavingProgress={isSavingProgress}
-          voiceDescriptionSource={voiceDescriptionSources[currentExercise.id]}
           onShowDescription={() => bottomSheetRef.current?.expand()}
         />
 
@@ -262,7 +618,7 @@ export default function Page() {
           title={currentExercise.name}
           description={currentExercise.description}
           focus={currentExercise.focus}
-          duration={45}
+          duration={currentExercise.duration}
           bottomSheetRef={bottomSheetRef}
         />
       </View>
@@ -270,84 +626,27 @@ export default function Page() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { paddingHorizontal: 16 }]}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.dismissButton}
-          onPress={() => router.back()}
-        >
-          <FontAwesome name="times" size={20} color="#4A2318" />
-        </TouchableOpacity>
-        <Text
-          style={[
-            styles.title,
-            { flex: 1, textAlign: "center", marginLeft: -40 },
-          ]}
-        >
-          Custom Workout
-        </Text>
-      </View>
-
-      <Text style={styles.sectionTitle}>Duration</Text>
-      <View style={styles.optionsContainer}>
-        {DURATION_OPTIONS.map(({ value, label }) => (
-          <TouchableOpacity
-            key={value}
-            style={[
-              styles.optionButton,
-              selectedDuration === value && styles.selectedOption,
-            ]}
-            onPress={() => setSelectedDuration(value)}
-          >
-            <Text
-              style={[
-                styles.optionText,
-                selectedDuration === value && styles.selectedOptionText,
-              ]}
-            >
-              {label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text style={styles.sectionTitle}>Focus Area</Text>
-      <View style={styles.optionsContainer}>
-        {FOCUS_OPTIONS.map(({ value, label }) => (
-          <TouchableOpacity
-            key={value}
-            style={[
-              styles.optionButton,
-              selectedFocus === value && styles.selectedOption,
-            ]}
-            onPress={() => setSelectedFocus(value)}
-          >
-            <Text
-              style={[
-                styles.optionText,
-                selectedFocus === value && styles.selectedOptionText,
-              ]}
-            >
-              {label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <TouchableOpacity
-        style={[
-          styles.createButton,
-          isLoading && styles.createButtonDisabled,
-          (!selectedDuration || !selectedFocus) && styles.createButtonDisabled,
-        ]}
-        onPress={handleCreateWorkout}
-        disabled={!selectedDuration || !selectedFocus || isLoading}
+    <View style={{ flex: 1 }}>
+      <CustomSessionLayout
+        currentStep={currentStep}
+        totalSteps={setupType === "quick" ? 3 : 4}
+        onBack={handleBack}
+        onNext={handleNext}
+        isNextDisabled={isNextDisabled()}
+        nextButtonText={
+          setupType === "quick" && currentStep === 2 ? "Create Workout" : "Next"
+        }
+        title="Custom Workout"
+        hideNextButton={currentStep === 4}
       >
-        <Text style={styles.createButtonText}>
-          {isLoading ? "Creating..." : "Create Workout"}
-        </Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+        {renderStep()}
+      </CustomSessionLayout>
+
+      <ExerciseDetailsModal
+        exercise={selectedExerciseDetails}
+        bottomSheetRef={exerciseDetailsRef}
+      />
+    </View>
   );
 }
 
@@ -384,7 +683,7 @@ const styles = StyleSheet.create({
     color: "#4A2318",
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#4A2318",
     marginBottom: 12,
@@ -405,7 +704,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#4A2318",
   },
   optionText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#4A2318",
   },
@@ -427,5 +726,84 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#FFE9D5",
+  },
+  stepContainer: {
+    flex: 1,
+    paddingTop: 24,
+  },
+  stepTitle: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#4A2318",
+    marginBottom: 32,
+    // fontFamily: "matolha-regular",
+  },
+  setupOptionButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#4A2318",
+    alignItems: "center",
+  },
+  setupOptionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#4A2318",
+  },
+  setupOptionDescription: {
+    fontSize: 14,
+    color: "#4A2318",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#4A2318",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  exerciseList: {
+    flex: 1,
+  },
+  exerciseSection: {
+    marginBottom: 24,
+  },
+  exerciseItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#FFE9D5",
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#4A2318",
+  },
+  selectedExercise: {
+    backgroundColor: "#4A2318",
+  },
+  exerciseInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  exerciseTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#4A2318",
+    marginBottom: 4,
+  },
+  exerciseDescription: {
+    fontSize: 14,
+    color: "#4A2318",
+    opacity: 0.8,
+  },
+  stepSubtitle: {
+    fontSize: 16,
+    color: "#4A2318",
+    marginBottom: 24,
+    opacity: 0.8,
   },
 });

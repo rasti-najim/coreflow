@@ -2,7 +2,7 @@ import supabase from "./supabase";
 import { DateTime } from "luxon";
 
 type WeeklySession = "3" | "5" | "everyday";
-type Focus = "full body" | "upper body" | "lower body" | "core";
+export type Focus = "full body" | "upper body" | "lower body" | "core";
 type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 type ScheduleAction = "create" | "update" | "extend";
 
@@ -168,14 +168,10 @@ function shuffle<T>(array: T[]): T[] {
   return newArray;
 }
 
-export async function createSession(
-  sessionDuration: number, // in minutes
-  focus: Focus
-): Promise<{
-  warmup_exercise: string;
-  target_exercises: string[];
-  cooldown_exercise: string;
-}> {
+export async function getExercisesForSession(
+  focus: Focus,
+  sessionDuration: number
+): Promise<{ warmup: any; target: any[]; cooldown: any }> {
   const totalSessionSeconds = sessionDuration * 60;
   const availableTimeForTargets =
     totalSessionSeconds - EXERCISE_TIMING.WARMUP_COOLDOWN_TIME;
@@ -186,7 +182,7 @@ export async function createSession(
   // Get warmup exercise
   const { data: warmup_exercise } = await supabase
     .from("random_exercises")
-    .select("id")
+    .select("*", "exercises(*)")
     .eq("type", "warmup")
     .limit(1)
     .single();
@@ -194,7 +190,7 @@ export async function createSession(
   // Get target exercises based on focus
   let targetQuery = supabase
     .from("random_exercises")
-    .select("id")
+    .select("*", "exercises(*)")
     .eq("type", "target");
 
   // Add focus-specific filters using the FOCUS_MAP
@@ -209,16 +205,84 @@ export async function createSession(
   // Get cooldown exercise
   const { data: cooldown_exercise } = await supabase
     .from("random_exercises")
-    .select("id")
+    .select("*", "exercises(*)")
     .eq("type", "cooldown")
     .limit(1)
     .single();
 
   return {
-    warmup_exercise: warmup_exercise?.id ?? "",
-    target_exercises: target_exercises?.map((ex) => ex.id) ?? [],
-    cooldown_exercise: cooldown_exercise?.id ?? "",
+    warmup: warmup_exercise,
+    target: target_exercises || [],
+    cooldown: cooldown_exercise,
   };
+}
+
+export async function createSession(
+  sessionDuration: number,
+  focus: Focus,
+  userId: string,
+  date: DateTime = DateTime.now()
+): Promise<string> {
+  // Get exercises for the session
+  const { warmup, target, cooldown } = await getExercisesForSession(
+    focus,
+    sessionDuration
+  );
+
+  // Create session first
+  const { data: session, error: sessionError } = await supabase
+    .from("sessions")
+    .insert({
+      user_id: userId,
+      focus: focus,
+      scheduled_date: date.toISODate(),
+      status: "scheduled",
+      is_custom: false,
+    })
+    .select()
+    .single();
+
+  if (sessionError) throw sessionError;
+
+  // Create session exercises
+  const exercises = [
+    {
+      session_id: session.id,
+      exercise_id: warmup?.id,
+      sequence: 1,
+      duration: EXERCISE_TIMING.TOTAL_TIME,
+    },
+    ...(target?.map((ex, index) => ({
+      session_id: session.id,
+      exercise_id: ex.id,
+      sequence: index + 2,
+      duration: EXERCISE_TIMING.TOTAL_TIME,
+    })) ?? []),
+    {
+      session_id: session.id,
+      exercise_id: cooldown?.id,
+      sequence: (target?.length ?? 0) + 2,
+      duration: EXERCISE_TIMING.TOTAL_TIME,
+    },
+  ].filter(
+    (
+      ex
+    ): ex is {
+      session_id: string;
+      exercise_id: string;
+      sequence: number;
+      duration: number;
+    } => Boolean(ex.exercise_id)
+  );
+
+  // Insert all session exercises in a single query
+  const { error: exercisesError } = await supabase
+    .from("session_exercises")
+    .insert(exercises);
+
+  if (exercisesError) throw exercisesError;
+
+  return session.id;
 }
 
 export async function createSchedule(
@@ -276,33 +340,15 @@ export async function createSchedule(
 
     // Create all sessions in parallel
     const sessionPromises = schedule.map(async (day) => {
-      const session = await createSession(
+      await createSession(
         preferencesResponse.data.session_duration,
-        day.focus
+        day.focus,
+        userId,
+        day.date
       );
-      if (!session) return null;
-
-      return {
-        user_id: userId,
-        focus: day.focus,
-        scheduled_date: day.date.toISODate(),
-        warmup_exercise: session.warmup_exercise,
-        target_exercises: session.target_exercises,
-        cooldown_exercise: session.cooldown_exercise,
-        status: "scheduled",
-        is_custom: false,
-      };
     });
 
-    const sessionData = (await Promise.all(sessionPromises)).filter(Boolean);
-
-    // Batch insert all sessions
-    const { data: insertedSessions, error: insertError } = await supabase
-      .from("sessions")
-      .insert(sessionData)
-      .select();
-
-    if (insertError) throw insertError;
+    await Promise.all(sessionPromises);
 
     return schedule;
   } catch (error) {

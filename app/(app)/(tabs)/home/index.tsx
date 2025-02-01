@@ -23,6 +23,7 @@ import { useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useStreak } from "@/lib/hooks/useStreaks";
 import { usePostHog } from "posthog-react-native";
+import { CustomSessions } from "../../../../components/custom-sessions";
 
 type Session = {
   focus: string;
@@ -195,61 +196,6 @@ export default function Page() {
     });
   };
 
-  const ProgressOptions = () => {
-    if (!showOptions) return null;
-
-    return (
-      <View style={styles.optionsContainer}>
-        <TouchableOpacity
-          style={styles.optionButton}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            // Handle image progress
-            setShowOptions(false);
-
-            Superwall.shared.register("trackProgressPhoto").then(() => {
-              router.push("/home/track-picture");
-            });
-          }}
-        >
-          <FontAwesome6 name="image" size={18} color="#FFE9D5" />
-          <Text style={styles.optionText}>Track Progress Photo</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.optionButton}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            // Handle note progress
-            setShowOptions(false);
-
-            Superwall.shared.register("trackProgressMood").then(() => {
-              router.push("/home/track-mood");
-            });
-          }}
-        >
-          <FontAwesome6 name="note-sticky" size={18} color="#FFE9D5" />
-          <Text style={styles.optionText}>Track Progress Note</Text>
-        </TouchableOpacity>
-
-        {/* <TouchableOpacity
-          style={styles.optionButton}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setShowOptions(false);
-
-            Superwall.shared.register("startCustomWorkoutSession").then(() => {
-              router.push("/home/custom");
-            });
-          }}
-        >
-          <FontAwesome6 name="mattress-pillow" size={18} color="#FFE9D5" />
-          <Text style={styles.optionText}>Create Custom Workout</Text>
-        </TouchableOpacity> */}
-      </View>
-    );
-  };
-
   const formatDate = (dateString: string) => {
     const date = DateTime.fromISO(dateString);
     return date.toFormat("EEE");
@@ -293,7 +239,11 @@ export default function Page() {
             onPress={handleStreakPress}
           >
             <Text style={styles.streakText}>
-              {isStreakLoading ? "..." : `${streak?.count} ${streak?.emoji}`}
+              {isStreakLoading
+                ? "..."
+                : `${streak?.count} 🔥${
+                    streak?.emoji !== "🔥" ? ` ${streak?.emoji}` : ""
+                  }`}
             </Text>
           </TouchableOpacity>
         </View>
@@ -387,9 +337,9 @@ export default function Page() {
 
         <View style={styles.consistencyContainer}>
           <View style={styles.consistencyHeader}>
-            <Text style={styles.consistencyTitle}>Custom Session</Text>
+            <Text style={styles.consistencyTitle}>Custom Workouts</Text>
           </View>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.customSessionButton}
             onPress={async () => {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -402,24 +352,12 @@ export default function Page() {
             }}
           >
             <Text style={styles.customSessionButtonText}>
-              Choose duration + focus
+              Create New Workout
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
+          <CustomSessions />
         </View>
       </ScrollView>
-
-      <View style={styles.addButtonContainer}>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setShowOptions(!showOptions);
-          }}
-        >
-          <FontAwesome6 name="plus" size={18} color="#FFE9D5" />
-        </TouchableOpacity>
-        <ProgressOptions />
-      </View>
     </View>
   );
 }
@@ -550,62 +488,6 @@ const styles = StyleSheet.create({
     bottom: 24,
     left: 24,
     right: 24,
-  },
-  addButtonContainer: {
-    position: "absolute",
-    bottom: 32,
-    right: 32,
-    zIndex: 1000,
-  },
-  addButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#4A2318",
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  optionsContainer: {
-    position: "absolute",
-    bottom: "100%",
-    right: 0,
-    backgroundColor: "#4A2318",
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    width: 200,
-    zIndex: 1000,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  optionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 233, 213, 0.1)",
-  },
-  optionText: {
-    color: "#FFE9D5",
-    fontWeight: "bold",
-    fontSize: 14,
   },
   workoutDuration: {
     color: "#4A2318",
