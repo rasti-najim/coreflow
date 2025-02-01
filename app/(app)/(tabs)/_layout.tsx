@@ -1,74 +1,78 @@
-import { FontAwesome, FontAwesome6 } from "@expo/vector-icons";
+import { FontAwesome6 } from "@expo/vector-icons";
 import { Text, StyleSheet } from "react-native";
-import { Tabs } from "expo-router";
-// import { Tabs, TabList, TabTrigger, TabSlot } from "expo-router/ui";
+// import { Tabs } from "expo-router";
+import { Tabs, TabList, TabTrigger, TabSlot } from "expo-router/ui";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FloatingActionButton } from "@/components/floating-action-button";
 
 export default function TabLayout() {
-  return (
-    // <Tabs>
-    //   <TabSlot />
-    //   <TabList style={styles.navbar}>
-    //     <TabTrigger name="home" href="/home">
-    //       <FontAwesome name="plus" size={24} color="#4A2318" />
-    //     </TabTrigger>
-    //     <TabTrigger name="calendar" href="/calendar">
-    //       <FontAwesome name="calendar" size={24} color="#4A2318" />
-    //     </TabTrigger>
-    //     <TabTrigger name="settings" href="/settings">
-    //       <FontAwesome name="cog" size={24} color="#4A2318" />
-    //     </TabTrigger>
-    //   </TabList>
-    // </Tabs>
+  const insets = useSafeAreaInsets();
 
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: { backgroundColor: "#FFE9D5", borderTopWidth: 0 },
-        tabBarActiveTintColor: "#4A2318",
-      }}
-      //   tabBar={(props) => <TabBar {...props} />}
-    >
-      <Tabs.Screen
-        name="home"
-        options={{
-          title: "",
-          tabBarIcon: ({ color }) => (
-            // <FontAwesome name="plus" size={24} color={color} />
-            <FontAwesome6 name="house" size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="timeline"
-        options={{
-          title: "",
-          tabBarIcon: ({ color }) => (
-            <FontAwesome6 name="calendar" size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: "",
-          tabBarIcon: ({ color }) => (
-            <FontAwesome6 name="gear" size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen name="index" options={{ href: null }} />
+  return (
+    <Tabs>
+      <TabSlot />
+      <TabList style={[styles.navbar, { paddingBottom: insets.bottom + 10 }]}>
+        <TabTrigger name="home" href="/home">
+          <FontAwesome6 name="house" size={24} color="#4A2318" />
+        </TabTrigger>
+        <TabTrigger name="timeline" href="/timeline">
+          <FontAwesome6 name="calendar" size={24} color="#4A2318" />
+        </TabTrigger>
+        <TabTrigger name="settings" href="/settings">
+          <FontAwesome6 name="gear" size={24} color="#4A2318" />
+        </TabTrigger>
+        <FloatingActionButton />
+      </TabList>
     </Tabs>
+
+    // <Tabs
+    //   screenOptions={{
+    //     headerShown: false,
+    //     tabBarStyle: { backgroundColor: "#FFE9D5", borderTopWidth: 0 },
+    //     tabBarActiveTintColor: "#4A2318",
+    //   }}
+    //   //   tabBar={(props) => <TabBar {...props} />}
+    // >
+    //   <Tabs.Screen
+    //     name="home"
+    //     options={{
+    //       title: "",
+    //       tabBarIcon: ({ color }) => (
+    //         // <FontAwesome name="plus" size={24} color={color} />
+    //         <FontAwesome6 name="house" size={24} color={color} />
+    //       ),
+    //     }}
+    //   />
+    //   <Tabs.Screen
+    //     name="timeline"
+    //     options={{
+    //       title: "",
+    //       tabBarIcon: ({ color }) => (
+    //         <FontAwesome6 name="calendar" size={24} color={color} />
+    //       ),
+    //     }}
+    //   />
+    //   <Tabs.Screen
+    //     name="settings"
+    //     options={{
+    //       title: "",
+    //       tabBarIcon: ({ color }) => (
+    //         <FontAwesome6 name="gear" size={24} color={color} />
+    //       ),
+    //     }}
+    //   />
+    //   <Tabs.Screen name="index" options={{ href: null }} />
+    // </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
   navbar: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "center",
     alignItems: "center",
-    position: "absolute",
-    bottom: 24,
-    left: 24,
-    right: 24,
+    backgroundColor: "#FFE9D5",
+    paddingTop: 20,
+    gap: "15%",
   },
 });
