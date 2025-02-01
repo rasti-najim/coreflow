@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#4A2318",
     marginBottom: 32,
-    fontFamily: "matolha-regular",
+    // fontFamily: "matolha-regular",
   },
   setupOptionButton: {
     paddingVertical: 12,
