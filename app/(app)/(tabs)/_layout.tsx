@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFE9D5",
     paddingTop: 10,
-    gap: "10%",
+    gap: "12%",
   },
   tabTrigger: {
     padding: 10,

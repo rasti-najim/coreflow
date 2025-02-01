@@ -339,7 +339,7 @@ export default function Page() {
           <View style={styles.consistencyHeader}>
             <Text style={styles.consistencyTitle}>Custom Workouts</Text>
           </View>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.customSessionButton}
             onPress={async () => {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -354,7 +354,7 @@ export default function Page() {
             <Text style={styles.customSessionButtonText}>
               Create New Workout
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <CustomSessions />
         </View>
       </ScrollView>

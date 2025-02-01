@@ -22,6 +22,20 @@ export const ProgressOptions = ({ show, onClose }: ProgressOptionsProps) => {
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onClose();
+          Superwall.shared.register("createWorkout").then(() => {
+            router.push("/home/custom");
+          });
+        }}
+      >
+        <FontAwesome6 name="dumbbell" size={18} color="#FFE9D5" />
+        <Text style={styles.optionText}>Create Workout</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.optionButton}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onClose();
           Superwall.shared.register("trackProgressPhoto").then(() => {
             router.push("/home/track-picture");
           });

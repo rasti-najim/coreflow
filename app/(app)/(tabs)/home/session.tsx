@@ -270,7 +270,7 @@ export default function Modal() {
         title={currentExercise.name}
         description={currentExercise.description}
         focus={currentExercise.focus}
-        duration={45}
+        duration={currentExercise.duration}
         animationSource={animationSources[currentExercise.id]}
         type={currentExercise.type}
         onNext={handleNext}
@@ -287,7 +287,7 @@ export default function Modal() {
         title={currentExercise.name}
         description={currentExercise.description}
         focus={currentExercise.focus}
-        duration={45}
+        duration={currentExercise.duration}
         bottomSheetRef={bottomSheetRef}
       />
     </View>
