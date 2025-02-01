@@ -12,13 +12,13 @@ export default function TabLayout() {
     <Tabs>
       <TabSlot />
       <TabList style={[styles.navbar, { paddingBottom: insets.bottom + 10 }]}>
-        <TabTrigger name="home" href="/home">
+        <TabTrigger style={styles.tabTrigger} name="home" href="/home">
           <FontAwesome6 name="house" size={24} color="#4A2318" />
         </TabTrigger>
-        <TabTrigger name="timeline" href="/timeline">
+        <TabTrigger style={styles.tabTrigger} name="timeline" href="/timeline">
           <FontAwesome6 name="calendar" size={24} color="#4A2318" />
         </TabTrigger>
-        <TabTrigger name="settings" href="/settings">
+        <TabTrigger style={styles.tabTrigger} name="settings" href="/settings">
           <FontAwesome6 name="gear" size={24} color="#4A2318" />
         </TabTrigger>
         <FloatingActionButton />
@@ -72,7 +72,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#FFE9D5",
-    paddingTop: 20,
-    gap: "15%",
+    paddingTop: 10,
+    gap: "10%",
+  },
+  tabTrigger: {
+    padding: 10,
   },
 });
