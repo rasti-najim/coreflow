@@ -12,7 +12,6 @@ import { FontAwesome, FontAwesome6 } from "@expo/vector-icons";
 import { ExerciseDetailsModal } from "./exercise-details-modal";
 import * as Haptics from "expo-haptics";
 import LottieView from "lottie-react-native";
-import BottomSheet from "@gorhom/bottom-sheet";
 import { Loading } from "./loading";
 
 const FILTER_OPTIONS = [

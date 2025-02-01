@@ -32,7 +32,7 @@ import { SelectExercises } from "@/components/select-exercises";
 import { SelectExerciseDurations } from "@/components/select-exercise-durations";
 import { ExerciseDetailsModal } from "@/components/exercise-details-modal";
 import { SaveCustomWorkout } from "@/components/save-custom-workout";
-
+import { saveWorkoutProgress } from "@/lib/progress";
 const DURATION_OPTIONS = [
   { value: "5", label: "5 minutes" },
   { value: "10", label: "10 minutes" },
@@ -256,29 +256,10 @@ export default function Page() {
       setIsSavingProgress(true);
       try {
         // Always save progress
-        const { error: progressError } = await supabase
-          .from("progress")
-          .insert({
-            user_id: user.id,
-            entry_type: "session",
-            added_on: DateTime.now().toISODate(),
-          });
+        const { success: progressSuccess } = await saveWorkoutProgress(user.id);
 
-        // Only update session status if it exists (custom workouts)
-        if (session_id) {
-          const { error: sessionError } = await supabase
-            .from("sessions")
-            .update({ status: "completed" })
-            .eq("id", session_id)
-            .eq("user_id", user.id);
-
-          if (sessionError) {
-            console.error("Error updating session status:", sessionError);
-          }
-        }
-
-        if (progressError) {
-          console.error("Error saving progress:", progressError);
+        if (!progressSuccess) {
+          console.error("Error saving progress:", progressSuccess);
         }
 
         posthog.capture("user_completed_workout", {
