@@ -85,6 +85,7 @@ export default function Modal() {
 
   useEffect(() => {
     const fetchSession = async () => {
+      console.log("fetching session", session_id);
       try {
         // 1. Fetch session with all exercise data in a single query
         const { data: sessionData, error: sessionError } = await supabase
@@ -102,6 +103,8 @@ export default function Modal() {
           .eq("id", session_id)
           .eq("user_id", user.id)
           .single();
+
+        console.log("sessionData", sessionData);
 
         if (sessionError) throw sessionError;
 

@@ -132,7 +132,11 @@ export default function Page() {
     setCurrentStep(currentStep - 1);
   };
 
-  const handleCreateWorkout = async (isCustom = false, shouldSave = false) => {
+  const handleCreateWorkout = async (
+    isCustom = false,
+    shouldSave = false,
+    existingSessionId?: string
+  ) => {
     if (!user) return;
     if (!isCustom && (!selectedDuration || !selectedFocus)) return;
 
@@ -142,7 +146,7 @@ export default function Page() {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       let exercisesData;
-      let sessionId = null;
+      let sessionId: string | null = existingSessionId || null;
 
       if (isCustom) {
         const { data, error } = await supabase
@@ -156,8 +160,8 @@ export default function Page() {
           duration: exerciseDurations[ex.id] || 15,
         }));
 
-        // Only create session if shouldSave is true
-        if (shouldSave) {
+        // Only create session if shouldSave is true AND we don't have an existing sessionId
+        if (shouldSave && !existingSessionId) {
           const { data: sessionData, error: sessionError } = await supabase
             .from("sessions")
             .insert({
@@ -173,6 +177,19 @@ export default function Page() {
 
           if (sessionError) throw sessionError;
           sessionId = sessionData.id;
+
+          const sessionExercises = exercisesData.map((exercise, index) => ({
+            session_id: sessionId as string,
+            exercise_id: exercise.id,
+            sequence: index + 1,
+            duration: exercise.duration,
+          }));
+
+          const { error: exercisesError } = await supabase
+            .from("session_exercises")
+            .insert(sessionExercises);
+
+          if (exercisesError) throw exercisesError;
         }
       } else {
         const { warmup, target, cooldown } = await getExercisesForSession(
@@ -500,6 +517,7 @@ export default function Page() {
               }))}
             onSave={async (name) => {
               try {
+                // First create the session
                 const { data, error } = await supabase
                   .from("sessions")
                   .insert({
@@ -511,17 +529,33 @@ export default function Page() {
                     scheduled_date: DateTime.now().toISODate(),
                   })
                   .select()
-                  .limit(1)
                   .single();
 
                 if (error) throw error;
+
+                // Create session exercises directly here
+                const sessionExercises = availableExercises
+                  .filter((ex) => selectedExercises.includes(ex.id))
+                  .map((exercise, index) => ({
+                    session_id: data.id,
+                    exercise_id: exercise.id,
+                    sequence: index + 1,
+                    duration: exerciseDurations[exercise.id] || 15,
+                  }));
+
+                const { error: exercisesError } = await supabase
+                  .from("session_exercises")
+                  .insert(sessionExercises);
+
+                if (exercisesError) throw exercisesError;
 
                 posthog.capture("user_saved_custom_workout", {
                   workout_name: name,
                   exercise_count: selectedExercises.length,
                 });
 
-                await handleCreateWorkout(true, true);
+                // Now start the workout with the existing session
+                await handleCreateWorkout(true, false, data.id);
               } catch (error) {
                 console.error("Error saving custom workout:", error);
               }

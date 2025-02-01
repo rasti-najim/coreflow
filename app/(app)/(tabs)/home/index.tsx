@@ -23,6 +23,7 @@ import { useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useStreak } from "@/lib/hooks/useStreaks";
 import { usePostHog } from "posthog-react-native";
+import { CustomSessions } from "../../../../components/custom-sessions";
 
 type Session = {
   focus: string;
@@ -391,7 +392,7 @@ export default function Page() {
 
         <View style={styles.consistencyContainer}>
           <View style={styles.consistencyHeader}>
-            <Text style={styles.consistencyTitle}>Custom Session</Text>
+            <Text style={styles.consistencyTitle}>Custom Workouts</Text>
           </View>
           <TouchableOpacity
             style={styles.customSessionButton}
@@ -406,9 +407,10 @@ export default function Page() {
             }}
           >
             <Text style={styles.customSessionButtonText}>
-              Choose duration + focus
+              Create New Workout
             </Text>
           </TouchableOpacity>
+          <CustomSessions />
         </View>
       </ScrollView>
 
