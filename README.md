@@ -29,9 +29,13 @@ A beautifully crafted iOS app for guided pilates workouts, progress tracking, an
 
 ## Why Coreflow?
 
-Pilates was [the most searched workout of 2024](https://www.google.com/trends). Studios are expensive. YouTube is overwhelming. Coreflow was built to give everyone access to structured, progressive pilates sessions they can do from anywhere — no reformer required.
+Pilates was [the most-booked workout globally in 2024](https://insider.fitt.co/pilates-2024s-most-popular-workout/) — topping ClassPass rankings for the second consecutive year with an 84% rise in bookings. Studios are expensive. YouTube is overwhelming. Coreflow was built to give everyone access to structured, progressive pilates sessions they can do from anywhere — no reformer required.
 
-**Coreflow generated recurring monthly revenue on the App Store** before being taken down, validating demand for a focused, well-designed pilates experience.
+<br />
+
+## Revenue
+
+Coreflow reached **~$50 MRR** on the App Store through its subscription model before my co-founder departed and we discontinued the project. The app validated real demand for a focused, well-designed pilates experience in a market seeing explosive growth.
 
 <br />
 
@@ -202,6 +206,6 @@ This project is source-available for portfolio and educational purposes. Not lic
 
 <div align="center">
 
-Built by [**Rasti Najim**](https://github.com/rasti-najim)
+Built by [**Rasti Aldawoodi**](https://github.com/rasti-najim)
 
 </div>
