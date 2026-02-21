@@ -37,6 +37,12 @@ Pilates was [the most-booked workout globally in 2024](https://insider.fitt.co/p
 
 Coreflow reached **~$50 MRR** on the App Store through its subscription model before my co-founder departed and we discontinued the project. The app validated real demand for a focused, well-designed pilates experience in a market seeing explosive growth.
 
+<div align="center">
+<img src="docs/screenshots/revenue-analytics.png" alt="App Store Connect Analytics" width="700" />
+<br />
+<sub><b>App Store Connect — 4.34K impressions, 212 downloads, $49 in proceeds, 6.6% conversion rate</b></sub>
+</div>
+
 <br />
 
 ## Screenshots
@@ -46,10 +52,14 @@ Coreflow reached **~$50 MRR** on the App Store through its subscription model be
 <div align="center">
 <table>
 <tr>
-<td align="center"><img src="#" alt="Home Screen" width="200" /><br /><sub><b>Daily Session</b></sub></td>
-<td align="center"><img src="#" alt="Workout" width="200" /><br /><sub><b>Guided Workout</b></sub></td>
-<td align="center"><img src="#" alt="Progress" width="200" /><br /><sub><b>Progress Timeline</b></sub></td>
-<td align="center"><img src="#" alt="Custom" width="200" /><br /><sub><b>Custom Workouts</b></sub></td>
+<td align="center"><img src="docs/screenshots/welcome.png" alt="Welcome" width="200" /><br /><sub><b>Welcome</b></sub></td>
+<td align="center"><img src="docs/screenshots/home.png" alt="Home Screen" width="200" /><br /><sub><b>Daily Session</b></sub></td>
+<td align="center"><img src="docs/screenshots/workout.png" alt="Workout" width="200" /><br /><sub><b>Guided Workout</b></sub></td>
+<td align="center"><img src="docs/screenshots/custom.png" alt="Custom Workout" width="200" /><br /><sub><b>Custom Workouts</b></sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/screenshots/progress.png" alt="Progress" width="200" /><br /><sub><b>Progress Timeline</b></sub></td>
+<td align="center"><img src="docs/screenshots/home-simulator.png" alt="Home Simulator" width="200" /><br /><sub><b>Home Screen</b></sub></td>
 </tr>
 </table>
 </div>
