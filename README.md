@@ -19,7 +19,7 @@ A beautifully crafted iOS app for guided pilates workouts, progress tracking, an
 
 <br />
 
-[**Download on the App Store**](#) · [**Watch Demo**](#) · [**Website**](#)
+[**Download on the App Store**](#) · [**Website**](#)
 
 </div>
 
@@ -62,18 +62,6 @@ Coreflow reached **~$50 MRR** on the App Store through its subscription model be
 <td align="center"><img src="docs/screenshots/home-simulator.png" alt="Home Simulator" width="200" /><br /><sub><b>Home Screen</b></sub></td>
 </tr>
 </table>
-</div>
-
-<br />
-
-## Demo
-
-<!-- Replace with actual video link (Loom, YouTube, etc.) -->
-
-<div align="center">
-
-[![Coreflow Demo Video](https://img.shields.io/badge/Watch_Demo-Video-FF0000?style=for-the-badge&logo=youtube)](# "Click to watch demo")
-
 </div>
 
 <br />
